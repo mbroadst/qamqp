@@ -1,0 +1,461 @@
+#include "amqp_frame.h"
+#define AMQP_FRAME_END 0xCE
+
+#include <QDateTime>
+#include <QList>
+#include <QDebug>
+#include <float.h>
+
+using namespace QAMQP::Frame;
+Base::Base( Type type ) :type_(type), channel_(0), size_(0) {}
+
+Base::Base( QDataStream& raw ){
+	readHeader(raw);
+}
+
+Type Base::type() const
+{
+	return Type(type_);
+}
+
+void Base::setChannel( qint16 channel )
+{
+	channel_ = channel;
+}
+
+qint16 Base::channel() const
+{
+	return channel_;
+}
+
+qint32 Base::size() const
+{
+	return 0;
+}
+
+void QAMQP::Frame::Base::writeHeader( QDataStream & stream ) const
+{
+	stream << type_;
+	stream << channel_;
+	stream << qint32(size());
+
+}
+
+void QAMQP::Frame::Base::writeEnd( QDataStream & stream ) const
+{
+	stream << qint8(AMQP_FRAME_END);
+}
+
+void QAMQP::Frame::Base::writePayload( QDataStream & stream ) const{}
+
+void QAMQP::Frame::Base::readHeader( QDataStream & stream )
+{
+	stream >> type_;
+	stream >> channel_;
+	stream >> size_;
+
+	/*
+	stream.readRawData(reinterpret_cast<char*>(&type_), sizeof(type_));
+		stream.readRawData(reinterpret_cast<char*>(&channel_), sizeof(channel_));
+		stream.readRawData(reinterpret_cast<char*>(&size_), sizeof(size_));*/
+	
+}
+
+void QAMQP::Frame::Base::readEnd( QDataStream & stream )
+{
+	char end_  = 0;
+	stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
+	if(end_ != AMQP_FRAME_END )
+	{
+		qWarning("Wrong end of frame");
+	}
+}
+
+void QAMQP::Frame::Base::readPayload( QDataStream & stream )
+{
+	stream.skipRawData(size_);
+}
+
+void QAMQP::Frame::Base::toStream( QDataStream & stream ) const
+{
+	writeHeader(stream);
+	writePayload(stream);
+	writeEnd(stream);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+
+QAMQP::Frame::Method::Method( MethodClass methodClass, qint16 id )
+: Base(ftMethod), methodClass_(methodClass), id_(id)
+{
+
+}
+
+QAMQP::Frame::Method::Method( QDataStream& raw )
+: Base(raw)
+{
+	readPayload(raw);
+}
+
+QAMQP::Frame::Method::Method(): Base(ftMethod)
+{
+
+}
+
+MethodClass QAMQP::Frame::Method::methodClass() const
+{
+	return MethodClass(methodClass_);
+}
+
+qint16 QAMQP::Frame::Method::id() const
+{
+	return id_;
+}
+
+qint32 QAMQP::Frame::Method::size() const
+{
+	return sizeof(id_) + sizeof(methodClass_) + arguments_.size();
+}
+
+void QAMQP::Frame::Method::setArguments( const QByteArray & data )
+{
+	arguments_ = data;
+}
+
+QByteArray QAMQP::Frame::Method::arguments() const
+{
+	return arguments_;
+}
+
+void QAMQP::Frame::Method::readPayload( QDataStream & stream )
+{
+	stream >> methodClass_;
+	stream >> id_;
+	
+	arguments_.resize(size_ - (sizeof(id_) + sizeof(methodClass_)));
+	stream.readRawData(arguments_.data(), arguments_.size());
+}
+
+void QAMQP::Frame::Method::writePayload( QDataStream & stream ) const
+{
+	stream << quint16(methodClass_);
+	stream << quint16(id_);
+	stream.writeRawData(arguments_.data(), arguments_.size());
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
+{
+	QVariant value;
+	QByteArray tmp;
+	qint8 nameSize_;
+	char octet[1] = {0}, octet2[2] = {0}, octet4[4] = {0}, octet8[8] = {0};
+	switch(valueType)
+	{
+	case 't':
+		s.readRawData(octet, sizeof(octet));
+		value = QVariant::fromValue<bool>(*octet > 0);
+		break;
+	case 'b':
+		s.readRawData(octet, sizeof(octet));
+		value = QVariant::fromValue<int>(*octet);
+		break;
+	case 'B':
+		s.readRawData(octet, sizeof(octet));
+		value = QVariant::fromValue<uint>(*octet);
+		break;
+	case 'U':
+		s.readRawData(octet2, sizeof(octet2));
+		value = QVariant::fromValue<int>(*reinterpret_cast<qint16*>(octet2));
+		break;
+	case 'u':
+		s.readRawData(octet2, sizeof(octet2));
+		value = QVariant::fromValue<uint>(*reinterpret_cast<quint16*>(octet2));
+		break;
+	case 'I':
+		s.readRawData(octet4, sizeof(octet4));
+		value = QVariant::fromValue<int>(*reinterpret_cast<qint32*>(octet4));
+		break;
+	case 'i':
+		s.readRawData(octet4, sizeof(octet4));
+		value = QVariant::fromValue<uint>(*reinterpret_cast<quint32*>(octet4));
+		break;
+	case 'L':
+		s.readRawData(octet8, sizeof(octet8));
+		value = QVariant::fromValue<qlonglong>(*reinterpret_cast<qlonglong*>(octet8));
+		break;
+	case 'l':
+		s.readRawData(octet8, sizeof(octet8));
+		value = QVariant::fromValue<qulonglong>(*reinterpret_cast<qulonglong*>(octet8));
+		break;
+	case 'f':
+		s.readRawData(octet4, sizeof(octet4));
+		value = QVariant::fromValue<float>(*reinterpret_cast<float*>(octet4));
+		break;
+	case 'd':
+		s.readRawData(octet8, sizeof(octet8));
+		value = QVariant::fromValue<double>(*reinterpret_cast<double*>(octet8));
+		break;
+	case 'D':
+		{
+			QAMQP::Frame::decimal v;
+			s >> v.scale;
+			s >> v.value;
+			value = QVariant::fromValue<QAMQP::Frame::decimal>(v);
+		}
+		break;
+	case 's':
+		s >> nameSize_;
+		tmp.resize(nameSize_);
+		s.readRawData(tmp.data(), tmp.size());
+		value = QString::fromAscii(tmp.data(), nameSize_);
+		break;
+	case 'S':
+		{
+			quint32 length_ = 0;
+			s >> length_;
+			tmp.resize(length_);
+		}		
+		s.readRawData(tmp.data(), tmp.size());
+		value = QString::fromAscii(tmp.data(), tmp.size());
+		break;
+	case 'A':
+		{
+			qint32 length_ = 0;
+			qint8 type = 0;
+			s >> length_;
+			QList<QVariant> array_;
+			for (int i =0; i < length_; ++i)
+			{				
+				s >> type;
+				array_ << readField(type, s);
+			}
+			value = array_;
+		}
+		break;
+	case 'T':
+		s.readRawData(octet8, sizeof(octet8));
+		value = QDateTime::fromMSecsSinceEpoch(*reinterpret_cast<qulonglong*>(octet8));
+		break;
+	case 'F':
+		{
+			TableField table_;
+			deserialize(s, table_);
+			value = table_;
+		}
+		break;
+	case 'V':
+		break;
+	default:
+		qWarning("Unknown field type");
+	}
+	return value;
+}
+
+QDataStream & QAMQP::Frame::deserialize( QDataStream & stream, QAMQP::Frame::TableField & f )
+{
+	QByteArray data;	
+	stream >> data;
+	QDataStream s(&data, QIODevice::ReadOnly);
+
+	while(!s.atEnd())
+	{
+		qint8 valueType = 0;
+
+		QString name = readField('s', s).toString();
+		s >> valueType;		
+		f[name] = readField(valueType, s);
+	}
+
+	return stream;
+}
+
+QDataStream & QAMQP::Frame::serialize( QDataStream & stream, const TableField & f )
+{
+	QByteArray data;	
+	QDataStream s(&data, QIODevice::WriteOnly);
+	TableField::ConstIterator i;
+	for(i = f.begin(); i != f.end(); ++i)
+	{
+		writeField('s', s, i.key());
+		writeField(s, i.value());
+	}
+	stream << data;
+	return stream;
+}
+
+void QAMQP::Frame::print( const TableField & f )
+{
+	TableField::ConstIterator i;
+	for(i = f.begin(); i != f.end(); ++i)
+	{
+		switch(i.value().type())
+		{
+		case  QVariant::Hash:
+			qDebug() << "\t" << qPrintable(i.key()) << ": FIELD_TABLE";
+			break;
+		case QVariant::List:
+			qDebug() << "\t" << qPrintable(i.key()) << ": ARRAY";
+			break;
+		default:
+			qDebug() << "\t" << qPrintable(i.key()) << ": " << i.value();
+		}		
+	}
+}
+
+void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType )
+{
+	QByteArray tmp;
+	qint8 nameSize_;
+	if(withType)
+		s << valueType; // Запишем тип поля
+
+	switch(valueType)
+	{
+	case 't':
+		s << (value.toBool() ? qint8(1) : qint8(0));
+		break;
+	case 'b':
+		s << qint8(value.toInt());
+		break;
+	case 'B':
+		s << quint8(value.toUInt());
+		break;
+	case 'U':
+		s << qint16(value.toInt());
+		break;
+	case 'u':
+		s << quint16(value.toUInt());
+		break;
+	case 'I':
+		s << qint32(value.toInt());
+		break;
+	case 'i':
+		s << quint32(value.toUInt());
+		break;
+	case 'L':
+		s << qlonglong(value.toLongLong());
+		break;
+	case 'l':
+		s << qulonglong(value.toULongLong());
+		break;
+	case 'f':
+		s << value.toFloat();		
+		break;
+	case 'd':
+		s << value.toDouble();		
+		break;
+	case 'D':
+		{
+			QAMQP::Frame::decimal v(value.value<QAMQP::Frame::decimal>());
+			s << v.scale;
+			s << v.value;
+		}
+		break;
+	case 's':
+		{
+			QString str = value.toString();
+			s << quint8(str.length());
+			s.writeRawData(str.toAscii().data(), str.length());
+		}
+		break;
+	case 'S':
+		{
+			QString str = value.toString();
+			s << quint32(str.length());
+			s.writeRawData(str.toAscii().data(), str.length());
+		}
+		break;
+	case 'A':
+		{
+			QList<QVariant> array_(value.toList());
+			s << quint32(array_.count());
+			for (int i =0; i < array_.count(); ++i)
+			{				
+				writeField(s, array_.at(i));
+			}
+		}
+		break;
+	case 'T':
+		s << qulonglong(value.toDateTime().toMSecsSinceEpoch());
+		break;
+	case 'F':
+		{
+			TableField table_(value.toHash());
+			serialize(s, table_);
+		}
+		break;
+	case 'V':
+		break;
+	default:
+		qWarning("Unknown field type");
+	}
+}
+
+void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
+{
+	char type = 0;
+	switch(value.type())
+	{
+	case QVariant::Bool:
+		type = 't';
+		break;
+	case QVariant::Int:
+		{
+			int i = qAbs(value.toInt());
+			if(i <= qint8(0xFF)) {
+				type = 'b';
+			} else if(i <= qint16(0xFFFF)) {
+				type = 'U';
+			} else if(i <= qint16(0xFFFFFFFF)) {
+				type = 'I';
+			}		
+		}		
+		break;
+	case QVariant::UInt:
+		{
+			int i = value.toInt();
+			if(i <= qint8(0xFF)) {
+				type = 'B';
+			} else if(i <= qint16(0xFFFF)) {
+				type = 'u';
+			} else if(i <= qint16(0xFFFFFFFF)) {
+				type = 'i';
+			}		
+		}
+		break;
+	case QVariant::LongLong:
+		type = 'L';
+		break;
+	case QVariant::ULongLong:
+		type = 'l';
+		break;
+	case QVariant::String:
+		/*
+		{
+					QString str = value.toString();
+					type = str.length() > 255 ? 'S' : 's';			
+				}*/
+		type = 'S';
+		break;
+	case QVariant::DateTime:
+		type = 'T';
+		break;
+	case QVariant::Double:
+		type = value.toDouble() > FLT_MAX ? 'd' : 'f';
+		break;
+	case QVariant::Hash:
+		type = 'F';
+		break;
+	case QVariant::List:
+		type = 'A';
+		break;
+	}
+
+	if(type)
+		writeField(type, s, value, true);
+}

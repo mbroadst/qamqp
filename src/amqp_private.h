@@ -1,0 +1,27 @@
+#include <QBuffer>
+
+namespace QAMQP
+{
+
+	enum amqp_field_value_kind_t {
+		AMQP_FIELD_KIND_BOOLEAN = 't',
+		AMQP_FIELD_KIND_I8 = 'b',
+		AMQP_FIELD_KIND_U8 = 'B',
+		AMQP_FIELD_KIND_I16 = 's',
+		AMQP_FIELD_KIND_U16 = 'u',
+		AMQP_FIELD_KIND_I32 = 'I',
+		AMQP_FIELD_KIND_U32 = 'i',
+		AMQP_FIELD_KIND_I64 = 'l',
+		AMQP_FIELD_KIND_U64 = 'L',
+		AMQP_FIELD_KIND_F32 = 'f',
+		AMQP_FIELD_KIND_F64 = 'd',
+		AMQP_FIELD_KIND_DECIMAL = 'D',
+		AMQP_FIELD_KIND_UTF8 = 'S',
+		AMQP_FIELD_KIND_ARRAY = 'A',
+		AMQP_FIELD_KIND_TIMESTAMP = 'T',
+		AMQP_FIELD_KIND_TABLE = 'F',
+		AMQP_FIELD_KIND_VOID = 'V',
+		AMQP_FIELD_KIND_BYTES = 'x'
+	} ;
+
+}
