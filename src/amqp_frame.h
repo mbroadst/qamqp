@@ -4,6 +4,7 @@
 #include <QDataStream>
 #include <QHash>
 #include <QVariant>
+#include <QSharedPointer>
 
 namespace QAMQP
 {
@@ -27,6 +28,28 @@ namespace QAMQP
 			fcTx = 90,
 		};
 
+		enum FieldValueKind {
+			fkBoolean = 't',
+			fkI8 = 'b',
+			fkU8 = 'B',
+			fkI16 = 'U',
+			fkU16 = 'u',
+			fkI32 = 'I',
+			fkU32 = 'i',
+			fkI64 = 'l',
+			fkU64 = 'L',
+			fkFloat = 'f',
+			fkDouble = 'd',
+			fkDecimal = 'D',
+			fkLongString = 'S',
+			fkShortString = 's',
+			fkArray = 'A',
+			fkTimestamp = 'T',
+			fkTable = 'F',
+			fkVoid = 'V',
+			fkBytes = 'x'
+		};
+
 		struct decimal
 		{
 			qint8 scale;
@@ -40,9 +63,9 @@ namespace QAMQP
 
 		QDataStream & serialize( QDataStream & stream, const QAMQP::Frame::TableField & f );
 		QDataStream & deserialize( QDataStream & stream, QAMQP::Frame::TableField & f );
-		QVariant readField( qint8 valueType, QDataStream &s );
+		QVariant readField( FieldValueKind valueType, QDataStream &s );
 		void writeField( QDataStream &s, const QVariant & value );
-		void writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType = false );
+		void writeField( FieldValueKind valueType, QDataStream &s, const QVariant & value, bool withType = false );
 		void print( const QAMQP::Frame::TableField & f );
 
 		class Base
@@ -70,6 +93,8 @@ namespace QAMQP
 			qint16 channel_;
 			
 		};
+
+		typedef QSharedPointer<QAMQP::Frame::Base> BasePtr;
 
 		class Method : public Base
 		{

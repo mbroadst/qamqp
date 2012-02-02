@@ -148,7 +148,7 @@ void QAMQP::Frame::Method::writePayload( QDataStream & stream ) const
 //////////////////////////////////////////////////////////////////////////
 
 
-QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
+QVariant QAMQP::Frame::readField( FieldValueKind valueType, QDataStream &s )
 {
 	QVariant value;
 	QByteArray tmp;
@@ -232,7 +232,7 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 			for (int i =0; i < length_; ++i)
 			{				
 				s >> type;
-				array_ << readField(type, s);
+				array_ << readField(FieldValueKind(type), s);
 			}
 			value = array_;
 		}
@@ -266,9 +266,9 @@ QDataStream & QAMQP::Frame::deserialize( QDataStream & stream, QAMQP::Frame::Tab
 	{
 		qint8 valueType = 0;
 
-		QString name = readField('s', s).toString();
+		QString name = readField(fkShortString, s).toString();
 		s >> valueType;		
-		f[name] = readField(valueType, s);
+		f[name] = readField(FieldValueKind(valueType), s);
 	}
 
 	return stream;
@@ -281,7 +281,7 @@ QDataStream & QAMQP::Frame::serialize( QDataStream & stream, const TableField & 
 	TableField::ConstIterator i;
 	for(i = f.begin(); i != f.end(); ++i)
 	{
-		writeField('s', s, i.key());
+		writeField(fkShortString, s, i.key());
 		writeField(s, i.value());
 	}
 	stream << data;
@@ -307,7 +307,7 @@ void QAMQP::Frame::print( const TableField & f )
 	}
 }
 
-void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType )
+void QAMQP::Frame::writeField( FieldValueKind valueType, QDataStream &s, const QVariant & value, bool withType )
 {
 	QByteArray tmp;
 	qint8 nameSize_;
@@ -457,5 +457,5 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	}
 
 	if(type)
-		writeField(type, s, value, true);
+		writeField(FieldValueKind(type), s, value, true);
 }

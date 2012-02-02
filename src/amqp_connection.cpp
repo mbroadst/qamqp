@@ -58,14 +58,15 @@ void ConnectionPrivate::startOk()
 	clientProperties["version"] = "0.0.1";
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
 	clientProperties["product"] = "QAMQP";
+	clientProperties["site"] = "http://vmp.ru";
 	QAMQP::Frame::serialize(stream, clientProperties);
 
-	QAMQP::Frame::writeField('s', stream, "AMQPLAIN");
+	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, "AMQPLAIN");
 	QAMQP::Frame::TableField response;
 	response["LOGIN"] = client_->user();
 	response["PASSWORD"] = client_->password();
 	QAMQP::Frame::serialize(stream, response);
-	QAMQP::Frame::writeField('s', stream, "en_US");
+	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, "en_US");
 
 	frame.setArguments(arguments_);
 
@@ -99,7 +100,7 @@ void ConnectionPrivate::open()
 	QByteArray arguments_;
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-	QAMQP::Frame::writeField('s',stream, client_->virtualHost());
+	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString,stream, client_->virtualHost());
 
 	stream << qint8(0);
 	stream << qint8(0);
@@ -122,8 +123,8 @@ void ConnectionPrivate::start( const QAMQP::Frame::Method & frame )
 	QAMQP::Frame::TableField table;
 	QAMQP::Frame::deserialize(stream, table);
 
-	QString mechanisms = QAMQP::Frame::readField('S', stream).toString();
-	QString locales = QAMQP::Frame::readField('S', stream).toString();
+	QString mechanisms = QAMQP::Frame::readField(QAMQP::Frame::fkLongString, stream).toString();
+	QString locales = QAMQP::Frame::readField(QAMQP::Frame::fkLongString, stream).toString();
 	
 	qDebug(">> version_major: %d", version_major);
 	qDebug(">> version_minor: %d", version_minor);
@@ -175,7 +176,7 @@ void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
 	QDataStream stream(&data, QIODevice::ReadOnly);
 	qint16 code_ = 0, classId, methodId;
 	stream >> code_;
-	QString text(QAMQP::Frame::readField('s', stream).toString());
+	QString text(QAMQP::Frame::readField(QAMQP::Frame::fkShortString, stream).toString());
 	stream >> classId;
 	stream >> methodId;
 
@@ -191,10 +192,10 @@ void ConnectionPrivate::close(int code, const QString & text, int classId, int m
 	QByteArray arguments_;
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-	QAMQP::Frame::writeField('s',stream, client_->virtualHost());
+	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString,stream, client_->virtualHost());
 
 	stream << qint16(code);
-	QAMQP::Frame::writeField('s', stream, text);
+	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, text);
 	stream << qint16(classId);
 	stream << qint16(methodId);
 
