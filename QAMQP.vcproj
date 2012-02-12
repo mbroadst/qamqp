@@ -163,27 +163,39 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\amqp.cpp"
+				RelativePath=".\src\qamqp\amqp.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_channel.cpp"
+				RelativePath=".\src\qamqp\amqp_channel.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_connection.cpp"
+				RelativePath=".\src\qamqp\amqp_connection.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_frame.cpp"
+				RelativePath=".\src\qamqp\amqp_exchange.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_network.cpp"
+				RelativePath=".\src\qamqp\amqp_frame.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\qamqp\amqp_network.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\qamqp\amqp_queue.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\src\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\test.cpp"
 				>
 			</File>
 		</Filter>
@@ -193,7 +205,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\src\amqp.h"
+				RelativePath=".\src\qamqp\amqp.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -219,7 +231,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\amqp_channel.h"
+				RelativePath=".\src\qamqp\amqp_channel.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -245,11 +257,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\amqp_channel_p.h"
+				RelativePath=".\src\qamqp\amqp_channel_p.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_connection.h"
+				RelativePath=".\src\qamqp\amqp_connection.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -275,11 +287,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\amqp_connection_p.h"
+				RelativePath=".\src\qamqp\amqp_connection_p.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_exchange.h"
+				RelativePath=".\src\qamqp\amqp_exchange.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -305,15 +317,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\amqp_frame.h"
+				RelativePath=".\src\qamqp\amqp_exchange_p.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_message.h"
+				RelativePath=".\src\qamqp\amqp_frame.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_network.h"
+				RelativePath=".\src\qamqp\amqp_message.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\qamqp\amqp_network.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -339,7 +355,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\amqp_p.h"
+				RelativePath=".\src\qamqp\amqp_p.h"
 				>
 			</File>
 			<File
@@ -347,16 +363,68 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\amqp_queue.h"
+				RelativePath=".\src\qamqp\amqp_queue.h"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing $(InputFileName)..."
+						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_NETWORK_LIB &quot;-I.&quot; &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\qtmain&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
+						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing $(InputFileName)..."
+						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_CORE_LIB -DQT_NETWORK_LIB &quot;-I.&quot; &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\qtmain&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
+						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\qamqp\amqp_queue_p.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\QAMQP.h"
+				RelativePath=".\src\qamqp\QAMQP.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\qamqp_global.h"
+				RelativePath=".\src\qamqp\qamqp_global.h"
 				>
+			</File>
+			<File
+				RelativePath=".\src\test.h"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing $(InputFileName)..."
+						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_NETWORK_LIB &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\qtmain&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
+						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing $(InputFileName)..."
+						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_CORE_LIB -DQT_NETWORK_LIB &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\qtmain&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
+						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -437,6 +505,30 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath=".\GeneratedFiles\Release\moc_amqp_queue.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\GeneratedFiles\Release\moc_test.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
 			</Filter>
 			<Filter
 				Name="Debug"
@@ -493,6 +585,30 @@
 				</File>
 				<File
 					RelativePath=".\GeneratedFiles\Debug\moc_amqp_network.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\GeneratedFiles\Debug\moc_amqp_queue.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\GeneratedFiles\Debug\moc_test.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
