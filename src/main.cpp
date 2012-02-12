@@ -1,18 +1,12 @@
 
 #include <QtCore/QCoreApplication>
-#include "amqp.h"
-#include "amqp_exchange.h"
+#include "test.h"
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
 
-	QUrl con(QString("amqp://guest:guest@localhost:5672/"));
-	QAMQP::Client client(con);
-	QAMQP::Exchange * exchange_ =  client.createExchange(),
-		*exchange2_ =  client.createExchange();
-
-	client.printConnect();
+	Test test;
 
 	return a.exec();
 }

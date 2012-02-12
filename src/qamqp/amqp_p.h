@@ -19,12 +19,13 @@ namespace QAMQP
 		void init(QObject * parent, const QUrl & connectionString);
 		void printConnect() const;
 		void connect();
+		void disconnect();
 		void parseCnnString( const QUrl & connectionString);
 		void sockConnect();
 		void login();
 
-		Exchange * createExchange(const QString &name);
-		Queue * createQueue(const QString &name);
+		Exchange * createExchange(int channelNumber, const QString &name);
+		Queue * createQueue(int channelNumber, const QString &name);
 
 		quint32 port;
 		QString host;

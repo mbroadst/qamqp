@@ -41,6 +41,7 @@ namespace QAMQP
 		void _q_method(const QAMQP::Frame::Method & frame);
 		QPointer<Client> client_;
 		bool closed_;
+		bool connected;
 	};
 }
 #endif // amqp_connection_p_h__

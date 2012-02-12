@@ -30,14 +30,18 @@ namespace QAMQP
 		void setParam(int param);
 		void setName(const QString &name);
 
+		bool isOpened() const;
+
 	signals:
 		void opened();
 		void closed();
 		void flowChanged(bool enabled);
 
 	protected:
-		Channel(Client * parent = 0);
+		Channel(int channelNumber = -1, Client * parent = 0);
 		Channel(ChannelPrivate &dd, Client* parent);
+		virtual void onOpen();;
+		virtual void onClose();;
 
 	private:
 		void stateChanged(int state);

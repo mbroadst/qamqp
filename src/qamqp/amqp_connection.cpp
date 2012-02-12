@@ -27,12 +27,13 @@ namespace QAMQP
 		}
 	};
 
+	
 }
 //////////////////////////////////////////////////////////////////////////
 
 
 ConnectionPrivate::ConnectionPrivate( int version /*= QObjectPrivateVersion*/ )
-	:QObjectPrivate(version), closed_(false)
+	:QObjectPrivate(version), closed_(false), connected(false)
 {
 
 }
@@ -58,20 +59,18 @@ void ConnectionPrivate::startOk()
 	clientProperties["version"] = "0.0.1";
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
 	clientProperties["product"] = "QAMQP";
-	clientProperties["site"] = "http://vmp.ru";
 	QAMQP::Frame::serialize(stream, clientProperties);
 
-	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, "AMQPLAIN");
+	QAMQP::Frame::writeField('s', stream, "AMQPLAIN");
 	QAMQP::Frame::TableField response;
 	response["LOGIN"] = client_->user();
 	response["PASSWORD"] = client_->password();
 	QAMQP::Frame::serialize(stream, response);
-	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, "en_US");
+	QAMQP::Frame::writeField('s', stream, "en_US");
 
 	frame.setArguments(arguments_);
 
-	client_->d_func()->network_->sendFrame(frame);
-	
+	client_->d_func()->network_->sendFrame(frame);	
 }
 
 void ConnectionPrivate::secureOk()
@@ -100,7 +99,7 @@ void ConnectionPrivate::open()
 	QByteArray arguments_;
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString,stream, client_->virtualHost());
+	QAMQP::Frame::writeField('s',stream, client_->virtualHost());
 
 	stream << qint8(0);
 	stream << qint8(0);
@@ -117,14 +116,13 @@ void ConnectionPrivate::start( const QAMQP::Frame::Method & frame )
 	quint8 version_major = 0;
 	quint8 version_minor = 0;
 	
-	stream >> version_major;
-	stream >> version_minor;
+	stream >> version_major >> version_minor;
 
 	QAMQP::Frame::TableField table;
 	QAMQP::Frame::deserialize(stream, table);
 
-	QString mechanisms = QAMQP::Frame::readField(QAMQP::Frame::fkLongString, stream).toString();
-	QString locales = QAMQP::Frame::readField(QAMQP::Frame::fkLongString, stream).toString();
+	QString mechanisms = QAMQP::Frame::readField('S', stream).toString();
+	QString locales = QAMQP::Frame::readField('S', stream).toString();
 	
 	qDebug(">> version_major: %d", version_major);
 	qDebug(">> version_minor: %d", version_minor);
@@ -166,6 +164,7 @@ void ConnectionPrivate::tune( const QAMQP::Frame::Method & frame )
 void ConnectionPrivate::openOk( const QAMQP::Frame::Method & frame )
 {
 	qDebug(">> OpenOK");
+	connected = true;
 	q_func()->openOk();
 }
 
@@ -176,7 +175,7 @@ void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
 	QDataStream stream(&data, QIODevice::ReadOnly);
 	qint16 code_ = 0, classId, methodId;
 	stream >> code_;
-	QString text(QAMQP::Frame::readField(QAMQP::Frame::fkShortString, stream).toString());
+	QString text(QAMQP::Frame::readField('s', stream).toString());
 	stream >> classId;
 	stream >> methodId;
 
@@ -184,6 +183,7 @@ void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
 	qDebug(">> text: %s", qPrintable(text));
 	qDebug(">> class-id: %d", classId);
 	qDebug(">> method-id: %d", methodId);
+	connected = false;
 }
 
 void ConnectionPrivate::close(int code, const QString & text, int classId, int methodId)
@@ -192,10 +192,10 @@ void ConnectionPrivate::close(int code, const QString & text, int classId, int m
 	QByteArray arguments_;
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString,stream, client_->virtualHost());
+	QAMQP::Frame::writeField('s',stream, client_->virtualHost());
 
 	stream << qint16(code);
-	QAMQP::Frame::writeField(QAMQP::Frame::fkShortString, stream, text);
+	QAMQP::Frame::writeField('s', stream, text);
 	stream << qint16(classId);
 	stream << qint16(methodId);
 
@@ -205,12 +205,14 @@ void ConnectionPrivate::close(int code, const QString & text, int classId, int m
 
 void ConnectionPrivate::closeOk()
 {
-	QAMQP::Frame::Method frame(QAMQP::Frame::fcConnection, miCloseOk);
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcConnection, miCloseOk);	
+	connected = false;
 	client_->d_func()->network_->sendFrame(frame);
 }
 
 void ConnectionPrivate::closeOk( const QAMQP::Frame::Method & )
 {
+	connected = false;
 	QMetaObject::invokeMethod(q_func(), "disconnected");
 }
 
@@ -325,4 +327,9 @@ void Connection::closeOk()
 void Connection::openOk()
 {
 	emit connected();
+}
+
+bool Connection::isConnected() const
+{
+	return d_func()->connected;
 }

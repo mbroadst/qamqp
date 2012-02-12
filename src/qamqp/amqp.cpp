@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include "qamqp_global.h"
 #include "amqp_exchange.h"
+#include "amqp_queue.h"
 
 using namespace QAMQP;
 
@@ -45,27 +46,24 @@ ClientPrivate::~ClientPrivate()
 void ClientPrivate::init(QObject * parent)
 {
 	q_func()->setParent(parent);
-	network_ = new QAMQP::Network(q_func());
-	connection_ = new QAMQP::Connection(q_func());
+	if(!network_){
+		network_ = new QAMQP::Network(q_func());
+	}
+
+	if(!connection_)
+	{
+		connection_ = new QAMQP::Connection(q_func());
+	}
 
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		connection_, SLOT(_q_method(const QAMQP::Frame::Method &)));
-
-	ClientPrivate::connect();
 }
 
 void ClientPrivate::init(QObject * parent, const QUrl & con)
-{
-	Q_Q(QAMQP::Client);
-	if(con.scheme() == AMQPSCHEME )
-	{
-		q->setPassword(con.password());
-		q->setUser(con.userName());
-		q->setPort(con.port());
-		q->setHost(con.host());				
-		q->setVirtualHost(con.path());
-	}
+{	
+	parseCnnString(con);
 	init(parent);
+	ClientPrivate::connect();
 }
 
 void ClientPrivate::printConnect() const
@@ -84,13 +82,22 @@ void ClientPrivate::connect()
 	ClientPrivate::login();
 }
 
-void ClientPrivate::parseCnnString( const QUrl & connectionString )
+void ClientPrivate::parseCnnString( const QUrl & con )
 {
-
+	Q_Q(QAMQP::Client);
+	if(con.scheme() == AMQPSCHEME )
+	{
+		q->setPassword(con.password());
+		q->setUser(con.userName());
+		q->setPort(con.port());
+		q->setHost(con.host());				
+		q->setVirtualHost(con.path());
+	}
 }
 
 void ClientPrivate::sockConnect()
 {
+	disconnect();
 	network_->connectTo(host, port);
 }
 
@@ -99,20 +106,34 @@ void ClientPrivate::login()
 
 }
 
-Exchange * ClientPrivate::createExchange( const QString &name )
+Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name )
 {
-	Exchange * exchange_ = new Exchange(q_func());
+	Exchange * exchange_ = new Exchange(channelNumber, q_func());
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
+	exchange_->setName(name);
 	return exchange_;
 }
 
-Queue * ClientPrivate::createQueue( const QString &name )
+Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 {
-	return 0;
+	Queue * queue_ = new Queue(channelNumber, q_func());
+	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
+		queue_, SLOT(_q_method(const QAMQP::Frame::Method &)));
+
+	QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
+	queue_->setName(name);
+	return queue_;
 }
+
+
+void ClientPrivate::disconnect()
+{
+	network_->QAMQP::Network::disconnect();
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -224,22 +245,44 @@ void QAMQP::Client::closeChannel()
 
 }
 
-Exchange * QAMQP::Client::createExchange()
+Exchange * QAMQP::Client::createExchange(int channelNumber)
 {
-	return d_func()->createExchange(QString());
+	return d_func()->createExchange(channelNumber, QString());
 }
 
-Exchange * QAMQP::Client::createExchange( const QString &name )
+Exchange * QAMQP::Client::createExchange( const QString &name, int channelNumber )
 {
-	return d_func()->createExchange(name);
+	return d_func()->createExchange(channelNumber, name);
 }
 
-Queue * QAMQP::Client::createQueue()
+Queue * QAMQP::Client::createQueue(int channelNumber)
 {
-	return d_func()->createQueue(QString());
+	return d_func()->createQueue(channelNumber, QString());
 }
 
-Queue * QAMQP::Client::createQueue( const QString &name )
+Queue * QAMQP::Client::createQueue( const QString &name, int channelNumber )
 {
-	return d_func()->createQueue(name);
+	return d_func()->createQueue(channelNumber, name);
+}
+
+void QAMQP::Client::open()
+{
+	return d_func()->connect();
+}
+
+void QAMQP::Client::open( const QUrl & connectionString )
+{
+	d_func()->parseCnnString(connectionString);
+	open();
+}
+
+void QAMQP::Client::close()
+{
+	return d_func()->disconnect();
+}
+
+void QAMQP::Client::reopen()
+{
+	return d_func()->connect();
+	return d_func()->disconnect();
 }

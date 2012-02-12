@@ -27,10 +27,26 @@ namespace QAMQP
 			csRunning
 		};
 
+		enum BasicMethod
+		{
+			METHOD_ID_ENUM(bmQos, 10),
+			METHOD_ID_ENUM(bmConsume, 20),
+			METHOD_ID_ENUM(bmCancel, 30),
+			bmPublish = 40,
+			bmReturn = 50,
+			bmDeliver = 60,
+			METHOD_ID_ENUM(bmGet, 70),
+			bmgetEmpty = 72,
+			bmAck = 80,
+			bmReject = 90,
+			bmRecoverAsync = 100,
+			METHOD_ID_ENUM(bmRecover, 110)
+		};
+
 		ChannelPrivate(int version = QObjectPrivateVersion);
 		~ChannelPrivate();
 
-		void init(Client * parent);
+		void init(int channelNumber, Client * parent);
 
 		void open();
 		void flow();
@@ -46,8 +62,9 @@ namespace QAMQP
 		void close(const QAMQP::Frame::Method & frame);
 		void closeOk(const QAMQP::Frame::Method & frame);
 
-		void _q_method(const QAMQP::Frame::Method & frame);
+		virtual void _q_method(const QAMQP::Frame::Method & frame);
 		void _q_open();
+
 
 		void sendFrame(const QAMQP::Frame::Base & frame);
 
@@ -57,6 +74,8 @@ namespace QAMQP
 		int number;
 
 		static int nextChannelNumber_;
+		bool opened;
+		bool needOpen;
 	};
 }
 #endif // amqp_channel_p_h__

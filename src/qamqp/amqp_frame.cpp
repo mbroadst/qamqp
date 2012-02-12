@@ -148,7 +148,7 @@ void QAMQP::Frame::Method::writePayload( QDataStream & stream ) const
 //////////////////////////////////////////////////////////////////////////
 
 
-QVariant QAMQP::Frame::readField( FieldValueKind valueType, QDataStream &s )
+QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 {
 	QVariant value;
 	QByteArray tmp;
@@ -232,7 +232,7 @@ QVariant QAMQP::Frame::readField( FieldValueKind valueType, QDataStream &s )
 			for (int i =0; i < length_; ++i)
 			{				
 				s >> type;
-				array_ << readField(FieldValueKind(type), s);
+				array_ << readField(type, s);
 			}
 			value = array_;
 		}
@@ -266,9 +266,9 @@ QDataStream & QAMQP::Frame::deserialize( QDataStream & stream, QAMQP::Frame::Tab
 	{
 		qint8 valueType = 0;
 
-		QString name = readField(fkShortString, s).toString();
+		QString name = readField('s', s).toString();
 		s >> valueType;		
-		f[name] = readField(FieldValueKind(valueType), s);
+		f[name] = readField(valueType, s);
 	}
 
 	return stream;
@@ -281,10 +281,16 @@ QDataStream & QAMQP::Frame::serialize( QDataStream & stream, const TableField & 
 	TableField::ConstIterator i;
 	for(i = f.begin(); i != f.end(); ++i)
 	{
-		writeField(fkShortString, s, i.key());
+		writeField('s', s, i.key());
 		writeField(s, i.value());
 	}
-	stream << data;
+	if(data.isEmpty())
+	{
+		stream << qint32(0);
+	} else {
+		stream << data;
+	}
+	
 	return stream;
 }
 
@@ -307,7 +313,7 @@ void QAMQP::Frame::print( const TableField & f )
 	}
 }
 
-void QAMQP::Frame::writeField( FieldValueKind valueType, QDataStream &s, const QVariant & value, bool withType )
+void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType )
 {
 	QByteArray tmp;
 	qint8 nameSize_;
@@ -457,5 +463,116 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	}
 
 	if(type)
-		writeField(FieldValueKind(type), s, value, true);
+		writeField(type, s, value, true);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+QAMQP::Frame::Content::Content():Base(ftHeader)
+{
+
+}
+
+QAMQP::Frame::Content::Content( MethodClass methodClass ):Base(ftHeader)
+{
+	methodClass_ = methodClass;
+}
+
+QAMQP::Frame::Content::Content( QDataStream& raw ):Base(ftHeader)
+{
+
+}
+
+QAMQP::Frame::MethodClass QAMQP::Frame::Content::methodClass() const
+{
+	return MethodClass(methodClass_);
+}
+
+qint32 QAMQP::Frame::Content::size() const
+{
+	QDataStream out(&buffer_, QIODevice::WriteOnly);
+	buffer_.clear();
+	out << qint16(methodClass_);
+	out << qint16(0); //weight
+	out << qlonglong(body_.size());
+
+	qint16 prop_ = 0;
+	foreach (int p, properties_.keys())
+	{
+		prop_ |= p;
+	}
+
+	out << prop_;
+	QHash<int, QVariant>::const_iterator i;
+	for(i = properties_.begin(); i != properties_.end(); ++i)
+	{
+		if(i.value().type() == QVariant::String)
+		{
+			writeField('s', out, i.value());
+		} else {
+			writeField(out, i.value());
+		}
+	}
+
+	return buffer_.size();
+}
+
+void QAMQP::Frame::Content::setBody( const QByteArray & data )
+{
+	body_ = data;
+}
+
+QByteArray QAMQP::Frame::Content::body() const
+{
+	return body_;
+}
+
+void QAMQP::Frame::Content::setProperty( Property prop, const QVariant & value )
+{
+	properties_[prop] = value;
+}
+
+QVariant QAMQP::Frame::Content::property( Property prop ) const
+{
+	return properties_.value(prop);
+}
+
+void QAMQP::Frame::Content::writePayload( QDataStream & out ) const
+{
+	out.writeRawData(buffer_.data(), buffer_.size());
+}
+
+void QAMQP::Frame::Content::readPayload( QDataStream & in )
+{
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+ContentBody::ContentBody() : Base(ftBody)
+{}
+
+void QAMQP::Frame::ContentBody::setBody( const QByteArray & data )
+{
+	body_ = data;
+}
+
+QByteArray QAMQP::Frame::ContentBody::body() const
+{
+	return body_;
+}
+
+void QAMQP::Frame::ContentBody::writePayload( QDataStream & out ) const
+{
+	out.writeRawData(body_.data(), body_.size());
+}
+
+void QAMQP::Frame::ContentBody::readPayload( QDataStream & in )
+{
+
+}
+
+qint32 QAMQP::Frame::ContentBody::size() const
+{
+	return body_.size();
 }

@@ -32,11 +32,11 @@ namespace QAMQP
 
 //////////////////////////////////////////////////////////////////////////
 
-QAMQP::Channel::Channel( Client * parent /*= 0*/ )
+QAMQP::Channel::Channel(int channelNumber /*= -1*/, Client * parent /*= 0*/ )
 	: QObject(*new ChannelPrivate, 0)
 {
 	QT_TRY {
-		d_func()->init(parent);
+		d_func()->init(channelNumber, parent);
 	} QT_CATCH(...) {
 		ChannelExceptionCleaner::cleanup(this, d_func());
 		QT_RETHROW;
@@ -62,12 +62,17 @@ QAMQP::Channel::~Channel()
 
 void QAMQP::Channel::closeChannel()
 {
-
+	Q_D(Channel);
+	d->needOpen = true;
+	if(d->opened)
+		d->close(0, QString(), 0,0);
+	
 }
 
 void QAMQP::Channel::reopen()
-{
-
+{	
+	closeChannel();	
+	d_func()->open();
 }
 
 QString QAMQP::Channel::name()
@@ -108,10 +113,28 @@ void QAMQP::Channel::stateChanged( int state )
 		break;
 	}
 }
+
+bool QAMQP::Channel::isOpened() const
+{
+	return d_func()->opened;
+}
+
+void QAMQP::Channel::onOpen()
+{
+
+}
+
+void QAMQP::Channel::onClose()
+{
+
+}
 //////////////////////////////////////////////////////////////////////////
 
 ChannelPrivate::ChannelPrivate(int version /* = QObjectPrivateVersion */)
-	:QObjectPrivate(version), number(++nextChannelNumber_)
+	:QObjectPrivate(version)
+	, number(0)
+	, opened(false)
+	, needOpen(true)
 {
 
 }
@@ -121,8 +144,11 @@ ChannelPrivate::~ChannelPrivate()
 
 }
 
-void ChannelPrivate::init(Client * parent)
+void ChannelPrivate::init(int channelNumber, Client * parent)
 {
+	needOpen = channelNumber == -1 ? true : false;
+	number = channelNumber == -1 ? ++nextChannelNumber_ : channelNumber;
+	nextChannelNumber_ = qMax(channelNumber, (nextChannelNumber_ + 1));
 	q_func()->setParent(parent);
 	client_ = parent;
 }
@@ -158,7 +184,6 @@ void ChannelPrivate::_q_method( const QAMQP::Frame::Method & frame )
 
 void ChannelPrivate::_q_open()
 {
-	qDebug("Open channel #%d", number);
 	open();
 }
 
@@ -171,6 +196,12 @@ void ChannelPrivate::sendFrame( const QAMQP::Frame::Base & frame )
 
 void ChannelPrivate::open()
 {
+	if(!needOpen)
+		return;
+
+	if(!client_->d_func()->connection_->isConnected())
+		return;
+	qDebug("Open channel #%d", number);
 	QAMQP::Frame::Method frame(QAMQP::Frame::fcChannel, miOpen);
 	frame.setChannel(number);
 	QByteArray arguments_;
@@ -245,11 +276,18 @@ void ChannelPrivate::closeOk()
 
 void ChannelPrivate::closeOk( const QAMQP::Frame::Method & frame )
 {
-	q_func()->stateChanged(csClosed);
+	Q_Q(Channel);
+	q->stateChanged(csClosed);
+	q->onClose();
+	opened = false;
 }
 
 void ChannelPrivate::openOk( const QAMQP::Frame::Method & frame )
 {
+	Q_Q(Channel);
 	qDebug(">> OpenOK");
-	q_func()->stateChanged(csOpened);
+	opened = true;
+	q->stateChanged(csOpened);
+	q->onOpen();
+	
 }

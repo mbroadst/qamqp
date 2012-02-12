@@ -31,7 +31,8 @@ void QAMQP::Network::connectTo( const QString & host, quint32 port )
 
 void QAMQP::Network::disconnect()
 {
-
+	if(socket_)
+		socket_->abort();
 }
 
 void QAMQP::Network::connected()
@@ -101,8 +102,8 @@ void QAMQP::Network::readyRead()
 	}
 }
 
-void QAMQP::Network::sendFrame( const QAMQP::Frame::BasePtr &frame )
+void QAMQP::Network::sendFrame( const QAMQP::Frame::Base & frame )
 {
 	QDataStream stream(socket_);
-	frame->toStream(stream);
+	frame.toStream(stream);
 }

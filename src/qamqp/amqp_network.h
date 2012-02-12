@@ -5,7 +5,6 @@
 #include <QTcpSocket>
 #include <QPointer>
 #include <QBuffer>
-#include <QQueue>
 
 #include "amqp_frame.h"
 
@@ -23,7 +22,7 @@ namespace QAMQP
 		void disconnect();
 		void sendFrame();
 
-		void sendFrame(const QAMQP::Frame::BasePtr &frame);
+		void sendFrame(const QAMQP::Frame::Base & frame);
 
 	signals:
 		void method(const QAMQP::Frame::Method & method);
@@ -37,7 +36,6 @@ namespace QAMQP
 	private:
 		QPointer<QTcpSocket> socket_;
 		QPointer<QBuffer> buffer_;
-		QQueue<QAMQP::Frame::BasePtr> outFrames_;
 		int offsetBuf;
 		int leftSize;
 		qint8 lastType_;

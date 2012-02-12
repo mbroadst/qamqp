@@ -25,6 +25,9 @@ namespace QAMQP
 		void open();
 		void close(int code, const QString & text, int classId = 0, int methodId = 0);
 		void closeOk();	
+
+		bool isConnected() const;
+
 	Q_SIGNALS:
 		void disconnected();
 		void connected();

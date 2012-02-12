@@ -33,11 +33,11 @@ namespace QAMQP
 		void printConnect() const;
 		void closeChannel();
 
-		Exchange * createExchange();
-		Exchange * createExchange(const QString &name);
+		Exchange * createExchange(int channelNumber = -1);
+		Exchange * createExchange(const QString &name, int channelNumber = -1);
 
-		Queue * createQueue();
-		Queue * createQueue(const QString &name);
+		Queue * createQueue(int channelNumber = -1);
+		Queue * createQueue(const QString &name, int channelNumber = -1);
 
 		quint32 port() const;
 		void setPort(quint32 port);
@@ -53,6 +53,11 @@ namespace QAMQP
 
 		QString password() const;
 		void setPassword(const QString & password);
+
+		void open();
+		void open(const QUrl & connectionString);
+		void close();
+		void reopen();
 
 	protected:
 		Client(ClientPrivate &d, QObject* parent, const QUrl & connectionString);
