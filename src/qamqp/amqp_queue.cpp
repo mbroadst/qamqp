@@ -125,14 +125,14 @@ void Queue::get()
 
 }
 
-void Queue::consume()
+void Queue::consume(QueueOptions options)
 {
-
+	d_func()->consume(options);
 }
 
 void Queue::setConsumerTag( const QString &consumerTag )
 {
-	d_func()->setConsumerTag(consumerTag);
+	d_func()->consumerTag = consumerTag;
 }
 
 QString Queue::consumerTag() const
@@ -147,6 +147,7 @@ QueuePrivate::QueuePrivate()
 	:ChannelPrivate()
 	,  deleyedDeclare(false)
 	,  declared(false)
+	,  recievingMessage(false)
 {
 
 }
@@ -160,36 +161,54 @@ QueuePrivate::~QueuePrivate()
 void QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
 	ChannelPrivate::_q_method(frame);
-	if(frame.methodClass() != QAMQP::Frame::fcQueue
-		|| frame.channel() != number )
+	if(frame.channel() != number)
 		return;
 
-	switch(frame.id())
+	if(frame.methodClass() == QAMQP::Frame::fcQueue)
 	{
-	case miDeclareOk:
-		declareOk(frame);
-		break;
-	case miDelete:
-		deleteOk(frame);
-		break;
-	case miBindOk:
-		bindOk(frame);
-		break;
-	case miUnbindOk:
-		unbindOk(frame);
-		break;
-	case miPurgeOk:
-		deleteOk(frame);
-		break;
-	default:
-		break;
+		switch(frame.id())
+		{
+		case miDeclareOk:
+			declareOk(frame);
+			break;
+		case miDelete:
+			deleteOk(frame);
+			break;
+		case miBindOk:
+			bindOk(frame);
+			break;
+		case miUnbindOk:
+			unbindOk(frame);
+			break;
+		case miPurgeOk:
+			deleteOk(frame);
+			break;
+		default:
+			break;
+		}
 	}
+
+	if(frame.methodClass() == QAMQP::Frame::fcBasic)
+	{
+		switch(frame.id())
+		{
+		case bmConsumeOk:
+			consumeOk(frame);
+			break;
+		case bmDeliver:
+			deliver(frame);
+			break;
+		default:
+			break;
+		}
+	}
+
+
 }
 
 void QueuePrivate::declareOk( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "Declared queue: " << name;
-	QMetaObject::invokeMethod(q_func(), "declared");
+	qDebug() << "Declared queue: " << name;	
 	declared = true;
 
 	QByteArray data = frame.arguments();
@@ -199,12 +218,13 @@ void QueuePrivate::declareOk( const QAMQP::Frame::Method & frame )
 	qint32 messageCount = 0, consumerCount = 0;
 	stream >> messageCount >> consumerCount;
 	qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
+
+	QMetaObject::invokeMethod(q_func(), "declared");
 }
 
 void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "Deleted or purged queue: " << name;
-	QMetaObject::invokeMethod(q_func(), "removed");
+	qDebug() << "Deleted or purged queue: " << name;	
 	declared = false;
 
 	QByteArray data = frame.arguments();
@@ -212,6 +232,7 @@ void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 	qint32 messageCount = 0;
 	stream >> messageCount;
 	qDebug("Message count %d", messageCount);
+	QMetaObject::invokeMethod(q_func(), "removed");
 }
 
 
@@ -255,12 +276,12 @@ void QueuePrivate::remove( bool ifUnused /*= true*/, bool ifEmpty /*= true*/, bo
 	if(!declared)
 		return;
 
-	QAMQP::Frame::Method frame(QAMQP::Frame::fcExchange, miDelete);
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcQueue, miDelete);
 	frame.setChannel(number);
 	QByteArray arguments_;
 	QDataStream out(&arguments_, QIODevice::WriteOnly);
 
-	out << qint8(0); //reserver 1
+	out << qint16(0); //reserver 1
 	writeField('s', out, name);
 
 	qint8 flag = 0;
@@ -282,13 +303,13 @@ void QueuePrivate::purge()
 		return;
 	}
 
-	QAMQP::Frame::Method frame(QAMQP::Frame::fcQueue, miBind);
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcQueue, miPurge);
 	frame.setChannel(number);
 	QByteArray arguments_;
 	QDataStream out(&arguments_, QIODevice::WriteOnly);
 	out << qint16(0); //reserver 1
 	writeField('s', out, name);
-	out << qint8(1); // no-wait
+	out << qint8(0); // no-wait
 	frame.setArguments(arguments_);
 	sendFrame(frame);
 
@@ -340,7 +361,74 @@ void QueuePrivate::unbind( const QString & exchangeName, const QString & key )
 }
 
 
-void QueuePrivate::setConsumerTag( const QString &consumerTag )
+
+void QueuePrivate::consume( Queue::QueueOptions options )
+{
+	if(!opened)
+	{
+		return;
+	}
+
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, bmConsume);
+	frame.setChannel(number);
+	QByteArray arguments_;
+	QDataStream out(&arguments_, QIODevice::WriteOnly);
+	out << qint16(0); //reserver 1
+	writeField('s', out, name);
+	writeField('s', out, consumerTag);
+	out << qint8(options); // no-wait
+	writeField('F', out, TableField());
+
+	frame.setArguments(arguments_);
+	sendFrame(frame);
+}
+
+
+void QueuePrivate::consumeOk( const QAMQP::Frame::Method & frame )
+{
+	qDebug() << "Consume ok: " << name;	
+	declared = false;
+
+	QByteArray data = frame.arguments();
+	QDataStream stream(&data, QIODevice::ReadOnly);
+	consumerTag = readField('s',stream).toString();
+	qDebug("Consumer tag = %s", qPrintable(consumerTag));
+}
+
+
+void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
+{
+	qDebug() << "* Receive message: ";	
+	declared = false;
+
+	QByteArray data = frame.arguments();
+	QDataStream in(&data, QIODevice::ReadOnly);
+	QString consumer_ = readField('s',in).toString();
+	if(consumer_ != consumerTag)
+	{
+		return;
+	}
+
+	qlonglong deliveryTag = readField('L',in).toLongLong();
+	bool redelivered = readField('t',in).toBool();
+	QString exchangeName = readField('s',in).toString();
+	QString routingKey = readField('s',in).toString();
+
+	qDebug() << "| Delivery-tag: " << deliveryTag;
+	qDebug() << "| Redelivered: " << redelivered;
+	qDebug("| Exchange-name: %s", qPrintable(exchangeName));
+	qDebug("| Routing-key: %s", qPrintable(routingKey));
+}
+
+void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
+{
+	if(frame.channel() != number)
+		return;
+	qDebug() << "Content-type: " << qPrintable(frame.property(Content::cpContentType).toString());
+	qDebug() << "Encoding-type: " << qPrintable(frame.property(Content::cpContentEncoding).toString());
+}
+
+void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 {
 
 }

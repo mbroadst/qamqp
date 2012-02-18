@@ -1,3 +1,6 @@
+#ifndef amqp_queue_p_h__
+#define amqp_queue_p_h__
+
 #include "amqp_channel_p.h"
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
@@ -27,13 +30,19 @@ namespace QAMQP
 		void bind(const QString & exchangeName, const QString & key);
 		void unbind(const QString & exchangeName, const QString & key);
 
-		void setConsumerTag( const QString &consumerTag );
-
 		void declareOk(const QAMQP::Frame::Method & frame);
 		void deleteOk(const QAMQP::Frame::Method & frame);
 		void bindOk(const QAMQP::Frame::Method & frame);
 		void unbindOk(const QAMQP::Frame::Method & frame);
 
+		/************************************************************************/
+		/* CLASS BASIC METHODS                                                  */
+		/************************************************************************/
+
+		void consume(Queue::ConsumeOptions options);
+		void consumeOk(const QAMQP::Frame::Method & frame);
+		
+		void deliver(const QAMQP::Frame::Method & frame);
 		
 		QString type;
 		Queue::QueueOptions options;
@@ -45,7 +54,13 @@ namespace QAMQP
 		QString consumerTag;
 
 		QMap<QString, QString> delayedBindings;
+
+
+		bool recievingMessage;
+
+		void _q_content(const QAMQP::Frame::Content & frame);
+		void _q_body(int channeNumber, const QByteArray & body);
 	};	
 
-
 }
+#endif // amqp_queue_p_h__

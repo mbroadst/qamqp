@@ -143,16 +143,16 @@ void ExchangePrivate::_q_method( const QAMQP::Frame::Method & frame )
 
 void ExchangePrivate::declareOk( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "Declared exchange: " << name;
-	QMetaObject::invokeMethod(q_func(), "declared");
+	qDebug() << "Declared exchange: " << name;	
 	declared = true;
+	QMetaObject::invokeMethod(q_func(), "declared");
 }
 
 void ExchangePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "Deleted exchange: " << name;
-	QMetaObject::invokeMethod(q_func(), "removed");
+	qDebug() << "Deleted exchange: " << name;	
 	declared = false;
+	QMetaObject::invokeMethod(q_func(), "removed");
 }
 
 void ExchangePrivate::declare( )
@@ -189,7 +189,7 @@ void ExchangePrivate::remove( bool ifUnused /*= true*/, bool noWait /*= true*/ )
 	QByteArray arguments_;
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-	stream << qint8(0); //reserver 1
+	stream << qint16(0); //reserver 1
 	writeField('s', stream, name);
 
 	qint8 flag = 0;

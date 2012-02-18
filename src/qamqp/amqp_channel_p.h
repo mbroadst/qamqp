@@ -64,8 +64,8 @@ namespace QAMQP
 
 		virtual void _q_method(const QAMQP::Frame::Method & frame);
 		void _q_open();
-
-
+		
+		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 		void sendFrame(const QAMQP::Frame::Base & frame);
 
 		QPointer<Client> client_;

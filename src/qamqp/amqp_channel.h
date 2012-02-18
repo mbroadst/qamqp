@@ -14,7 +14,7 @@ namespace QAMQP
 		Q_OBJECT
 
 		Q_PROPERTY(int number READ channelNumber);
-		Q_PROPERTY(QString name READ name WRITE setName);
+		Q_PROPERTY(QString name READ name WRITE setName);		
 
 		Q_DECLARE_PRIVATE(QAMQP::Channel)
 		Q_DISABLE_COPY(Channel)		
@@ -29,7 +29,7 @@ namespace QAMQP
 				
 		void setParam(int param);
 		void setName(const QString &name);
-
+		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 		bool isOpened() const;
 
 	signals:

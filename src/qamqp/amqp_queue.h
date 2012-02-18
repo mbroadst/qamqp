@@ -35,6 +35,15 @@ namespace QAMQP
 			NoWait = 0x10
 		};
 		Q_DECLARE_FLAGS(QueueOptions, QueueOption)
+
+		enum ConsumeOption {
+				coNoLocal = 0x1,
+				coNoAck = 0x02,
+				coExclusive = 0x04,	
+				coNoWait = 0x8
+		};
+		Q_DECLARE_FLAGS(ConsumeOptions, ConsumeOption)
+
 		~Queue();
 
 		QueueOptions option() const;
@@ -52,7 +61,7 @@ namespace QAMQP
 		void unbind(Exchange * exchange, const QString & key);
 
 		void get();
-		void consume();
+		void consume(ConsumeOptions options = NoOptions);
 		void setConsumerTag(const QString &consumerTag);
 		QString consumerTag() const;
 	
@@ -60,6 +69,12 @@ namespace QAMQP
 		void declared();
 		void binded(bool);
 		void removed();
+	private:
+		Q_PRIVATE_SLOT(d_func(), void _q_content(const QAMQP::Frame::Content & frame))
+		Q_PRIVATE_SLOT(d_func(), void _q_body(int channeNumber, const QByteArray & body))
 	};
 }
+#ifdef QAMQP_P_INCLUDE
+# include "amqp_queue_p.h"
+#endif
 #endif // amqp_queue_h__

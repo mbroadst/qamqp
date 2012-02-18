@@ -26,6 +26,8 @@ namespace QAMQP
 
 	signals:
 		void method(const QAMQP::Frame::Method & method);
+		void content(const QAMQP::Frame::Content & content);
+		void body(int channeNumber, const QByteArray & body);
 
 	private slots:
 		void connected();

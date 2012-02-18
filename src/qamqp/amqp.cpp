@@ -123,6 +123,12 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		queue_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
+	QObject::connect(network_, SIGNAL(content(const QAMQP::Frame::Content &)),
+		queue_, SLOT(_q_content(const QAMQP::Frame::Content &)));
+
+	QObject::connect(network_, SIGNAL(body(int, const QByteArray &)),
+		queue_, SLOT(_q_body(int, const QByteArray &)));
+
 	QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
 	queue_->setName(name);
 	return queue_;

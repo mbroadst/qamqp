@@ -94,6 +94,14 @@ void QAMQP::Network::readyRead()
 					emit method(frame);
 				}
 				break;
+			case QAMQP::Frame::ftHeader:
+				{
+					QAMQP::Frame::Content frame(streamB);
+					emit content(frame);
+				}
+				break;
+			case QAMQP::Frame::ftBody:
+				break;
 			default:
 				qWarning("Unknown frame type");
 			}

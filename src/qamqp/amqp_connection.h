@@ -8,6 +8,7 @@
 namespace QAMQP
 {
 	class ConnectionPrivate;
+	class ChannelPrivate;
 	class ClientPrivate;
 	class Client;
 	class Connection : public QObject
@@ -28,6 +29,8 @@ namespace QAMQP
 
 		bool isConnected() const;
 
+		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+
 	Q_SIGNALS:
 		void disconnected();
 		void connected();
@@ -36,6 +39,7 @@ namespace QAMQP
 	private:
 		void openOk();
 		friend class ClientPrivate;
+		friend class ChannelPrivate;
 		Q_PRIVATE_SLOT(d_func(), void _q_method(const QAMQP::Frame::Method & frame))
 	};
 }

@@ -128,6 +128,11 @@ void QAMQP::Channel::onClose()
 {
 
 }
+
+void QAMQP::Channel::setQOS( qint32 prefetchSize, quint16 prefetchCount )
+{
+	d_func()->setQOS(prefetchSize, prefetchCount);
+}
 //////////////////////////////////////////////////////////////////////////
 
 ChannelPrivate::ChannelPrivate(int version /* = QObjectPrivateVersion */)
@@ -290,4 +295,9 @@ void ChannelPrivate::openOk( const QAMQP::Frame::Method & frame )
 	q->stateChanged(csOpened);
 	q->onOpen();
 	
+}
+
+void ChannelPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount )
+{
+	client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, number, false);
 }

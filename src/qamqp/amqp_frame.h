@@ -128,6 +128,7 @@ namespace QAMQP
 				cpAppId = AMQP_BASIC_APP_ID_FLAG,
 				cpClusterID = AMQP_BASIC_CLUSTER_ID_FLAG
 			};
+			Q_DECLARE_FLAGS(Properties, Property)
 
 			Content();
 			Content(MethodClass methodClass);
@@ -140,6 +141,7 @@ namespace QAMQP
 
 			void setBody(const QByteArray & data);
 			QByteArray body() const;
+			qlonglong bodySize() const;
 
 		protected:
 			void writePayload(QDataStream & stream) const;
@@ -149,6 +151,7 @@ namespace QAMQP
 			QByteArray body_;
 			mutable QByteArray buffer_;
 			QHash<int, QVariant> properties_;
+			qlonglong bodySize_;
 		};
 
 		class ContentBody : public Base

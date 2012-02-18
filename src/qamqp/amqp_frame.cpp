@@ -185,12 +185,26 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		value = QVariant::fromValue<uint>(*reinterpret_cast<quint32*>(octet4));
 		break;
 	case 'L':
+		{
+			qlonglong v = 0 ;
+			s >> v;
+			value = v;
+		}
+		/*
 		s.readRawData(octet8, sizeof(octet8));
-		value = QVariant::fromValue<qlonglong>(*reinterpret_cast<qlonglong*>(octet8));
+				value = QVariant::fromValue<qlonglong>(*reinterpret_cast<qlonglong*>(octet8));*/
+		
 		break;
 	case 'l':
+		{
+			qulonglong v = 0 ;
+			s >> v;
+			value = v;
+		}
+		/*
 		s.readRawData(octet8, sizeof(octet8));
-		value = QVariant::fromValue<qulonglong>(*reinterpret_cast<qulonglong*>(octet8));
+				value = QVariant::fromValue<qulonglong>(*reinterpret_cast<qulonglong*>(octet8));*/
+		
 		break;
 	case 'f':
 		s.readRawData(octet4, sizeof(octet4));
@@ -478,9 +492,9 @@ QAMQP::Frame::Content::Content( MethodClass methodClass ):Base(ftHeader)
 	methodClass_ = methodClass;
 }
 
-QAMQP::Frame::Content::Content( QDataStream& raw ):Base(ftHeader)
+QAMQP::Frame::Content::Content( QDataStream& raw ): Base(raw)
 {
-
+	readPayload(raw);
 }
 
 QAMQP::Frame::MethodClass QAMQP::Frame::Content::methodClass() const
@@ -544,9 +558,58 @@ void QAMQP::Frame::Content::writePayload( QDataStream & out ) const
 
 void QAMQP::Frame::Content::readPayload( QDataStream & in )
 {
+	in >> methodClass_;
+	in.skipRawData(2); //weight
+	in >> bodySize_;
+	qint16 flags_ = 0;
+	in >> flags_;
+	if(flags_ & cpContentType)
+		properties_[cpContentType] = readField('s', in);
 
+	if(flags_ & cpContentEncoding)
+		properties_[cpContentEncoding] = readField('s', in);
+
+	if(flags_ & cpHeaders)
+		properties_[cpHeaders] = readField('f', in);
+
+	if(flags_ & cpDeliveryMode)
+		properties_[cpDeliveryMode] = readField('b', in);
+
+	if(flags_ & cpPriority)
+		properties_[cpPriority] = readField('b', in);
+
+	if(flags_ & cpCorrelationId)
+		properties_[cpCorrelationId] = readField('s', in);
+
+	if(flags_ & cpReplyTo)
+		properties_[cpReplyTo] = readField('s', in);
+
+	if(flags_ & cpExpiration)
+		properties_[cpExpiration] = readField('s', in);
+
+	if(flags_ & cpMessageId)
+		properties_[cpMessageId] = readField('s', in);
+
+	if(flags_ & cpTimestamp)
+		properties_[cpTimestamp] = readField('T', in);
+
+	if(flags_ & cpType)
+		properties_[cpType] = readField('s', in);
+
+	if(flags_ & cpUserId)
+		properties_[cpUserId] = readField('s', in);
+
+	if(flags_ & cpAppId)
+		properties_[cpAppId] = readField('s', in);
+
+	if(flags_ & cpClusterID)
+		properties_[cpClusterID] = readField('s', in);
 }
 
+qlonglong QAMQP::Frame::Content::bodySize() const
+{
+	return body_.isEmpty() ? bodySize_ : body_.size();
+}
 //////////////////////////////////////////////////////////////////////////
 
 ContentBody::ContentBody() : Base(ftBody)

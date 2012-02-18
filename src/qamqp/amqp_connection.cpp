@@ -4,6 +4,7 @@
 #include "amqp_p.h"
 #include "amqp_frame.h"
 
+
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
@@ -216,6 +217,23 @@ void ConnectionPrivate::closeOk( const QAMQP::Frame::Method & )
 	QMetaObject::invokeMethod(q_func(), "disconnected");
 }
 
+
+void ConnectionPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount, int channel, bool global )
+{
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, 10);
+	frame.setChannel(channel);
+	QByteArray arguments_;
+	QDataStream out(&arguments_, QIODevice::WriteOnly);
+
+	out << prefetchSize;
+	out << prefetchCount;
+	out << qint8(global ? 1 : 0);
+
+	frame.setArguments(arguments_);
+	client_->d_func()->network_->sendFrame(frame);	
+}
+
+
 void ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
 	if(frame.methodClass() != QAMQP::Frame::fcConnection)
@@ -332,4 +350,10 @@ void Connection::openOk()
 bool Connection::isConnected() const
 {
 	return d_func()->connected;
+}
+
+
+void Connection::setQOS( qint32 prefetchSize, quint16 prefetchCount )
+{
+	d_func()->setQOS(prefetchSize, prefetchSize, 0, true);
 }
