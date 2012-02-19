@@ -61,7 +61,7 @@ namespace QAMQP
 		void unbind(Exchange * exchange, const QString & key);
 
 		void get();
-		void consume(ConsumeOptions options = NoOptions);
+		void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
 		void setConsumerTag(const QString &consumerTag);
 		QString consumerTag() const;
 	

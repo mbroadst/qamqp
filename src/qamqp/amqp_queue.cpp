@@ -125,7 +125,7 @@ void Queue::get()
 
 }
 
-void Queue::consume(QueueOptions options)
+void Queue::consume(ConsumeOptions options)
 {
 	d_func()->consume(options);
 }
@@ -362,7 +362,7 @@ void QueuePrivate::unbind( const QString & exchangeName, const QString & key )
 
 
 
-void QueuePrivate::consume( Queue::QueueOptions options )
+void QueuePrivate::consume( Queue::ConsumeOptions options )
 {
 	if(!opened)
 	{
