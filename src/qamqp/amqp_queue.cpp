@@ -8,6 +8,7 @@ using namespace QAMQP::Frame;
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
+#include <QFile>
 
 namespace QAMQP
 {
@@ -120,9 +121,21 @@ void Queue::unbind( Exchange * exchange, const QString & key )
 		d_func()->unbind(exchange->name(), key);
 }
 
-void Queue::get()
+
+QAMQP::MessagePtr Queue::getMessage()
+{
+	return d_func()->messages_.dequeue();
+}
+
+bool Queue::hasMessage() const
 {
 
+	if(d_func()->messages_.isEmpty())
+	{
+		return false;
+	}
+	const MessagePtr &q = d_func()->messages_.head();
+	return q->leftSize == 0;
 }
 
 void Queue::consume(ConsumeOptions options)
@@ -154,7 +167,7 @@ QueuePrivate::QueuePrivate()
 
 QueuePrivate::~QueuePrivate()
 {
-
+	
 }
 
 
@@ -418,17 +431,53 @@ void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 	qDebug() << "| Redelivered: " << redelivered;
 	qDebug("| Exchange-name: %s", qPrintable(exchangeName));
 	qDebug("| Routing-key: %s", qPrintable(routingKey));
+
+
+	MessagePtr newMessage = MessagePtr(new Message);
+	newMessage->routeKey = routingKey;
+	newMessage->exchangeName = exchangeName;
+	messages_.enqueue(newMessage);
+
 }
 
 void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
 {
 	if(frame.channel() != number)
 		return;
+	QFile::remove("dump.jpg");
 	qDebug() << "Content-type: " << qPrintable(frame.property(Content::cpContentType).toString());
 	qDebug() << "Encoding-type: " << qPrintable(frame.property(Content::cpContentEncoding).toString());
+	if(messages_.isEmpty())
+	{
+		qErrnoWarning("Received content-header without method frame before");
+		return;
+	}
+	MessagePtr &message = messages_.head();
+	message->leftSize = frame.bodySize();
+	QHash<int, QVariant>::ConstIterator i;
+	for (i = frame.properties_.begin(); i != frame.properties_.end(); ++i)
+	{
+		message->property[Message::MessageProperty(i.key())]= i.value();
+	}
 }
 
 void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 {
+	if(channeNumber!= number)
+		return;
 
+	if(messages_.isEmpty())
+	{
+		qErrnoWarning("Received content-body without method frame before");
+		return;
+	}
+	MessagePtr &message = messages_.head();	
+	message->payload.append(body);
+	message->leftSize -= body.size();
+	int size = message->leftSize;
+
+	if(message->leftSize == 0 && messages_.size() == 1)
+	{
+		QMetaObject::invokeMethod(q_func(), "messageRecieved");
+	}
 }

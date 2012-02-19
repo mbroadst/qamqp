@@ -3,6 +3,7 @@
 
 #include "amqp_channel_p.h"
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
+#include <QQueue>
 
 namespace QAMQP
 {
@@ -54,13 +55,12 @@ namespace QAMQP
 		QString consumerTag;
 
 		QMap<QString, QString> delayedBindings;
-
+		QQueue<QAMQP::MessagePtr> messages_;
 
 		bool recievingMessage;
 
 		void _q_content(const QAMQP::Frame::Content & frame);
 		void _q_body(int channeNumber, const QByteArray & body);
 	};	
-
 }
 #endif // amqp_queue_p_h__

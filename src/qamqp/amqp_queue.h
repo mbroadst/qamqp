@@ -2,6 +2,7 @@
 #define amqp_queue_h__
 
 #include "amqp_channel.h"
+#include "amqp_message.h"
 
 namespace QAMQP
 {
@@ -60,7 +61,8 @@ namespace QAMQP
 		void unbind(const QString & exchangeName, const QString & key);
 		void unbind(Exchange * exchange, const QString & key);
 
-		void get();
+		MessagePtr getMessage();
+		bool hasMessage() const;
 		void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
 		void setConsumerTag(const QString &consumerTag);
 		QString consumerTag() const;
@@ -69,6 +71,8 @@ namespace QAMQP
 		void declared();
 		void binded(bool);
 		void removed();
+		void messageRecieved();
+
 	private:
 		Q_PRIVATE_SLOT(d_func(), void _q_content(const QAMQP::Frame::Content & frame))
 		Q_PRIVATE_SLOT(d_func(), void _q_body(int channeNumber, const QByteArray & body))

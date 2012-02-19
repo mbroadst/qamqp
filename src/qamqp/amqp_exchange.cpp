@@ -104,6 +104,13 @@ void Exchange::publish( const QString & message, const QString & key )
 	d_func()->publish(message.toUtf8(), key);
 }
 
+
+void Exchange::publish( const QByteArray & message, const QString & key, const QString &mimeType )
+{
+	d_func()->publish(message, key, mimeType);
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -221,15 +228,20 @@ void ExchangePrivate::publish( const QByteArray & message, const QString & key, 
 	
 	QAMQP::Frame::Content content(QAMQP::Frame::fcBasic);
 	content.setChannel(number);
-	content.setProperty(Content::cpContentType, "text/plain");
+	content.setProperty(Content::cpContentType, mimeType);
 	content.setProperty(Content::cpContentEncoding, "utf-8");
 	content.setProperty(Content::cpMessageId, "0");
 	content.setBody(message);
 	sendFrame(content);
 	
-
-	QAMQP::Frame::ContentBody body;
-	body.setChannel(number);
-	body.setBody(message);
-	sendFrame(body);
+	int fullSize = message.size();
+	for (int sended_ = 0; sended_ < fullSize; sended_+= (FRAME_MAX - 7))
+	{
+		QAMQP::Frame::ContentBody body;
+		QByteArray partition_ = message.mid(sended_, (FRAME_MAX - 7));
+		body.setChannel(number);
+		body.setBody(partition_);
+		sendFrame(body);
+	}
+	
 }

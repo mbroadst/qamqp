@@ -615,6 +615,11 @@ qlonglong QAMQP::Frame::Content::bodySize() const
 ContentBody::ContentBody() : Base(ftBody)
 {}
 
+QAMQP::Frame::ContentBody::ContentBody( QDataStream& raw ): Base(raw)
+{
+	readPayload(raw);
+}
+
 void QAMQP::Frame::ContentBody::setBody( const QByteArray & data )
 {
 	body_ = data;
@@ -632,7 +637,8 @@ void QAMQP::Frame::ContentBody::writePayload( QDataStream & out ) const
 
 void QAMQP::Frame::ContentBody::readPayload( QDataStream & in )
 {
-
+	body_.resize(size_);
+	in.readRawData(body_.data(), body_.size());
 }
 
 qint32 QAMQP::Frame::ContentBody::size() const

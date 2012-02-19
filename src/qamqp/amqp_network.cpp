@@ -101,6 +101,10 @@ void QAMQP::Network::readyRead()
 				}
 				break;
 			case QAMQP::Frame::ftBody:
+				{
+					QAMQP::Frame::ContentBody frame(streamB);
+					emit body(frame.channel(), frame.body());
+				}
 				break;
 			default:
 				qWarning("Unknown frame type");

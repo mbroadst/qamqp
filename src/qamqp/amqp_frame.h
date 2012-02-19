@@ -22,6 +22,7 @@
 
 namespace QAMQP
 {
+	class QueuePrivate;
 	namespace Frame
 	{
 		enum Type
@@ -109,6 +110,7 @@ namespace QAMQP
 
 		class Content : public Base
 		{
+			friend class QAMQP::QueuePrivate;
 		public:
 
 			enum Property
@@ -158,6 +160,7 @@ namespace QAMQP
 		{
 		public:
 			ContentBody();
+			ContentBody(QDataStream& raw);
 			void setBody(const QByteArray & data);
 			QByteArray body() const;
 			qint32 size() const;
