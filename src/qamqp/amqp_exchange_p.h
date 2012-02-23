@@ -30,7 +30,7 @@ namespace QAMQP
 		Exchange::ExchangeOptions options;
 		TableField arguments;
 		
-		void _q_method(const QAMQP::Frame::Method & frame);
+		bool _q_method(const QAMQP::Frame::Method & frame);
 		
 		bool deleyedDeclare;
 		bool declared;

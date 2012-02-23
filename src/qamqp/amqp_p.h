@@ -2,9 +2,11 @@
 #define qamqp_amqp_p_h__
 #include <QtCore/private/qobject_p.h>
 
+#include <QSharedPointer>
 
 #include "amqp_network.h"
 #include "amqp_connection.h"
+#include "amqp_authenticator.h"
 
 namespace QAMQP
 {
@@ -23,17 +25,20 @@ namespace QAMQP
 		void parseCnnString( const QUrl & connectionString);
 		void sockConnect();
 		void login();
-
+		void setAuth(Authenticator* auth);
 		Exchange * createExchange(int channelNumber, const QString &name);
 		Queue * createQueue(int channelNumber, const QString &name);
 
 		quint32 port;
 		QString host;
 		QString virtualHost;
+/*
 		QString user;
-		QString password;
+		QString password;*/
+
 		QPointer<QAMQP::Network> network_;	
 		QPointer<QAMQP::Connection> connection_;
+		QSharedPointer<Authenticator> auth_;
 	};
 }
 #endif // amqp_p_h__

@@ -167,6 +167,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\qamqp\amqp_authenticator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\qamqp\amqp_channel.cpp"
 				>
 			</File>
@@ -229,6 +233,10 @@
 						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\qamqp\amqp_authenticator.h"
+				>
 			</File>
 			<File
 				RelativePath=".\src\qamqp\amqp_channel.h"

@@ -57,16 +57,13 @@ void ConnectionPrivate::startOk()
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 	
 	QAMQP::Frame::TableField clientProperties;
-	clientProperties["version"] = "0.0.1";
+	clientProperties["version"] = "0.0.3";
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
 	clientProperties["product"] = "QAMQP";
 	QAMQP::Frame::serialize(stream, clientProperties);
 
-	QAMQP::Frame::writeField('s', stream, "AMQPLAIN");
-	QAMQP::Frame::TableField response;
-	response["LOGIN"] = client_->user();
-	response["PASSWORD"] = client_->password();
-	QAMQP::Frame::serialize(stream, response);
+	client_->d_func()->auth_->write(stream);
+
 	QAMQP::Frame::writeField('s', stream, "en_US");
 
 	frame.setArguments(arguments_);
@@ -234,10 +231,10 @@ void ConnectionPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount, int 
 }
 
 
-void ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
+bool ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
 	if(frame.methodClass() != QAMQP::Frame::fcConnection)
-		return;
+		return true;
 
 	qDebug() << "Connection:";
 	
@@ -245,7 +242,7 @@ void ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 	{
 		if( frame.id() == miCloseOk)
 			closeOk(frame);
-		return;
+		return true;
 	}
 
 	switch(MethodId(frame.id()))
@@ -270,8 +267,9 @@ void ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 			break;
 		default:
 			qWarning("Unknown method-id %d", frame.id());
+			return false;
 	}
-
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////

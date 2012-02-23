@@ -6,6 +6,7 @@
 #include "qamqp_global.h"
 #include "amqp_exchange.h"
 #include "amqp_queue.h"
+#include "amqp_authenticator.h"
 
 using namespace QAMQP;
 
@@ -31,8 +32,6 @@ ClientPrivate::ClientPrivate(int version )
 	 , port(AMQPPORT)
 	 , host(QString::fromLatin1(AMQPHOST))
 	 , virtualHost(QString::fromLatin1(AMQPVHOST))
-	 , user(QString::fromLatin1(AMQPLOGIN))
-	 , password(QString::fromLatin1(AMQPPSWD))
 {
 	
 }
@@ -55,6 +54,8 @@ void ClientPrivate::init(QObject * parent)
 		connection_ = new QAMQP::Connection(q_func());
 	}
 
+	setAuth(new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
+
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		connection_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 }
@@ -66,14 +67,27 @@ void ClientPrivate::init(QObject * parent, const QUrl & con)
 	ClientPrivate::connect();
 }
 
+
+void ClientPrivate::setAuth( Authenticator* auth )
+{
+	auth_ = QSharedPointer<Authenticator>(auth);
+}
+
+
 void ClientPrivate::printConnect() const
 {
 	QTextStream stream(stdout);
 	stream <<  "port  = " << port << endl;
 	stream <<  "host  = " << host << endl;
 	stream <<  "vhost = " << virtualHost << endl;
-	stream <<  "user  = " << user << endl;
-	stream <<  "passw = " << password << endl;
+	
+	if(auth_ && auth_->type() == "AMQPLAIN")
+	{
+		QSharedPointer<AMQPlainAuthenticator> a = auth_.staticCast<AMQPlainAuthenticator>();
+		stream <<  "user  = " << a->login() << endl;
+		stream <<  "passw = " << a->password() << endl;
+	}
+	
 }
 
 void ClientPrivate::connect()
@@ -221,22 +235,48 @@ void QAMQP::Client::setVirtualHost( const QString & virtualHost )
 
 QString QAMQP::Client::user() const
 {
-	return d_func()->user;
+	const Authenticator * auth = d_func()->auth_.data();
+
+	if(auth && auth->type() == "AMQPLAIN")
+	{
+		const AMQPlainAuthenticator * a = static_cast<const AMQPlainAuthenticator *>(auth);
+		return a->login();
+	}
+	return QString();
 }
 
 void QAMQP::Client::setUser( const QString & user )
 {
-	d_func()->user = user;
+	Authenticator * auth = d_func()->auth_.data();
+
+	if(auth && auth->type() == "AMQPLAIN")
+	{
+		AMQPlainAuthenticator * a = static_cast<AMQPlainAuthenticator *>(auth);
+		a->setLogin(user);
+	}
 }
 
 QString QAMQP::Client::password() const
 {
-	return d_func()->password;
+	const Authenticator * auth = d_func()->auth_.data();
+
+	if(auth && auth->type() == "AMQPLAIN")
+	{
+		const AMQPlainAuthenticator * a = static_cast<const AMQPlainAuthenticator *>(auth);
+		return a->password();
+	}
+	return QString();
 }
 
 void QAMQP::Client::setPassword( const QString & password )
 {
-	d_func()->password = password;
+	Authenticator * auth = d_func()->auth_.data();
+
+	if(auth && auth->type() == "AMQPLAIN")
+	{
+		AMQPlainAuthenticator * a = static_cast<AMQPlainAuthenticator *>(auth);
+		a->setPassword(password);
+	}
 }
 
 void QAMQP::Client::printConnect() const
@@ -291,4 +331,14 @@ void QAMQP::Client::reopen()
 {
 	return d_func()->connect();
 	return d_func()->disconnect();
+}
+
+void QAMQP::Client::setAuth( Authenticator * auth )
+{
+	d_func()->setAuth(auth);
+}
+
+Authenticator * QAMQP::Client::auth() const
+{
+	return d_func()->auth_.data();
 }

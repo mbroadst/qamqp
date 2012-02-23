@@ -9,6 +9,7 @@ namespace QAMQP
 	class Exchange;
 	class Queue;
 	class ClientPrivate;
+	class Authenticator;
 	class ConnectionPrivate;
 	class Client : public QObject
 	{
@@ -53,7 +54,9 @@ namespace QAMQP
 
 		QString password() const;
 		void setPassword(const QString & password);
-
+		
+		void setAuth(Authenticator * auth);
+		Authenticator * auth() const;
 		void open();
 		void open(const QUrl & connectionString);
 		void close();

@@ -48,7 +48,7 @@ namespace QAMQP
 		QString type;
 		Queue::QueueOptions options;
 
-		void _q_method(const QAMQP::Frame::Method & frame);
+		bool _q_method(const QAMQP::Frame::Method & frame);
 
 		bool deleyedDeclare;
 		bool declared;

@@ -159,11 +159,13 @@ void ChannelPrivate::init(int channelNumber, Client * parent)
 }
 
 
-void ChannelPrivate::_q_method( const QAMQP::Frame::Method & frame )
+bool ChannelPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
-	if(frame.methodClass() != QAMQP::Frame::fcChannel
-		|| frame.channel() != number )
-		return;
+	if(frame.channel() != number )
+		return true;
+
+	if(frame.methodClass() != QAMQP::Frame::fcChannel)
+		return false;
 
 	qDebug("Channel#%d:", number);
 
@@ -185,6 +187,7 @@ void ChannelPrivate::_q_method( const QAMQP::Frame::Method & frame )
 		closeOk(frame);
 		break;
 	}
+	return true;
 }
 
 void ChannelPrivate::_q_open()

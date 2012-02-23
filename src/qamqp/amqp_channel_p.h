@@ -44,7 +44,7 @@ namespace QAMQP
 		};
 
 		ChannelPrivate(int version = QObjectPrivateVersion);
-		~ChannelPrivate();
+		virtual ~ChannelPrivate();
 
 		void init(int channelNumber, Client * parent);
 
@@ -62,7 +62,7 @@ namespace QAMQP
 		void close(const QAMQP::Frame::Method & frame);
 		void closeOk(const QAMQP::Frame::Method & frame);
 
-		virtual void _q_method(const QAMQP::Frame::Method & frame);
+		virtual bool _q_method(const QAMQP::Frame::Method & frame);
 		void _q_open();
 		
 		void setQOS(qint32 prefetchSize, quint16 prefetchCount);

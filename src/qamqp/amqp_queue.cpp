@@ -171,11 +171,10 @@ QueuePrivate::~QueuePrivate()
 }
 
 
-void QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
+bool QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
-	ChannelPrivate::_q_method(frame);
-	if(frame.channel() != number)
-		return;
+	if(ChannelPrivate::_q_method(frame))
+		return true;
 
 	if(frame.methodClass() == QAMQP::Frame::fcQueue)
 	{
@@ -199,6 +198,7 @@ void QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 		default:
 			break;
 		}
+		return true;
 	}
 
 	if(frame.methodClass() == QAMQP::Frame::fcBasic)
@@ -214,13 +214,17 @@ void QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 		default:
 			break;
 		}
+		return true;
 	}
 
 
+
+	return false;
 }
 
 void QueuePrivate::declareOk( const QAMQP::Frame::Method & frame )
 {
+
 	qDebug() << "Declared queue: " << name;	
 	declared = true;
 
@@ -237,7 +241,7 @@ void QueuePrivate::declareOk( const QAMQP::Frame::Method & frame )
 
 void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "Deleted or purged queue: " << name;	
+		qDebug() << "Deleted or purged queue: " << name;	
 	declared = false;
 
 	QByteArray data = frame.arguments();
@@ -257,6 +261,7 @@ void QueuePrivate::bindOk( const QAMQP::Frame::Method & frame )
 
 void QueuePrivate::unbindOk( const QAMQP::Frame::Method & frame )
 {
+
 	qDebug() << "Unbinded queue: " << name;
 	QMetaObject::invokeMethod(q_func(), "binded", Q_ARG(bool, false));
 }
@@ -281,6 +286,7 @@ void QueuePrivate::declare()
 	frame.setArguments(arguments_);
 	sendFrame(frame);
 	deleyedDeclare = false;
+	
 
 }
 
@@ -307,6 +313,7 @@ void QueuePrivate::remove( bool ifUnused /*= true*/, bool ifEmpty /*= true*/, bo
 
 	frame.setArguments(arguments_);
 	sendFrame(frame);
+
 }
 
 void QueuePrivate::purge()
@@ -349,6 +356,7 @@ void QueuePrivate::bind( const QString & exchangeName, const QString & key )
 
 	frame.setArguments(arguments_);
 	sendFrame(frame);
+
 }
 
 void QueuePrivate::unbind( const QString & exchangeName, const QString & key )
@@ -394,11 +402,13 @@ void QueuePrivate::consume( Queue::ConsumeOptions options )
 
 	frame.setArguments(arguments_);
 	sendFrame(frame);
+
 }
 
 
 void QueuePrivate::consumeOk( const QAMQP::Frame::Method & frame )
 {
+
 	qDebug() << "Consume ok: " << name;	
 	declared = false;
 
@@ -411,7 +421,6 @@ void QueuePrivate::consumeOk( const QAMQP::Frame::Method & frame )
 
 void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 {
-	qDebug() << "* Receive message: ";	
 	declared = false;
 
 	QByteArray data = frame.arguments();
@@ -427,12 +436,6 @@ void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 	QString exchangeName = readField('s',in).toString();
 	QString routingKey = readField('s',in).toString();
 
-	qDebug() << "| Delivery-tag: " << deliveryTag;
-	qDebug() << "| Redelivered: " << redelivered;
-	qDebug("| Exchange-name: %s", qPrintable(exchangeName));
-	qDebug("| Routing-key: %s", qPrintable(routingKey));
-
-
 	MessagePtr newMessage = MessagePtr(new Message);
 	newMessage->routeKey = routingKey;
 	newMessage->exchangeName = exchangeName;
@@ -444,9 +447,6 @@ void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
 {
 	if(frame.channel() != number)
 		return;
-	QFile::remove("dump.jpg");
-	qDebug() << "Content-type: " << qPrintable(frame.property(Content::cpContentType).toString());
-	qDebug() << "Encoding-type: " << qPrintable(frame.property(Content::cpContentEncoding).toString());
 	if(messages_.isEmpty())
 	{
 		qErrnoWarning("Received content-header without method frame before");

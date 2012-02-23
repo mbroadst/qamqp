@@ -128,12 +128,13 @@ ExchangePrivate::~ExchangePrivate()
 }
 
 
-void ExchangePrivate::_q_method( const QAMQP::Frame::Method & frame )
+bool ExchangePrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
-	ChannelPrivate::_q_method(frame);
-	if(frame.methodClass() != QAMQP::Frame::fcExchange
-		|| frame.channel() != number )
-		return;
+	if(ChannelPrivate::_q_method(frame))
+		return true;
+
+	if(frame.methodClass() != QAMQP::Frame::fcExchange)
+		return false;
 
 	switch(frame.id())
 	{
@@ -146,6 +147,7 @@ void ExchangePrivate::_q_method( const QAMQP::Frame::Method & frame )
 	default:
 		break;
 	}
+	return true;
 }
 
 void ExchangePrivate::declareOk( const QAMQP::Frame::Method & frame )

@@ -9,7 +9,12 @@ namespace QAMQP
 	{		
 		Message()
 		{
+			qDebug("Message create");
 			leftSize = 0;
+		}
+		~Message()
+		{
+			qDebug("Message release");
 		}
 		typedef QAMQP::Frame::Content::Property MessageProperty;
 		Q_DECLARE_FLAGS(MessageProperties, MessageProperty);
