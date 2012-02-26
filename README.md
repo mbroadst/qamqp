@@ -63,44 +63,44 @@ work with basic content
 Usage
 ------------
 
-`Test::Test()
-{
-	QUrl con(QString("amqp://guest:guest@localhost:5672/"));
-	client_ = new QAMQP::Client(this);
-	client_->open(con);
-	exchange_ =  client_->createExchange("test.test2");
-	exchange_->declare("fanout");
-
-	queue_ = client_->createQueue("test.my_queue", exchange_->channelNumber());
-	queue_->declare();
-	exchange_->bind(queue_);
-
-	connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
-	connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
-
-}
-
-void Test::declared()
-{
-	exchange_->publish("Hello world", exchange_->name());
-	queue_->setQOS(0,10);
-	queue_->setConsumerTag("qamqp-consumer");
-	queue_->consume(QAMQP::Queue::coNoAck);
-}
-
-void Test::newMessage()
-{
-	QAMQP::Queue * q = qobject_cast<QAMQP::Queue *>(sender());
-	while (q->hasMessage())
+    Test::Test()	
 	{
-		QAMQP::MessagePtr message = q->getMessage();
-		qDebug("+ RECEIVE MESSAGE");
-		qDebug("| Exchange-name: %s", qPrintable(message->exchangeName));
-		qDebug("| Routing-key: %s", qPrintable(message->routeKey));
-		qDebug("| Content-type: %s", qPrintable(message->property[QAMQP::Frame::Content::cpContentType].toString()));
-		if(!q->noAck())
+		QUrl con(QString("amqp://guest:guest@localhost:5672/"));
+		client_ = new QAMQP::Client(this);
+		client_->open(con);
+		exchange_ =  client_->createExchange("test.test2");
+		exchange_->declare("fanout");
+
+		queue_ = client_->createQueue("test.my_queue", exchange_->channelNumber());
+		queue_->declare();
+		exchange_->bind(queue_);
+
+		connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
+		connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
+
+	}
+
+	void Test::declared()
+	{
+		exchange_->publish("Hello world", exchange_->name());
+		queue_->setQOS(0,10);
+		queue_->setConsumerTag("qamqp-consumer");
+		queue_->consume(QAMQP::Queue::coNoAck);
+	}
+
+	void Test::newMessage()
+	{
+		QAMQP::Queue * q = qobject_cast<QAMQP::Queue *>(sender());
+		while (q->hasMessage())
 		{
-			q->ack(message);
+			QAMQP::MessagePtr message = q->getMessage();
+			qDebug("+ RECEIVE MESSAGE");
+			qDebug("| Exchange-name: %s", qPrintable(message->exchangeName));
+			qDebug("| Routing-key: %s", qPrintable(message->routeKey));
+			qDebug("| Content-type: %s", qPrintable(message->property[QAMQP::Frame::Content::cpContentType].toString()));
+			if(!q->noAck())
+			{
+				q->ack(message);
+			}
 		}
 	}
-}`
