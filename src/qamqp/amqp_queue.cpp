@@ -280,15 +280,14 @@ void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 }
 
 
-void QueuePrivate::bindOk( const QAMQP::Frame::Method & frame )
+void QueuePrivate::bindOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Binded to queue: " << name;
 	QMetaObject::invokeMethod(q_func(), "binded", Q_ARG(bool, true));
 }
 
-void QueuePrivate::unbindOk( const QAMQP::Frame::Method & frame )
+void QueuePrivate::unbindOk( const QAMQP::Frame::Method &  )
 {
-
 	qDebug() << "Unbinded queue: " << name;
 	QMetaObject::invokeMethod(q_func(), "binded", Q_ARG(bool, false));
 }
@@ -439,6 +438,8 @@ void QueuePrivate::getOk( const QAMQP::Frame::Method & frame )
 	QString exchangeName = readField('s',in).toString();
 	QString routingKey = readField('s',in).toString();
 
+	Q_UNUSED(redelivered)
+
 	MessagePtr newMessage = MessagePtr(new Message);
 	newMessage->routeKey = routingKey;
 	newMessage->exchangeName = exchangeName;
@@ -517,6 +518,8 @@ void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 	QString exchangeName = readField('s',in).toString();
 	QString routingKey = readField('s',in).toString();
 
+	Q_UNUSED(redelivered)
+
 	MessagePtr newMessage = MessagePtr(new Message);
 	newMessage->routeKey = routingKey;
 	newMessage->exchangeName = exchangeName;
@@ -556,8 +559,7 @@ void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 	MessagePtr &message = messages_.head();	
 	message->payload.append(body);
 	message->leftSize -= body.size();
-	int size = message->leftSize;
-
+	
 	if(message->leftSize == 0 && messages_.size() == 1)
 	{
 		QMetaObject::invokeMethod(q_func(), "messageRecieved");

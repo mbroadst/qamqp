@@ -135,7 +135,7 @@ void ConnectionPrivate::start( const QAMQP::Frame::Method & frame )
 
 void ConnectionPrivate::secure( const QAMQP::Frame::Method & frame )
 {
-	
+	Q_UNUSED(frame);	
 }
 
 void ConnectionPrivate::tune( const QAMQP::Frame::Method & frame )
@@ -161,6 +161,7 @@ void ConnectionPrivate::tune( const QAMQP::Frame::Method & frame )
 
 void ConnectionPrivate::openOk( const QAMQP::Frame::Method & frame )
 {
+	Q_UNUSED(frame);
 	qDebug(">> OpenOK");
 	connected = true;
 	q_func()->openOk();
@@ -353,5 +354,5 @@ bool Connection::isConnected() const
 
 void Connection::setQOS( qint32 prefetchSize, quint16 prefetchCount )
 {
-	d_func()->setQOS(prefetchSize, prefetchSize, 0, true);
+	d_func()->setQOS(prefetchSize, prefetchCount, 0, true);
 }

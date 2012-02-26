@@ -43,11 +43,18 @@ QAMQP::Channel::Channel(int channelNumber /*= -1*/, Client * parent /*= 0*/ )
 	}
 }
 
-QAMQP::Channel::Channel( ChannelPrivate &dd, Client* parent )
+QAMQP::Channel::Channel( ChannelPrivate &dd, int channelNumber, Client* parent )
 	: QObject(dd, 0)
 {
-
+	Q_D(QAMQP::Channel);
+	QT_TRY {
+		d->init(channelNumber, parent);
+	} QT_CATCH(...) {
+		ChannelExceptionCleaner::cleanup(this, d_func());
+		QT_RETHROW;
+	}
 }
+
 QAMQP::Channel::~Channel()
 {
 	QObjectPrivate::clearGuards(this);
@@ -83,11 +90,6 @@ QString QAMQP::Channel::name()
 int QAMQP::Channel::channelNumber()
 {
 	return d_func()->number;
-}
-
-void QAMQP::Channel::setParam( int param )
-{
-
 }
 
 void QAMQP::Channel::setName( const QString &name )
@@ -227,8 +229,9 @@ void ChannelPrivate::flow()
 
 void ChannelPrivate::flow( const QAMQP::Frame::Method & frame )
 {
-
+	Q_UNUSED(frame);
 }
+
 void ChannelPrivate::flowOk()
 {
 
@@ -236,7 +239,7 @@ void ChannelPrivate::flowOk()
 
 void ChannelPrivate::flowOk( const QAMQP::Frame::Method & frame )
 {
-
+	Q_UNUSED(frame);
 }
 
 void ChannelPrivate::close(int code, const QString & text, int classId, int methodId)
@@ -284,6 +287,7 @@ void ChannelPrivate::closeOk()
 
 void ChannelPrivate::closeOk( const QAMQP::Frame::Method & frame )
 {
+	Q_UNUSED(frame);
 	Q_Q(Channel);
 	q->stateChanged(csClosed);
 	q->onClose();
@@ -292,6 +296,7 @@ void ChannelPrivate::closeOk( const QAMQP::Frame::Method & frame )
 
 void ChannelPrivate::openOk( const QAMQP::Frame::Method & frame )
 {
+	Q_UNUSED(frame);
 	Q_Q(Channel);
 	qDebug(">> OpenOK");
 	opened = true;

@@ -329,8 +329,8 @@ void QAMQP::Client::close()
 
 void QAMQP::Client::reopen()
 {
-	return d_func()->connect();
-	return d_func()->disconnect();
+	d_func()->disconnect();
+	d_func()->connect();	
 }
 
 void QAMQP::Client::setAuth( Authenticator * auth )

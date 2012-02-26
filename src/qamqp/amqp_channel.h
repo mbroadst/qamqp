@@ -27,7 +27,6 @@ namespace QAMQP
 		QString name();
 		int channelNumber();		
 				
-		void setParam(int param);
 		void setName(const QString &name);
 		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 		bool isOpened() const;
@@ -39,7 +38,7 @@ namespace QAMQP
 
 	protected:
 		Channel(int channelNumber = -1, Client * parent = 0);
-		Channel(ChannelPrivate &dd, Client* parent);
+		Channel(ChannelPrivate &dd, int channelNumber = -1, Client* parent = 0);
 		virtual void onOpen();;
 		virtual void onClose();;
 

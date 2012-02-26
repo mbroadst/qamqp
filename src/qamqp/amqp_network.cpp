@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-QAMQP::Network::Network( QObject * parent /*= 0*/ )
+QAMQP::Network::Network( QObject * parent /*= 0*/ ):QObject(parent)
 {
 	qRegisterMetaType<QAMQP::Frame::Method>("QAMQP::Frame::Method");
 
@@ -48,7 +48,7 @@ void QAMQP::Network::disconnected()
 
 void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 {
-
+	Q_UNUSED(socketError);
 }
 
 void QAMQP::Network::readyRead()

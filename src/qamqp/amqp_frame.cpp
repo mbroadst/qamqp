@@ -46,7 +46,7 @@ void QAMQP::Frame::Base::writeEnd( QDataStream & stream ) const
 	stream << qint8(AMQP_FRAME_END);
 }
 
-void QAMQP::Frame::Base::writePayload( QDataStream & stream ) const{}
+void QAMQP::Frame::Base::writePayload( QDataStream & ) const{}
 
 void QAMQP::Frame::Base::readHeader( QDataStream & stream )
 {
@@ -330,7 +330,6 @@ void QAMQP::Frame::print( const TableField & f )
 void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType )
 {
 	QByteArray tmp;
-	qint8 nameSize_;
 	if(withType)
 		s << valueType; // Запишем тип поля
 

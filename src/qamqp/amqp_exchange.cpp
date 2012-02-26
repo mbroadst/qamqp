@@ -90,13 +90,16 @@ void Exchange::bind( QAMQP::Queue * queue )
 }
 
 void Exchange::bind( const QString & queueName )
-{
-
+{	
+	Q_UNUSED(queueName);
+	qWarning("Not implement");
 }
 
 void Exchange::bind( const QString & queueName, const QString &key )
 {
-
+	Q_UNUSED(queueName);
+	Q_UNUSED(key);
+	qWarning("Not implement");
 }
 
 void Exchange::publish( const QString & message, const QString & key )
@@ -150,14 +153,14 @@ bool ExchangePrivate::_q_method( const QAMQP::Frame::Method & frame )
 	return true;
 }
 
-void ExchangePrivate::declareOk( const QAMQP::Frame::Method & frame )
+void ExchangePrivate::declareOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Declared exchange: " << name;	
 	declared = true;
 	QMetaObject::invokeMethod(q_func(), "declared");
 }
 
-void ExchangePrivate::deleteOk( const QAMQP::Frame::Method & frame )
+void ExchangePrivate::deleteOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Deleted exchange: " << name;	
 	declared = false;
