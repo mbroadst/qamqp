@@ -17,6 +17,7 @@ namespace QAMQP
 
 		Q_PROPERTY(QueueOptions option READ option );
 		Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
+		Q_PROPERTY(bool noAck READ noAck WRITE setNoAck)
 		
 		Q_DECLARE_PRIVATE(QAMQP::Queue)
 		Q_DISABLE_COPY(Queue);	
@@ -62,16 +63,22 @@ namespace QAMQP
 		void unbind(Exchange * exchange, const QString & key);
 
 		MessagePtr getMessage();
+		void get();
+		void ack(const MessagePtr & message);
 		bool hasMessage() const;
 		void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
 		void setConsumerTag(const QString &consumerTag);
 		QString consumerTag() const;
+
+		void setNoAck(bool noAck);
+		bool noAck() const;
 	
 	Q_SIGNALS:
 		void declared();
 		void binded(bool);
 		void removed();
 		void messageRecieved();
+		void empty();
 
 	private:
 		Q_PRIVATE_SLOT(d_func(), void _q_content(const QAMQP::Frame::Content & frame))

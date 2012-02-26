@@ -54,6 +54,7 @@ namespace QAMQP
 
 	Q_SIGNALS:
 		void declared();
+		void binded();
 		void removed();
 	};
 }

@@ -41,9 +41,12 @@ namespace QAMQP
 		/************************************************************************/
 
 		void consume(Queue::ConsumeOptions options);
-		void consumeOk(const QAMQP::Frame::Method & frame);
-		
+		void consumeOk(const QAMQP::Frame::Method & frame);		
 		void deliver(const QAMQP::Frame::Method & frame);
+
+		void get();		
+		void getOk(const QAMQP::Frame::Method & frame);
+		void ack(const MessagePtr & Message);
 		
 		QString type;
 		Queue::QueueOptions options;
@@ -52,6 +55,7 @@ namespace QAMQP
 
 		bool deleyedDeclare;
 		bool declared;
+		bool noAck;
 		QString consumerTag;
 
 		QMap<QString, QString> delayedBindings;

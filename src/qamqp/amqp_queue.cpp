@@ -73,7 +73,15 @@ Queue::QueueOptions Queue::option() const
 	return d_func()->options;
 }
 
+void Queue::setNoAck( bool noAck )
+{
+	d_func()->noAck = noAck;
+}
 
+bool Queue::noAck() const
+{
+	return d_func()->noAck;
+}
 
 void Queue::declare()
 {
@@ -153,6 +161,18 @@ QString Queue::consumerTag() const
 	return d_func()->consumerTag;
 }
 
+
+void Queue::get()
+{
+	d_func()->get();
+}
+
+
+void Queue::ack( const MessagePtr & message )
+{
+	d_func()->ack(message);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -161,6 +181,7 @@ QueuePrivate::QueuePrivate()
 	,  deleyedDeclare(false)
 	,  declared(false)
 	,  recievingMessage(false)
+	,  noAck(true)
 {
 
 }
@@ -210,6 +231,12 @@ bool QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 			break;
 		case bmDeliver:
 			deliver(frame);
+			break;
+		case bmGetOk:
+			getOk(frame);
+			break;
+		case bmGetEmpty:
+			QMetaObject::invokeMethod(q_func(), "empty");
 			break;
 		default:
 			break;
@@ -382,6 +409,61 @@ void QueuePrivate::unbind( const QString & exchangeName, const QString & key )
 }
 
 
+void QueuePrivate::get()
+{
+	if(!opened)
+	{
+		return;
+	}
+
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, bmGet);
+	frame.setChannel(number);
+	QByteArray arguments_;
+	QDataStream out(&arguments_, QIODevice::WriteOnly);
+	out << qint16(0); //reserver 1
+	writeField('s', out, name);
+	out << qint8(noAck ? 1 : 0); // noAck
+
+	frame.setArguments(arguments_);
+	sendFrame(frame);
+}
+
+
+void QueuePrivate::getOk( const QAMQP::Frame::Method & frame )
+{
+	QByteArray data = frame.arguments();
+	QDataStream in(&data, QIODevice::ReadOnly);
+
+	qlonglong deliveryTag = readField('L',in).toLongLong();
+	bool redelivered = readField('t',in).toBool();
+	QString exchangeName = readField('s',in).toString();
+	QString routingKey = readField('s',in).toString();
+
+	MessagePtr newMessage = MessagePtr(new Message);
+	newMessage->routeKey = routingKey;
+	newMessage->exchangeName = exchangeName;
+	newMessage->deliveryTag = deliveryTag;
+	messages_.enqueue(newMessage);
+}
+
+
+void QueuePrivate::ack( const MessagePtr & Message )
+{
+	if(!opened)
+	{
+		return;
+	}
+
+	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, bmAck);
+	frame.setChannel(number);
+	QByteArray arguments_;
+	QDataStream out(&arguments_, QIODevice::WriteOnly);
+	out << Message->deliveryTag; //reserver 1
+	out << qint8(0); // noAck
+
+	frame.setArguments(arguments_);
+	sendFrame(frame);
+}
 
 void QueuePrivate::consume( Queue::ConsumeOptions options )
 {
@@ -421,7 +503,6 @@ void QueuePrivate::consumeOk( const QAMQP::Frame::Method & frame )
 
 void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 {
-	declared = false;
 
 	QByteArray data = frame.arguments();
 	QDataStream in(&data, QIODevice::ReadOnly);
@@ -439,6 +520,7 @@ void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 	MessagePtr newMessage = MessagePtr(new Message);
 	newMessage->routeKey = routingKey;
 	newMessage->exchangeName = exchangeName;
+	newMessage->deliveryTag = deliveryTag;
 	messages_.enqueue(newMessage);
 
 }

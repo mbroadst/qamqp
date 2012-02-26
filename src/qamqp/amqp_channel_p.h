@@ -36,7 +36,7 @@ namespace QAMQP
 			bmReturn = 50,
 			bmDeliver = 60,
 			METHOD_ID_ENUM(bmGet, 70),
-			bmgetEmpty = 72,
+			bmGetEmpty = 72,
 			bmAck = 80,
 			bmReject = 90,
 			bmRecoverAsync = 100,

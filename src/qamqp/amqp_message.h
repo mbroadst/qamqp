@@ -11,6 +11,7 @@ namespace QAMQP
 		{
 			qDebug("Message create");
 			leftSize = 0;
+			deliveryTag = 0;
 		}
 		~Message()
 		{
@@ -19,6 +20,7 @@ namespace QAMQP
 		typedef QAMQP::Frame::Content::Property MessageProperty;
 		Q_DECLARE_FLAGS(MessageProperties, MessageProperty);
 		
+		qlonglong deliveryTag;
 		QByteArray payload;
 		QHash<MessageProperty, QVariant> property;
 		QAMQP::Frame::TableField headers;
