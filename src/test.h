@@ -12,6 +12,7 @@ public:
 	Test();
 	~Test();
 
+	Q_INVOKABLE void test() {};
 private slots:
 
 	void declared();

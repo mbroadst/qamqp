@@ -19,9 +19,9 @@ Test::Test()
 	exchange_->bind(queue_);
 	exchange_->bind(queue2_);
 
-	connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
-	connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));
-	
+	connect(queue2_, SIGNAL(declared()), this, SLOT(declared()));
+
+	connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
 	connect(queue2_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));
 }
 
@@ -34,17 +34,20 @@ void Test::declared()
 {
 	qDebug("\t-= Ready =-");
 	//queue_->purge();
-	QFile f("D:/geoip.eap");
-	f.open(QIODevice::ReadOnly);
-	exchange_->publish(f.readAll(), exchange_->name(), "image/jpg");
+
+	exchange_->publish("123", exchange_->name());
 	//queue_->remove(true, false, false);
 	queue_->setQOS(0,10);
 	queue_->setConsumerTag("qamqp-consumer");
 	queue_->consume(QAMQP::Queue::coNoAck);
+	//queue_->setNoAck(false);
+	//queue_->get();
+
 
 	queue2_->setQOS(0,10);
 	queue2_->setConsumerTag("qamqp-consumer2");
 	queue2_->consume(QAMQP::Queue::coNoAck);
+
 	//exchange_->remove(false, false);
 }
 
@@ -58,6 +61,10 @@ void Test::newMessage()
 		qDebug("| Exchange-name: %s", qPrintable(message->exchangeName));
 		qDebug("| Routing-key: %s", qPrintable(message->routeKey));
 		qDebug("| Content-type: %s", qPrintable(message->property[QAMQP::Frame::Content::cpContentType].toString()));
+		if(!q->noAck())
+		{
+			q->ack(message);
+		}
 
 	}
 
