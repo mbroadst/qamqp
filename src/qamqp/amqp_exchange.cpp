@@ -29,12 +29,12 @@ namespace QAMQP
 }
 
 Exchange::Exchange(int channelNumber, Client * parent /*= 0*/ )
-: Channel(*new ExchangePrivate, 0)
+: Channel(new ExchangePrivate(this))
 {
 	QT_TRY {
-		d_func()->init(channelNumber, parent);
+		pd_func()->init(channelNumber, parent);
 	} QT_CATCH(...) {
-		ExchangeExceptionCleaner::cleanup(this, d_func());
+		ExchangeExceptionCleaner::cleanup(this, pd_func());
 		QT_RETHROW;
 	}
 }
@@ -46,7 +46,7 @@ Exchange::~Exchange()
 
 void Exchange::onOpen()
 {
-	Q_D(Exchange);
+	P_D(Exchange);
 	if(d->deleyedDeclare)
 	{
 		d->declare();
@@ -55,23 +55,23 @@ void Exchange::onOpen()
 
 void Exchange::onClose()
 {
-	d_func()->remove(true, true);
+	pd_func()->remove(true, true);
 }
 
 Exchange::ExchangeOptions Exchange::option() const
 {
-	return d_func()->options;
+	return pd_func()->options;
 }
 
 QString Exchange::type() const
 {
-	return d_func()->type;
+	return pd_func()->type;
 }
 
 
 void Exchange::declare(const QString &type, ExchangeOptions option ,  const TableField & arg)
 {
-	Q_D(Exchange);
+	P_D(Exchange);
 	d->options = option;	
 	d->type = type;
 	d->arguments = arg;
@@ -80,13 +80,13 @@ void Exchange::declare(const QString &type, ExchangeOptions option ,  const Tabl
 
 void Exchange::remove( bool ifUnused /*= true*/, bool noWait /*= true*/ )
 {
-	d_func()->remove(ifUnused, noWait);
+	pd_func()->remove(ifUnused, noWait);
 }
 
 
 void Exchange::bind( QAMQP::Queue * queue )
 {
-	queue->bind(this, d_func()->name);
+	queue->bind(this, pd_func()->name);
 }
 
 void Exchange::bind( const QString & queueName )
@@ -104,21 +104,21 @@ void Exchange::bind( const QString & queueName, const QString &key )
 
 void Exchange::publish( const QString & message, const QString & key )
 {
-	d_func()->publish(message.toUtf8(), key);
+	pd_func()->publish(message.toUtf8(), key);
 }
 
 
 void Exchange::publish( const QByteArray & message, const QString & key, const QString &mimeType )
 {
-	d_func()->publish(message, key, mimeType);
+	pd_func()->publish(message, key, mimeType);
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 
 
-ExchangePrivate::ExchangePrivate()
-	:ChannelPrivate()
+ExchangePrivate::ExchangePrivate(Exchange * q)
+	:ChannelPrivate(q)
 	,  deleyedDeclare(false)
 	,  declared(false)
 {
@@ -157,14 +157,14 @@ void ExchangePrivate::declareOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Declared exchange: " << name;	
 	declared = true;
-	QMetaObject::invokeMethod(q_func(), "declared");
+	QMetaObject::invokeMethod(pq_func(), "declared");
 }
 
 void ExchangePrivate::deleteOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Deleted exchange: " << name;	
 	declared = false;
-	QMetaObject::invokeMethod(q_func(), "removed");
+	QMetaObject::invokeMethod(pq_func(), "removed");
 }
 
 void ExchangePrivate::declare( )

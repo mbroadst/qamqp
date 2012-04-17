@@ -1,7 +1,8 @@
 #ifndef amqp_channel_p_h__
 #define amqp_channel_p_h__
 
-#include <QtCore/private/qobject_p.h>
+#include "amqp_global.h"
+#include <QPointer>
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
@@ -9,9 +10,9 @@ namespace QAMQP
 {
 	class Client;
 	class ClientPrivate;
-	class ChannelPrivate : public QObjectPrivate
+	class ChannelPrivate 
 	{
-		Q_DECLARE_PUBLIC(QAMQP::Channel)
+		P_DECLARE_PUBLIC(QAMQP::Channel)
 	public:
 		enum MethodId
 		{
@@ -43,7 +44,7 @@ namespace QAMQP
 			METHOD_ID_ENUM(bmRecover, 110)
 		};
 
-		ChannelPrivate(int version = QObjectPrivateVersion);
+		ChannelPrivate(Channel * q);
 		virtual ~ChannelPrivate();
 
 		void init(int channelNumber, Client * parent);
@@ -76,6 +77,8 @@ namespace QAMQP
 		static int nextChannelNumber_;
 		bool opened;
 		bool needOpen;
+
+		Channel * const pq_ptr;
 	};
 }
 #endif // amqp_channel_p_h__

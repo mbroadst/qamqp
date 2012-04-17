@@ -1,17 +1,17 @@
 #ifndef amqp_connection_p_h__
 #define amqp_connection_p_h__
 
-#include <QtCore/private/qobject_p.h>
-
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
+
+#include <QPointer>
 
 namespace QAMQP
 {
 	class Client;
 	class ClientPrivate;
-	class ConnectionPrivate : public QObjectPrivate
+	class ConnectionPrivate
 	{
-		Q_DECLARE_PUBLIC(QAMQP::Connection)
+		P_DECLARE_PUBLIC(QAMQP::Connection)
 	public:
 		enum MethodId
 		{
@@ -22,7 +22,7 @@ namespace QAMQP
 			METHOD_ID_ENUM(miClose, 50)
 		};
 
-		ConnectionPrivate(int version = QObjectPrivateVersion);
+		ConnectionPrivate(Connection * q);
 		~ConnectionPrivate();
 		void init(Client * parent);
 		void startOk();
@@ -45,6 +45,8 @@ namespace QAMQP
 		QPointer<Client> client_;
 		bool closed_;
 		bool connected;
+
+		Connection * const pq_ptr;
 	};
 }
 #endif // amqp_connection_p_h__

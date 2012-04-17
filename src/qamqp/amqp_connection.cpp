@@ -33,8 +33,10 @@ namespace QAMQP
 //////////////////////////////////////////////////////////////////////////
 
 
-ConnectionPrivate::ConnectionPrivate( int version /*= QObjectPrivateVersion*/ )
-	:QObjectPrivate(version), closed_(false), connected(false)
+ConnectionPrivate::ConnectionPrivate( Connection * q)
+	:pq_ptr(q)
+	, closed_(false)
+	, connected(false)
 {
 
 }
@@ -46,7 +48,7 @@ ConnectionPrivate::~ConnectionPrivate()
 
 void ConnectionPrivate::init(Client * parent)
 {
-	q_func()->setParent(parent);
+	pq_func()->setParent(parent);
 	client_ = parent;
 }
 
@@ -62,13 +64,13 @@ void ConnectionPrivate::startOk()
 	clientProperties["product"] = "QAMQP";
 	QAMQP::Frame::serialize(stream, clientProperties);
 
-	client_->d_func()->auth_->write(stream);
+	client_->pd_func()->auth_->write(stream);
 
 	QAMQP::Frame::writeField('s', stream, "en_US");
 
 	frame.setArguments(arguments_);
 
-	client_->d_func()->network_->sendFrame(frame);	
+	client_->pd_func()->network_->sendFrame(frame);	
 }
 
 void ConnectionPrivate::secureOk()
@@ -88,7 +90,7 @@ void ConnectionPrivate::tuneOk()
 	stream << qint16(0); //heartbeat
 
 	frame.setArguments(arguments_);
-	client_->d_func()->network_->sendFrame(frame);
+	client_->pd_func()->network_->sendFrame(frame);
 }
 
 void ConnectionPrivate::open()
@@ -103,7 +105,7 @@ void ConnectionPrivate::open()
 	stream << qint8(0);
 
 	frame.setArguments(arguments_);
-	client_->d_func()->network_->sendFrame(frame);
+	client_->pd_func()->network_->sendFrame(frame);
 }
 
 void ConnectionPrivate::start( const QAMQP::Frame::Method & frame )
@@ -164,7 +166,7 @@ void ConnectionPrivate::openOk( const QAMQP::Frame::Method & frame )
 	Q_UNUSED(frame);
 	qDebug(">> OpenOK");
 	connected = true;
-	q_func()->openOk();
+	pq_func()->openOk();
 }
 
 void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
@@ -199,20 +201,20 @@ void ConnectionPrivate::close(int code, const QString & text, int classId, int m
 	stream << qint16(methodId);
 
 	frame.setArguments(arguments_);
-	client_->d_func()->network_->sendFrame(frame);
+	client_->pd_func()->network_->sendFrame(frame);
 }
 
 void ConnectionPrivate::closeOk()
 {
 	QAMQP::Frame::Method frame(QAMQP::Frame::fcConnection, miCloseOk);	
 	connected = false;
-	client_->d_func()->network_->sendFrame(frame);
+	client_->pd_func()->network_->sendFrame(frame);
 }
 
 void ConnectionPrivate::closeOk( const QAMQP::Frame::Method & )
 {
 	connected = false;
-	QMetaObject::invokeMethod(q_func(), "disconnected");
+	QMetaObject::invokeMethod(pq_func(), "disconnected");
 }
 
 
@@ -228,7 +230,7 @@ void ConnectionPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount, int 
 	out << qint8(global ? 1 : 0);
 
 	frame.setArguments(arguments_);
-	client_->d_func()->network_->sendFrame(frame);	
+	client_->pd_func()->network_->sendFrame(frame);	
 }
 
 
@@ -276,32 +278,18 @@ bool ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 //////////////////////////////////////////////////////////////////////////
 
 Connection::Connection( Client * parent /*= 0*/ )
-	: QObject(*new ConnectionPrivate, 0)
+	: pd_ptr(new ConnectionPrivate(this))
 {
 	QT_TRY {
-		d_func()->init(parent);
+		pd_func()->init(parent);
 	} QT_CATCH(...) {
-		ConnectionExceptionCleaner::cleanup(this, d_func());
-		QT_RETHROW;
-	}
-}
-
-Connection::Connection(ConnectionPrivate &dd, Client* parent)
-: QObject(dd, 0)
-{
-	Q_D(QAMQP::Connection);
-	QT_TRY {
-		d->init(parent);
-	} QT_CATCH(...) {
-		ConnectionExceptionCleaner::cleanup(this, d_func());
+		ConnectionExceptionCleaner::cleanup(this, pd_func());
 		QT_RETHROW;
 	}
 }
 
 Connection::~Connection()
 {
-	QObjectPrivate::clearGuards(this);
-
 	QT_TRY {
 		QEvent e(QEvent::Destroy);
 		QCoreApplication::sendEvent(this, &e);
@@ -312,32 +300,32 @@ Connection::~Connection()
 
 void Connection::startOk()
 {
-	d_func()->startOk();
+	pd_func()->startOk();
 }
 
 void Connection::secureOk()
 {
-	d_func()->secureOk();
+	pd_func()->secureOk();
 }
 
 void Connection::tuneOk()
 {
-	d_func()->tuneOk();
+	pd_func()->tuneOk();
 }
 
 void Connection::open()
 {
-	d_func()->open();
+	pd_func()->open();
 }
 
 void Connection::close(int code, const QString & text, int classId , int methodId)
 {
-	d_func()->close(code, text, classId, methodId);
+	pd_func()->close(code, text, classId, methodId);
 }
 
 void Connection::closeOk()
 {
-	d_func()->closeOk();
+	pd_func()->closeOk();
 	emit disconnect();
 }
 
@@ -348,11 +336,11 @@ void Connection::openOk()
 
 bool Connection::isConnected() const
 {
-	return d_func()->connected;
+	return pd_func()->connected;
 }
 
 
 void Connection::setQOS( qint32 prefetchSize, quint16 prefetchCount )
 {
-	d_func()->setQOS(prefetchSize, prefetchCount, 0, true);
+	pd_func()->setQOS(prefetchSize, prefetchCount, 0, true);
 }

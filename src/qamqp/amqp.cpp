@@ -3,7 +3,6 @@
 
 #include <QTextStream>
 #include <QCoreApplication>
-#include "qamqp_global.h"
 #include "amqp_exchange.h"
 #include "amqp_queue.h"
 #include "amqp_authenticator.h"
@@ -27,8 +26,8 @@ struct QAMQP::ClientExceptionCleaner
 
 //////////////////////////////////////////////////////////////////////////
 
-ClientPrivate::ClientPrivate(int version )
-	:QObjectPrivate(version)
+ClientPrivate::ClientPrivate( Client * q ) : 
+	 pq_ptr(q)
 	 , port(AMQPPORT)
 	 , host(QString::fromLatin1(AMQPHOST))
 	 , virtualHost(QString::fromLatin1(AMQPVHOST))
@@ -44,14 +43,14 @@ ClientPrivate::~ClientPrivate()
 
 void ClientPrivate::init(QObject * parent)
 {
-	q_func()->setParent(parent);
+	pq_func()->setParent(parent);
 	if(!network_){
-		network_ = new QAMQP::Network(q_func());
+		network_ = new QAMQP::Network(pq_func());
 	}
 
 	if(!connection_)
 	{
-		connection_ = new QAMQP::Connection(q_func());
+		connection_ = new QAMQP::Connection(pq_func());
 	}
 
 	setAuth(new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
@@ -98,7 +97,7 @@ void ClientPrivate::connect()
 
 void ClientPrivate::parseCnnString( const QUrl & con )
 {
-	Q_Q(QAMQP::Client);
+	P_Q(QAMQP::Client);
 	if(con.scheme() == AMQPSCHEME )
 	{
 		q->setPassword(con.password());
@@ -122,7 +121,7 @@ void ClientPrivate::login()
 
 Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name )
 {
-	Exchange * exchange_ = new Exchange(channelNumber, q_func());
+	Exchange * exchange_ = new Exchange(channelNumber, pq_func());
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
@@ -133,7 +132,7 @@ Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name 
 
 Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 {
-	Queue * queue_ = new Queue(channelNumber, q_func());
+	Queue * queue_ = new Queue(channelNumber, pq_func());
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		queue_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
@@ -159,42 +158,29 @@ void ClientPrivate::disconnect()
 
 
 QAMQP::Client::Client( QObject * parent /*= 0*/ )
-	: QObject(*new ClientPrivate, 0)
+	: pd_ptr(new ClientPrivate(this))
 {
 	QT_TRY {
-		d_func()->init(parent);
+		pd_func()->init(parent);
 	} QT_CATCH(...) {
-		ClientExceptionCleaner::cleanup(this, d_func());
+		ClientExceptionCleaner::cleanup(this, pd_func());
 		QT_RETHROW;
 	}
 }
 
 QAMQP::Client::Client( const QUrl & connectionString, QObject * parent /*= 0*/ )
-	: QObject(*new ClientPrivate, 0)
+	: pd_ptr(new ClientPrivate(this))
 {
 	QT_TRY {
-		d_func()->init(parent, connectionString);
+		pd_func()->init(parent, connectionString);
 	} QT_CATCH(...) {
-		ClientExceptionCleaner::cleanup(this, d_func());
-		QT_RETHROW;
-	}
-}
-
-QAMQP::Client::Client(ClientPrivate &dd, QObject* parent, const QUrl & connectionString)
-	: QObject(dd, 0)
-{
-	Q_D(QAMQP::Client);
-	QT_TRY {
-		d->init(parent, connectionString);
-	} QT_CATCH(...) {
-		ClientExceptionCleaner::cleanup(this, d_func());
+		ClientExceptionCleaner::cleanup(this, pd_func());
 		QT_RETHROW;
 	}
 }
 
 QAMQP::Client::~Client()
 {
-	QObjectPrivate::clearGuards(this);
 	QT_TRY {
 		QEvent e(QEvent::Destroy);
 		QCoreApplication::sendEvent(this, &e);
@@ -205,37 +191,37 @@ QAMQP::Client::~Client()
 
 quint32 QAMQP::Client::port() const
 {
-	return d_func()->port;
+	return pd_func()->port;
 }
 
 void QAMQP::Client::setPort( quint32 port )
 {
-	d_func()->port = port;
+	pd_func()->port = port;
 }
 
 QString QAMQP::Client::host() const
 {
-	return d_func()->host;
+	return pd_func()->host;
 }
 
 void QAMQP::Client::setHost( const QString & host )
 {
-	d_func()->host = host;
+	pd_func()->host = host;
 }
 
 QString QAMQP::Client::virtualHost() const
 {
-	return d_func()->virtualHost;
+	return pd_func()->virtualHost;
 }
 
 void QAMQP::Client::setVirtualHost( const QString & virtualHost )
 {
-	d_func()->virtualHost = virtualHost;
+	pd_func()->virtualHost = virtualHost;
 }
 
 QString QAMQP::Client::user() const
 {
-	const Authenticator * auth = d_func()->auth_.data();
+	const Authenticator * auth = pd_func()->auth_.data();
 
 	if(auth && auth->type() == "AMQPLAIN")
 	{
@@ -247,7 +233,7 @@ QString QAMQP::Client::user() const
 
 void QAMQP::Client::setUser( const QString & user )
 {
-	Authenticator * auth = d_func()->auth_.data();
+	Authenticator * auth = pd_func()->auth_.data();
 
 	if(auth && auth->type() == "AMQPLAIN")
 	{
@@ -258,7 +244,7 @@ void QAMQP::Client::setUser( const QString & user )
 
 QString QAMQP::Client::password() const
 {
-	const Authenticator * auth = d_func()->auth_.data();
+	const Authenticator * auth = pd_func()->auth_.data();
 
 	if(auth && auth->type() == "AMQPLAIN")
 	{
@@ -270,7 +256,7 @@ QString QAMQP::Client::password() const
 
 void QAMQP::Client::setPassword( const QString & password )
 {
-	Authenticator * auth = d_func()->auth_.data();
+	Authenticator * auth = pd_func()->auth_.data();
 
 	if(auth && auth->type() == "AMQPLAIN")
 	{
@@ -282,7 +268,7 @@ void QAMQP::Client::setPassword( const QString & password )
 void QAMQP::Client::printConnect() const
 {
 #ifdef _DEBUG
-	d_func()->printConnect();
+	pd_func()->printConnect();
 #endif // _DEBUG
 }
 
@@ -293,52 +279,52 @@ void QAMQP::Client::closeChannel()
 
 Exchange * QAMQP::Client::createExchange(int channelNumber)
 {
-	return d_func()->createExchange(channelNumber, QString());
+	return pd_func()->createExchange(channelNumber, QString());
 }
 
 Exchange * QAMQP::Client::createExchange( const QString &name, int channelNumber )
 {
-	return d_func()->createExchange(channelNumber, name);
+	return pd_func()->createExchange(channelNumber, name);
 }
 
 Queue * QAMQP::Client::createQueue(int channelNumber)
 {
-	return d_func()->createQueue(channelNumber, QString());
+	return pd_func()->createQueue(channelNumber, QString());
 }
 
 Queue * QAMQP::Client::createQueue( const QString &name, int channelNumber )
 {
-	return d_func()->createQueue(channelNumber, name);
+	return pd_func()->createQueue(channelNumber, name);
 }
 
 void QAMQP::Client::open()
 {
-	return d_func()->connect();
+	return pd_func()->connect();
 }
 
 void QAMQP::Client::open( const QUrl & connectionString )
 {
-	d_func()->parseCnnString(connectionString);
+	pd_func()->parseCnnString(connectionString);
 	open();
 }
 
 void QAMQP::Client::close()
 {
-	return d_func()->disconnect();
+	return pd_func()->disconnect();
 }
 
 void QAMQP::Client::reopen()
 {
-	d_func()->disconnect();
-	d_func()->connect();	
+	pd_func()->disconnect();
+	pd_func()->connect();	
 }
 
 void QAMQP::Client::setAuth( Authenticator * auth )
 {
-	d_func()->setAuth(auth);
+	pd_func()->setAuth(auth);
 }
 
 Authenticator * QAMQP::Client::auth() const
 {
-	return d_func()->auth_.data();
+	return pd_func()->auth_.data();
 }

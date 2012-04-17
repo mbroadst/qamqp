@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QUrl>
+#include "amqp_global.h"
 
 namespace QAMQP
 {
@@ -21,8 +22,10 @@ namespace QAMQP
 		Q_PROPERTY(QString user READ user WRITE setUser);
 		Q_PROPERTY(QString password READ password WRITE setPassword);
 
-		Q_DECLARE_PRIVATE(QAMQP::Client)
 		Q_DISABLE_COPY(Client)
+
+		P_DECLARE_PRIVATE(QAMQP::Client)
+		
 		friend class ConnectionPrivate;
 		friend class ChannelPrivate;
 
@@ -61,12 +64,12 @@ namespace QAMQP
 		void open(const QUrl & connectionString);
 		void close();
 		void reopen();
-
 	protected:
-		Client(ClientPrivate &d, QObject* parent, const QUrl & connectionString);
+		ClientPrivate * const pd_ptr;
 
 	private:
 		friend struct ClientExceptionCleaner;
+
 		//void chanalConnect();
 	};
 }

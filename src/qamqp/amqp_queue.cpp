@@ -30,12 +30,12 @@ namespace QAMQP
 }
 
 Queue::Queue( int channelNumber, Client * parent /*= 0*/ )
-: Channel(*new QueuePrivate, 0)
+: Channel(new QueuePrivate(this))
 {
 	QT_TRY {
-		d_func()->init(channelNumber, parent);
+		pd_func()->init(channelNumber, parent);
 	} QT_CATCH(...) {
-		QueueExceptionCleaner::cleanup(this, d_func());
+		QueueExceptionCleaner::cleanup(this, pd_func());
 		QT_RETHROW;
 	}
 }
@@ -47,7 +47,7 @@ Queue::~Queue()
 
 void Queue::onOpen()
 {
-	Q_D(Queue);
+	P_D(Queue);
 	if(d->deleyedDeclare)
 	{
 		d->declare();
@@ -65,33 +65,33 @@ void Queue::onOpen()
 
 void Queue::onClose()
 {
-	d_func()->remove(true, true);
+	pd_func()->remove(true, true);
 }
 
 Queue::QueueOptions Queue::option() const
 {
-	return d_func()->options;
+	return pd_func()->options;
 }
 
 void Queue::setNoAck( bool noAck )
 {
-	d_func()->noAck = noAck;
+	pd_func()->noAck = noAck;
 }
 
 bool Queue::noAck() const
 {
-	return d_func()->noAck;
+	return pd_func()->noAck;
 }
 
 void Queue::declare()
 {
-	Q_D(Queue);
+	P_D(Queue);
 	declare(d->name, QueueOptions(Durable | AutoDelete));
 }
 
 void Queue::declare( const QString &name, QueueOptions options )
 {
-	Q_D(Queue);
+	P_D(Queue);
 	setName(name);
 	d->options = options;
 	d->declare();
@@ -99,85 +99,85 @@ void Queue::declare( const QString &name, QueueOptions options )
 
 void Queue::remove( bool ifUnused /*= true*/, bool ifEmpty /*= true*/, bool noWait /*= true*/ )
 {
-	d_func()->remove(ifUnused, ifEmpty, noWait);
+	pd_func()->remove(ifUnused, ifEmpty, noWait);
 }
 
 void Queue::purge()
 {
-	d_func()->purge();
+	pd_func()->purge();
 }
 
 void Queue::bind( const QString & exchangeName, const QString & key )
 {
-	d_func()->bind(exchangeName, key);
+	pd_func()->bind(exchangeName, key);
 }
 
 void Queue::bind( Exchange * exchange, const QString & key )
 {
 	if(exchange)
-		d_func()->bind(exchange->name(), key);
+		pd_func()->bind(exchange->name(), key);
 }
 
 void Queue::unbind( const QString & exchangeName, const QString & key )
 {
-	d_func()->unbind(exchangeName, key);
+	pd_func()->unbind(exchangeName, key);
 }
 
 void Queue::unbind( Exchange * exchange, const QString & key )
 {
 	if(exchange)
-		d_func()->unbind(exchange->name(), key);
+		pd_func()->unbind(exchange->name(), key);
 }
 
 
 QAMQP::MessagePtr Queue::getMessage()
 {
-	return d_func()->messages_.dequeue();
+	return pd_func()->messages_.dequeue();
 }
 
 bool Queue::hasMessage() const
 {
 
-	if(d_func()->messages_.isEmpty())
+	if(pd_func()->messages_.isEmpty())
 	{
 		return false;
 	}
-	const MessagePtr &q = d_func()->messages_.head();
+	const MessagePtr &q = pd_func()->messages_.head();
 	return q->leftSize == 0;
 }
 
 void Queue::consume(ConsumeOptions options)
 {
-	d_func()->consume(options);
+	pd_func()->consume(options);
 }
 
 void Queue::setConsumerTag( const QString &consumerTag )
 {
-	d_func()->consumerTag = consumerTag;
+	pd_func()->consumerTag = consumerTag;
 }
 
 QString Queue::consumerTag() const
 {
-	return d_func()->consumerTag;
+	return pd_func()->consumerTag;
 }
 
 
 void Queue::get()
 {
-	d_func()->get();
+	pd_func()->get();
 }
 
 
 void Queue::ack( const MessagePtr & message )
 {
-	d_func()->ack(message);
+	pd_func()->ack(message);
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 
-QueuePrivate::QueuePrivate()
-	:ChannelPrivate()
+QueuePrivate::QueuePrivate(Queue * q)
+	:ChannelPrivate(q)
 	,  deleyedDeclare(false)
 	,  declared(false)
 	,  recievingMessage(false)
@@ -236,7 +236,7 @@ bool QueuePrivate::_q_method( const QAMQP::Frame::Method & frame )
 			getOk(frame);
 			break;
 		case bmGetEmpty:
-			QMetaObject::invokeMethod(q_func(), "empty");
+			QMetaObject::invokeMethod(pq_func(), "empty");
 			break;
 		default:
 			break;
@@ -263,7 +263,7 @@ void QueuePrivate::declareOk( const QAMQP::Frame::Method & frame )
 	stream >> messageCount >> consumerCount;
 	qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
 
-	QMetaObject::invokeMethod(q_func(), "declared");
+	QMetaObject::invokeMethod(pq_func(), "declared");
 }
 
 void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
@@ -276,20 +276,20 @@ void QueuePrivate::deleteOk( const QAMQP::Frame::Method & frame )
 	qint32 messageCount = 0;
 	stream >> messageCount;
 	qDebug("Message count %d", messageCount);
-	QMetaObject::invokeMethod(q_func(), "removed");
+	QMetaObject::invokeMethod(pq_func(), "removed");
 }
 
 
 void QueuePrivate::bindOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Binded to queue: " << name;
-	QMetaObject::invokeMethod(q_func(), "binded", Q_ARG(bool, true));
+	QMetaObject::invokeMethod(pq_func(), "binded", Q_ARG(bool, true));
 }
 
 void QueuePrivate::unbindOk( const QAMQP::Frame::Method &  )
 {
 	qDebug() << "Unbinded queue: " << name;
-	QMetaObject::invokeMethod(q_func(), "binded", Q_ARG(bool, false));
+	QMetaObject::invokeMethod(pq_func(), "binded", Q_ARG(bool, false));
 }
 
 void QueuePrivate::declare()
@@ -562,6 +562,6 @@ void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 	
 	if(message->leftSize == 0 && messages_.size() == 1)
 	{
-		QMetaObject::invokeMethod(q_func(), "messageRecieved");
+		QMetaObject::invokeMethod(pq_func(), "messageRecieved");
 	}
 }

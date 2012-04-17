@@ -19,7 +19,7 @@ namespace QAMQP
 		Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
 		Q_PROPERTY(bool noAck READ noAck WRITE setNoAck)
 		
-		Q_DECLARE_PRIVATE(QAMQP::Queue)
+		P_DECLARE_PRIVATE(QAMQP::Queue)
 		Q_DISABLE_COPY(Queue);	
 		friend class ClientPrivate;
 
@@ -81,8 +81,8 @@ namespace QAMQP
 		void empty();
 
 	private:
-		Q_PRIVATE_SLOT(d_func(), void _q_content(const QAMQP::Frame::Content & frame))
-		Q_PRIVATE_SLOT(d_func(), void _q_body(int channeNumber, const QByteArray & body))
+		Q_PRIVATE_SLOT(pd_func(), void _q_content(const QAMQP::Frame::Content & frame))
+		Q_PRIVATE_SLOT(pd_func(), void _q_body(int channeNumber, const QByteArray & body))
 	};
 }
 #ifdef QAMQP_P_INCLUDE

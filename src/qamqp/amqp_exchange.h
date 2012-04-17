@@ -18,7 +18,7 @@ namespace QAMQP
 		Q_PROPERTY(QString type READ type);
 		Q_PROPERTY(ExchangeOptions option READ option );
 
-		Q_DECLARE_PRIVATE(QAMQP::Exchange)
+		P_DECLARE_PRIVATE(QAMQP::Exchange)
 		Q_DISABLE_COPY(Exchange);	
 		friend class ClientPrivate;
 	protected:

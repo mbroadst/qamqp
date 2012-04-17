@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "amqp_frame.h"
-#include "qamqp_global.h"
+#include "amqp_global.h"
 
 namespace QAMQP
 {
@@ -14,7 +14,7 @@ namespace QAMQP
 	class Connection : public QObject
 	{
 		Q_OBJECT
-		Q_DECLARE_PRIVATE(QAMQP::Connection)
+		P_DECLARE_PRIVATE(QAMQP::Connection)
 		Q_DISABLE_COPY(Connection)
 		Connection(Client * parent = 0);
 	public:		
@@ -35,12 +35,13 @@ namespace QAMQP
 		void disconnected();
 		void connected();
 	protected:
-		Connection(ConnectionPrivate &dd, Client* parent);
+		ConnectionPrivate * const pd_ptr;
+
 	private:
 		void openOk();
 		friend class ClientPrivate;
 		friend class ChannelPrivate;
-		Q_PRIVATE_SLOT(d_func(), void _q_method(const QAMQP::Frame::Method & frame))
+		Q_PRIVATE_SLOT(pd_func(), void _q_method(const QAMQP::Frame::Method & frame))
 	};
 }
 

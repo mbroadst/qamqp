@@ -10,7 +10,7 @@ namespace QAMQP
 	using namespace QAMQP::Frame;
 	class QueuePrivate: public ChannelPrivate
 	{
-		Q_DECLARE_PUBLIC(QAMQP::Queue)
+		P_DECLARE_PUBLIC(QAMQP::Queue)
 	public:
 
 		enum MethodId
@@ -22,7 +22,7 @@ namespace QAMQP
 			METHOD_ID_ENUM(miDelete, 40)
 		};
 
-		QueuePrivate();
+		QueuePrivate(Queue * q);
 		~QueuePrivate();
 
 		void declare();

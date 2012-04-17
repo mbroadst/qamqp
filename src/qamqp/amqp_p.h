@@ -1,20 +1,21 @@
 #ifndef qamqp_amqp_p_h__
 #define qamqp_amqp_p_h__
-#include <QtCore/private/qobject_p.h>
 
 #include <QSharedPointer>
 
+#include "amqp_global.h"
 #include "amqp_network.h"
 #include "amqp_connection.h"
 #include "amqp_authenticator.h"
 
 namespace QAMQP
 {
-	class ClientPrivate : public QObjectPrivate
+	class ClientPrivate
 	{
-		Q_DECLARE_PUBLIC(QAMQP::Client)
+		P_DECLARE_PUBLIC(QAMQP::Client)
+
 	public:
-		ClientPrivate(int version = QObjectPrivateVersion);
+		ClientPrivate(Client * q ) ;
 		~ClientPrivate();
 
 		void init(QObject * parent);
@@ -32,13 +33,14 @@ namespace QAMQP
 		quint32 port;
 		QString host;
 		QString virtualHost;
-/*
-		QString user;
-		QString password;*/
 
 		QPointer<QAMQP::Network> network_;	
 		QPointer<QAMQP::Connection> connection_;
 		QSharedPointer<Authenticator> auth_;
+
+
+		Client * const pq_ptr;
+
 	};
 }
 #endif // amqp_p_h__

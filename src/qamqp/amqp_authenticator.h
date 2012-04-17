@@ -1,7 +1,7 @@
 #ifndef amqp_authenticator_h__
 #define amqp_authenticator_h__
 
-#include "qamqp_global.h"
+#include "amqp_global.h"
 #include <QString>
 #include <QDataStream>
 
