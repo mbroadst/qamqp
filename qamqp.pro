@@ -22,7 +22,6 @@ HEADERS += src/test.h \
            src/qamqp/amqp_p.h \
            src/qamqp/amqp_queue.h \
            src/qamqp/amqp_queue_p.h \
-           src/qamqp/QAMQP.h \
            src/qamqp/qamqp_global.h \
 
 SOURCES += src/main.cpp \

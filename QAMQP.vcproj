@@ -334,6 +334,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\qamqp\amqp_global.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\qamqp\amqp_message.h"
 				>
 			</File>
@@ -399,14 +403,6 @@
 			</File>
 			<File
 				RelativePath=".\src\qamqp\amqp_queue_p.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\qamqp\QAMQP.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\qamqp\qamqp_global.h"
 				>
 			</File>
 			<File
