@@ -38,6 +38,8 @@ namespace QAMQP
 		QPointer<QAMQP::Connection> connection_;
 		QSharedPointer<Authenticator> auth_;
 
+		bool isSSl() const;
+
 
 		Client * const pq_ptr;
 

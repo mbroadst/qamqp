@@ -98,8 +98,9 @@ void ClientPrivate::connect()
 void ClientPrivate::parseCnnString( const QUrl & con )
 {
 	P_Q(QAMQP::Client);
-	if(con.scheme() == AMQPSCHEME )
+	if(con.scheme() == AMQPSCHEME || con.scheme() == AMQPSSCHEME )
 	{
+		q->setSsl(con.scheme() == AMQPSSCHEME);
 		q->setPassword(con.password());
 		q->setUser(con.userName());
 		q->setPort(con.port());
@@ -152,6 +153,8 @@ void ClientPrivate::disconnect()
 {
 	network_->QAMQP::Network::disconnect();
 }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -327,4 +330,14 @@ void QAMQP::Client::setAuth( Authenticator * auth )
 Authenticator * QAMQP::Client::auth() const
 {
 	return pd_func()->auth_.data();
+}
+
+bool QAMQP::Client::isSsl() const
+{
+	return pd_func()->network_->isSsl();
+}
+
+void QAMQP::Client::setSsl( bool value )
+{
+	pd_func()->network_->setSsl(value);
 }

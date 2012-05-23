@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTcpSocket>
+#include <QSslSocket>
 #include <QPointer>
 #include <QBuffer>
 
@@ -24,6 +25,9 @@ namespace QAMQP
 
 		void sendFrame(const QAMQP::Frame::Base & frame);
 
+		bool isSsl() const;
+		void setSsl(bool value);
+
 	signals:
 		void method(const QAMQP::Frame::Method & method);
 		void content(const QAMQP::Frame::Content & content);
@@ -34,8 +38,12 @@ namespace QAMQP
 		void disconnected();
 		void error( QAbstractSocket::SocketError socketError );
 		void readyRead();
+		void sslErrors ( const QList<QSslError> & errors );
+
+		void conectionReady();
 
 	private:
+		void initSocket(bool ssl = false);
 		QPointer<QTcpSocket> socket_;
 		QPointer<QBuffer> buffer_;
 		int offsetBuf;

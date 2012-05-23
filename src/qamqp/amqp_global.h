@@ -5,6 +5,7 @@
 
 #define QAMQP_P_INCLUDE
 #define AMQPSCHEME "amqp"
+#define AMQPSSCHEME "amqps"
 #define AMQPPORT 5672
 #define AMQPHOST "localhost"
 #define AMQPVHOST "/"

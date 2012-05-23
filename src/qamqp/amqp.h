@@ -21,6 +21,7 @@ namespace QAMQP
 		Q_PROPERTY(QString virtualHost READ virtualHost WRITE setVirtualHost);
 		Q_PROPERTY(QString user READ user WRITE setUser);
 		Q_PROPERTY(QString password READ password WRITE setPassword);
+		Q_PROPERTY(bool ssl READ isSsl WRITE setSsl);
 
 		Q_DISABLE_COPY(Client)
 
@@ -64,6 +65,11 @@ namespace QAMQP
 		void open(const QUrl & connectionString);
 		void close();
 		void reopen();
+
+		bool isSsl() const;
+		void setSsl(bool value);
+
+
 	protected:
 		ClientPrivate * const pd_ptr;
 

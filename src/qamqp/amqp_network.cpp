@@ -6,17 +6,14 @@ QAMQP::Network::Network( QObject * parent /*= 0*/ ):QObject(parent)
 {
 	qRegisterMetaType<QAMQP::Frame::Method>("QAMQP::Frame::Method");
 
-	socket_ = new QTcpSocket(this);
+	
 	buffer_ = new QBuffer(this);
 	offsetBuf = 0;
 	leftSize = 0;
 
-
 	buffer_->open(QIODevice::ReadWrite);
-	connect(socket_, SIGNAL(connected()), this, SLOT(connected()));
-	connect(socket_, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
-	connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));	
+
+	initSocket(false);
 }
 
 QAMQP::Network::~Network()
@@ -26,7 +23,13 @@ QAMQP::Network::~Network()
 
 void QAMQP::Network::connectTo( const QString & host, quint32 port )
 {
-	socket_->connectToHost(host, port);
+	if (isSsl())
+	{
+		static_cast<QSslSocket *>(socket_.data())->connectToHostEncrypted(host, port);
+	} else {
+		socket_->connectToHost(host, port);
+	}
+	
 }
 
 void QAMQP::Network::disconnect()
@@ -37,8 +40,14 @@ void QAMQP::Network::disconnect()
 
 void QAMQP::Network::connected()
 {
-	char header_[8] = {'A', 'M', 'Q', 'P', 0,0,9,1};
-	socket_->write(header_, 8);
+	if(isSsl() && !static_cast<QSslSocket *>(socket_.data())->isEncrypted() )
+	{	
+		qDebug() << "[SSL] start encrypt";
+		static_cast<QSslSocket *>(socket_.data())->startClientEncryption();
+	} else {
+		conectionReady();
+	}
+	
 }
 
 void QAMQP::Network::disconnected()
@@ -118,4 +127,50 @@ void QAMQP::Network::sendFrame( const QAMQP::Frame::Base & frame )
 {
 	QDataStream stream(socket_);
 	frame.toStream(stream);
+}
+
+bool QAMQP::Network::isSsl() const
+{
+	return QString(socket_->metaObject()->className()).compare( "QSslSocket", Qt::CaseInsensitive) == 0;
+}
+
+void QAMQP::Network::setSsl( bool value )
+{
+	initSocket(value);
+}
+
+void QAMQP::Network::initSocket( bool ssl /*= false*/ )
+{
+	if(socket_)
+		delete socket_;
+
+	if(ssl)
+	{		
+		socket_ = new QSslSocket(this);
+		QSslSocket * ssl_= static_cast<QSslSocket*> (socket_.data());
+		ssl_->setProtocol(QSsl::AnyProtocol);
+		connect(socket_, SIGNAL(sslErrors(const QList<QSslError> &)),
+			this, SLOT(sslErrors(const QList<QSslError> &)));	
+
+		//connect(socket_, SIGNAL(encrypted()), this, SLOT(conectionReady()));
+		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
+	} else {
+		socket_ = new QTcpSocket(this);		
+		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
+	}
+	
+	connect(socket_, SIGNAL(disconnected()), this, SLOT(disconnected()));
+	connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
+	connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));	
+}
+
+void QAMQP::Network::sslErrors( const QList<QSslError> & errors )
+{
+	static_cast<QSslSocket*>(socket_.data())->ignoreSslErrors();
+}
+
+void QAMQP::Network::conectionReady()
+{
+	char header_[8] = {'A', 'M', 'Q', 'P', 0,0,9,1};
+	socket_->write(header_, 8);
 }
