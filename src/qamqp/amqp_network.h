@@ -18,8 +18,7 @@ namespace QAMQP
 	public:
 		Network(QObject * parent = 0);
 		~Network();
-
-		void connectTo(const QString & host, quint32 port);
+		
 		void disconnect();
 		void sendFrame();
 
@@ -28,14 +27,20 @@ namespace QAMQP
 		bool isSsl() const;
 		void setSsl(bool value);
 
-	signals:
+		bool autoReconnect() const;
+		void setAutoReconnect(bool value);
+
+	public slots:
+		void connectTo(const QString & host = QString(), quint32 port = 0);
+
+	signals:		
+		void connected();
+		void disconnected();
 		void method(const QAMQP::Frame::Method & method);
 		void content(const QAMQP::Frame::Content & content);
 		void body(int channeNumber, const QByteArray & body);
 
 	private slots:
-		void connected();
-		void disconnected();
 		void error( QAbstractSocket::SocketError socketError );
 		void readyRead();
 		void sslErrors ( const QList<QSslError> & errors );
@@ -46,9 +51,15 @@ namespace QAMQP
 		void initSocket(bool ssl = false);
 		QPointer<QTcpSocket> socket_;
 		QPointer<QBuffer> buffer_;
+		QString lastHost_;
+		int lastPort_;
 		int offsetBuf;
 		int leftSize;
 		qint8 lastType_;
+		bool autoReconnect_;
+		int timeOut_;
+
+		bool connect_;
 	};
 }
 #endif // amqp_network_h__

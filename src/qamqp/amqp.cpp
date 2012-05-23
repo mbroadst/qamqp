@@ -341,3 +341,13 @@ void QAMQP::Client::setSsl( bool value )
 {
 	pd_func()->network_->setSsl(value);
 }
+
+bool QAMQP::Client::autoReconnect() const
+{
+	return pd_func()->network_->autoReconnect();
+}
+
+void QAMQP::Client::setAutoReconnect( bool value )
+{
+	pd_func()->network_->setAutoReconnect(value);
+}

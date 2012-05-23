@@ -40,6 +40,7 @@ namespace QAMQP
 
 		bool isSSl() const;
 
+		
 
 		Client * const pq_ptr;
 

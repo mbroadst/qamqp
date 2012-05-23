@@ -1,6 +1,6 @@
 #include "amqp_network.h"
-
 #include <QDebug>
+#include <QTimer>
 
 QAMQP::Network::Network( QObject * parent /*= 0*/ ):QObject(parent)
 {
@@ -10,6 +10,8 @@ QAMQP::Network::Network( QObject * parent /*= 0*/ ):QObject(parent)
 	buffer_ = new QBuffer(this);
 	offsetBuf = 0;
 	leftSize = 0;
+	timeOut_ = 1000;
+	connect_ = false;
 
 	buffer_->open(QIODevice::ReadWrite);
 
@@ -23,41 +25,60 @@ QAMQP::Network::~Network()
 
 void QAMQP::Network::connectTo( const QString & host, quint32 port )
 {
+	QString h(host);
+	int p(port);
+	connect_ = true;
+	if(host.isEmpty())
+		h = lastHost_ ;
+	if(port == 0)
+		p = lastPort_;
+
 	if (isSsl())
 	{
-		static_cast<QSslSocket *>(socket_.data())->connectToHostEncrypted(host, port);
+		static_cast<QSslSocket *>(socket_.data())->connectToHostEncrypted(h, p);
 	} else {
-		socket_->connectToHost(host, port);
+		socket_->connectToHost(h, p);
 	}
-	
+
+	lastHost_ = h;
+	lastPort_ = p;	
 }
 
 void QAMQP::Network::disconnect()
 {
+	connect_ = false;
 	if(socket_)
 		socket_->abort();
 }
 
-void QAMQP::Network::connected()
-{
-	if(isSsl() && !static_cast<QSslSocket *>(socket_.data())->isEncrypted() )
-	{	
-		qDebug() << "[SSL] start encrypt";
-		static_cast<QSslSocket *>(socket_.data())->startClientEncryption();
-	} else {
-		conectionReady();
-	}
-	
-}
-
-void QAMQP::Network::disconnected()
-{
-
-}
-
 void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 {
+	if(timeOut_ == 0)
+	{
+		timeOut_ = 1000;
+	} else {		
+		if(timeOut_ < 120000)
+		{
+			timeOut_ *= 5;
+		}
+	}
+
 	Q_UNUSED(socketError);
+	switch(socketError)
+	{
+		case QAbstractSocket::ConnectionRefusedError:
+		case QAbstractSocket::RemoteHostClosedError:
+		case QAbstractSocket::SocketTimeoutError:
+		case QAbstractSocket::NetworkError:
+			if( autoReconnect_ && connect_ )
+			{
+				QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
+			}
+			break;
+
+		default:
+			break;
+	}
 }
 
 void QAMQP::Network::readyRead()
@@ -159,7 +180,7 @@ void QAMQP::Network::initSocket( bool ssl /*= false*/ )
 		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
 	}
 	
-	connect(socket_, SIGNAL(disconnected()), this, SLOT(disconnected()));
+	connect(socket_, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
 	connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
 	connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));	
 }
@@ -171,6 +192,18 @@ void QAMQP::Network::sslErrors( const QList<QSslError> & errors )
 
 void QAMQP::Network::conectionReady()
 {
+	emit connected();
+	timeOut_ = 0;
 	char header_[8] = {'A', 'M', 'Q', 'P', 0,0,9,1};
 	socket_->write(header_, 8);
+}
+
+bool QAMQP::Network::autoReconnect() const
+{
+	return autoReconnect_;
+}
+
+void QAMQP::Network::setAutoReconnect( bool value )
+{
+	autoReconnect_ = value;
 }
