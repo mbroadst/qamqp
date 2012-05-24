@@ -51,6 +51,7 @@ namespace QAMQP
 
 		void publish(const QString & message, const QString & key);
 		void publish(const QByteArray & message, const QString & key, const QString &mimeType);
+		void publish(const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType);
 
 	Q_SIGNALS:
 		void declared();

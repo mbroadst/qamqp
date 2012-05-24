@@ -146,7 +146,7 @@ void QAMQP::Network::readyRead()
 
 void QAMQP::Network::sendFrame( const QAMQP::Frame::Base & frame )
 {
-	if(socket_->state() == QAbstractSocket::Connected)	
+	if(socket_->state() == QAbstractSocket::ConnectedState)	
 	{
 		QDataStream stream(socket_);
 		frame.toStream(stream);

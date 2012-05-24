@@ -24,13 +24,14 @@ namespace QAMQP
 		void declareOk(const QAMQP::Frame::Method & frame);
 		void deleteOk(const QAMQP::Frame::Method & frame);
 
-		void publish(const QByteArray & message, const QString & key, const QString &mimeType = QString::fromLatin1("text/plain"));
+		void publish(const QByteArray & message, const QString & key, const QString &mimeType = QString::fromLatin1("text/plain"), const QVariantHash & headers = QVariantHash());
 
 		QString type;
 		Exchange::ExchangeOptions options;
 		TableField arguments;
 		
 		bool _q_method(const QAMQP::Frame::Method & frame);
+		void _q_disconnected();
 		
 		bool deleyedDeclare;
 		bool declared;

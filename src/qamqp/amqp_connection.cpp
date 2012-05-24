@@ -59,9 +59,9 @@ void ConnectionPrivate::startOk()
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 	
 	QAMQP::Frame::TableField clientProperties;
-	clientProperties["version"] = "0.0.3";
+	clientProperties["version"] = QString("0.0.3");
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
-	clientProperties["product"] = "QAMQP";
+	clientProperties["product"] = QString("QAMQP");
 	QAMQP::Frame::serialize(stream, clientProperties);
 
 	client_->pd_func()->auth_->write(stream);
@@ -185,6 +185,7 @@ void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
 	qDebug(">> class-id: %d", classId);
 	qDebug(">> method-id: %d", methodId);
 	connected = false;
+	QMetaObject::invokeMethod(pq_func(), "disconnected");
 }
 
 void ConnectionPrivate::close(int code, const QString & text, int classId, int methodId)

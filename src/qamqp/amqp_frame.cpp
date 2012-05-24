@@ -423,6 +423,9 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	case QVariant::Bool:
 		type = 't';
 		break;
+	case QVariant::ByteArray:
+		type = 'S';
+		break;
 	case QVariant::Int:
 		{
 			int i = qAbs(value.toInt());
@@ -453,12 +456,7 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	case QVariant::ULongLong:
 		type = 'l';
 		break;
-	case QVariant::String:
-		/*
-		{
-					QString str = value.toString();
-					type = str.length() > 255 ? 'S' : 's';			
-				}*/
+	case QVariant::String:			
 		type = 'S';
 		break;
 	case QVariant::DateTime:
@@ -516,16 +514,48 @@ qint32 QAMQP::Frame::Content::size() const
 	}
 
 	out << prop_;
-	QHash<int, QVariant>::const_iterator i;
-	for(i = properties_.begin(); i != properties_.end(); ++i)
-	{
-		if(i.value().type() == QVariant::String)
-		{
-			writeField('s', out, i.value());
-		} else {
-			writeField(out, i.value());
-		}
-	}
+
+	if(prop_ & cpContentType)
+		writeField('s', out, properties_[cpContentType]);
+
+	if(prop_ & cpContentEncoding)
+		writeField('s', out, properties_[cpContentEncoding]);
+
+	if(prop_ & cpHeaders)
+		writeField('F', out, properties_[cpHeaders]);
+
+	if(prop_ & cpDeliveryMode)
+		writeField('b', out, properties_[cpDeliveryMode]);
+
+	if(prop_ & cpPriority)
+		writeField('b', out, properties_[cpPriority]);
+
+	if(prop_ & cpCorrelationId)
+		writeField('s', out, properties_[cpCorrelationId]);
+
+	if(prop_ & cpReplyTo)
+		writeField('s', out, properties_[cpReplyTo]);
+
+	if(prop_ & cpExpiration)
+		writeField('s', out, properties_[cpExpiration]);
+
+	if(prop_ & cpMessageId)
+		writeField('s', out, properties_[cpMessageId]);
+
+	if(prop_ & cpTimestamp)
+		writeField('T', out, properties_[cpTimestamp]);
+
+	if(prop_ & cpType)
+		writeField('s', out, properties_[cpType]);
+
+	if(prop_ & cpUserId)
+		writeField('s', out, properties_[cpUserId]);
+
+	if(prop_ & cpAppId)
+		writeField('s', out, properties_[cpAppId]);
+
+	if(prop_ & cpClusterID)
+		writeField('s', out, properties_[cpClusterID]);
 
 	return buffer_.size();
 }
@@ -569,7 +599,7 @@ void QAMQP::Frame::Content::readPayload( QDataStream & in )
 		properties_[cpContentEncoding] = readField('s', in);
 
 	if(flags_ & cpHeaders)
-		properties_[cpHeaders] = readField('f', in);
+		properties_[cpHeaders] = readField('F', in);
 
 	if(flags_ & cpDeliveryMode)
 		properties_[cpDeliveryMode] = readField('b', in);

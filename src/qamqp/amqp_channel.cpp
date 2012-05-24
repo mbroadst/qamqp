@@ -193,7 +193,10 @@ void ChannelPrivate::_q_open()
 
 void ChannelPrivate::sendFrame( const QAMQP::Frame::Base & frame )
 {
-	client_->pd_func()->network_->sendFrame(frame);
+	if(client_)
+	{
+		client_->pd_func()->network_->sendFrame(frame);
+	}	
 }
 
 
@@ -301,4 +304,11 @@ void ChannelPrivate::openOk( const QAMQP::Frame::Method & frame )
 void ChannelPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount )
 {
 	client_->pd_func()->connection_->pd_func()->setQOS(prefetchSize, prefetchCount, number, false);
+}
+
+
+void ChannelPrivate::_q_disconnected()
+{
+	nextChannelNumber_ = 0;
+	opened = false;
 }

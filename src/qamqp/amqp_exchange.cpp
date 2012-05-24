@@ -26,6 +26,8 @@ namespace QAMQP
 #endif
 		}
 	};	
+
+
 }
 
 Exchange::Exchange(int channelNumber, Client * parent /*= 0*/ )
@@ -113,6 +115,10 @@ void Exchange::publish( const QByteArray & message, const QString & key, const Q
 	pd_func()->publish(message, key, mimeType);
 }
 
+void Exchange::publish( const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType )
+{
+	pd_func()->publish(message, key, mimeType, headers);
+}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -215,7 +221,7 @@ void ExchangePrivate::remove( bool ifUnused /*= true*/, bool noWait /*= true*/ )
 	sendFrame(frame);
 }
 
-void ExchangePrivate::publish( const QByteArray & message, const QString & key, const QString &mimeType /*= QString::fromLatin1("text/plain")*/ )
+void ExchangePrivate::publish( const QByteArray & message, const QString & key, const QString &mimeType /*= QString::fromLatin1("text/plain")*/, const QVariantHash & headers )
 {
 	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, bmPublish);
 	frame.setChannel(number);
@@ -235,7 +241,8 @@ void ExchangePrivate::publish( const QByteArray & message, const QString & key, 
 	content.setChannel(number);
 	content.setProperty(Content::cpContentType, mimeType);
 	content.setProperty(Content::cpContentEncoding, "utf-8");
-	content.setProperty(Content::cpMessageId, "0");
+	content.setProperty(Content::cpHeaders, headers);
+	content.setProperty(Content::cpMessageId, "0");	
 	content.setBody(message);
 	sendFrame(content);
 	
@@ -249,4 +256,13 @@ void ExchangePrivate::publish( const QByteArray & message, const QString & key, 
 		sendFrame(body);
 	}
 	
+}
+
+
+void ExchangePrivate::_q_disconnected()
+{
+	ChannelPrivate::_q_disconnected();
+	qDebug() << "Exchange " << name << " disconnected";
+	deleyedDeclare = false;
+	declared = false;
 }

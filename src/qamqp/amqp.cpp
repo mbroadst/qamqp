@@ -130,6 +130,7 @@ Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name 
 		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
+	QObject::connect(connection_, SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
 	exchange_->setName(name);
 	return exchange_;
 }

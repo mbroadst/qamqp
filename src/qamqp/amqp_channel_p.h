@@ -64,6 +64,7 @@ namespace QAMQP
 		void closeOk(const QAMQP::Frame::Method & frame);
 
 		virtual bool _q_method(const QAMQP::Frame::Method & frame);
+		virtual void _q_disconnected();
 		void _q_open();
 		
 		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
