@@ -57,6 +57,8 @@ void ClientPrivate::init(QObject * parent)
 
 	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
 		connection_, SLOT(_q_method(const QAMQP::Frame::Method &)));
+
+	QObject::connect(connection_, SIGNAL(connected()), pq_func(), SIGNAL(connected()));
 }
 
 void ClientPrivate::init(QObject * parent, const QUrl & con)
@@ -350,4 +352,9 @@ bool QAMQP::Client::autoReconnect() const
 void QAMQP::Client::setAutoReconnect( bool value )
 {
 	pd_func()->network_->setAutoReconnect(value);
+}
+
+bool QAMQP::Client::isConnected() const
+{
+	return pd_func()->connection_->isConnected();
 }
