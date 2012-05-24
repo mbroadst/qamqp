@@ -59,7 +59,7 @@ void ConnectionPrivate::startOk()
 	QDataStream stream(&arguments_, QIODevice::WriteOnly);
 	
 	QAMQP::Frame::TableField clientProperties;
-	clientProperties["version"] = QString("0.0.3");
+	clientProperties["version"] = QString(QAMQP_VERSION);
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
 	clientProperties["product"] = QString("QAMQP");
 	QAMQP::Frame::serialize(stream, clientProperties);
