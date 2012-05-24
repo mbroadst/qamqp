@@ -78,6 +78,7 @@ namespace QAMQP
 
 	signals:
 		void connected();
+		void disconnected();
 
 
 	protected:

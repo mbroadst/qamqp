@@ -59,6 +59,7 @@ void ClientPrivate::init(QObject * parent)
 		connection_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), pq_func(), SIGNAL(connected()));
+	QObject::connect(connection_, SIGNAL(disconnected()), pq_func(), SIGNAL(disconnected()));
 }
 
 void ClientPrivate::init(QObject * parent, const QUrl & con)
