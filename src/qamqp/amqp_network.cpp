@@ -146,8 +146,11 @@ void QAMQP::Network::readyRead()
 
 void QAMQP::Network::sendFrame( const QAMQP::Frame::Base & frame )
 {
-	QDataStream stream(socket_);
-	frame.toStream(stream);
+	if(socket_->state() == QAbstractSocket::Connected)	
+	{
+		QDataStream stream(socket_);
+		frame.toStream(stream);
+	}
 }
 
 bool QAMQP::Network::isSsl() const
