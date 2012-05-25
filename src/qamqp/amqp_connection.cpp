@@ -185,6 +185,7 @@ void ConnectionPrivate::close( const QAMQP::Frame::Method & frame )
 	qDebug(">> class-id: %d", classId);
 	qDebug(">> method-id: %d", methodId);
 	connected = false;
+	client_->pd_func()->network_->error(QAbstractSocket::RemoteHostClosedError);
 	QMetaObject::invokeMethod(pq_func(), "disconnected");
 }
 

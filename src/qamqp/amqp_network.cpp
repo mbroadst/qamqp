@@ -48,7 +48,7 @@ void QAMQP::Network::disconnect()
 {
 	connect_ = false;
 	if(socket_)
-		socket_->abort();
+		socket_->close();
 }
 
 void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
@@ -70,6 +70,9 @@ void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 		case QAbstractSocket::RemoteHostClosedError:
 		case QAbstractSocket::SocketTimeoutError:
 		case QAbstractSocket::NetworkError:
+		case QAbstractSocket::ProxyConnectionClosedError:
+		case QAbstractSocket::ProxyConnectionRefusedError:
+		case QAbstractSocket::ProxyConnectionTimeoutError:
 			if( autoReconnect_ && connect_ )
 			{
 				QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
@@ -77,6 +80,7 @@ void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 			break;
 
 		default:
+			qWarning() << "AMQP Socket Error: " << socket_->errorString();
 			break;
 	}
 }
@@ -209,4 +213,9 @@ bool QAMQP::Network::autoReconnect() const
 void QAMQP::Network::setAutoReconnect( bool value )
 {
 	autoReconnect_ = value;
+}
+
+QAbstractSocket::SocketState QAMQP::Network::state() const
+{
+	return socket_->state();
 }

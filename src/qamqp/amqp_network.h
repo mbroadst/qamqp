@@ -30,8 +30,11 @@ namespace QAMQP
 		bool autoReconnect() const;
 		void setAutoReconnect(bool value);
 
+		QAbstractSocket::SocketState state() const;
+
 	public slots:
 		void connectTo(const QString & host = QString(), quint32 port = 0);
+		void error( QAbstractSocket::SocketError socketError );
 
 	signals:		
 		void connected();
@@ -40,8 +43,7 @@ namespace QAMQP
 		void content(const QAMQP::Frame::Content & content);
 		void body(int channeNumber, const QByteArray & body);
 
-	private slots:
-		void error( QAbstractSocket::SocketError socketError );
+	private slots:		
 		void readyRead();
 		void sslErrors ( const QList<QSslError> & errors );
 

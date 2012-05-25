@@ -114,7 +114,10 @@ void ClientPrivate::parseCnnString( const QUrl & con )
 
 void ClientPrivate::sockConnect()
 {
-	disconnect();
+	if(network_->state() != QAbstractSocket::UnconnectedState )
+	{
+		disconnect();
+	}
 	network_->connectTo(host, port);
 }
 
@@ -130,7 +133,7 @@ Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name 
 		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
-	QObject::connect(connection_, SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
+	QObject::connect(pq_func(), SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
 	exchange_->setName(name);
 	return exchange_;
 }
@@ -148,6 +151,7 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 		queue_, SLOT(_q_body(int, const QByteArray &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
+	QObject::connect(pq_func(), SIGNAL(disconnected()), queue_, SLOT(_q_disconnected()));
 	queue_->setName(name);
 	return queue_;
 }
@@ -155,11 +159,15 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 
 void ClientPrivate::disconnect()
 {
-	network_->QAMQP::Network::disconnect();
+	P_Q(QAMQP::Client);
+	//connection_->close();
+	if(network_->state() != QAbstractSocket::UnconnectedState)
+	{
+		network_->QAMQP::Network::disconnect();	
+		connection_->pd_func()->connected = false;
+		emit pq_func()->disconnected();
+	}
 }
-
-
-
 
 //////////////////////////////////////////////////////////////////////////
 
