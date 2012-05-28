@@ -47,6 +47,9 @@ namespace QAMQP
 		bool connected;
 
 		Connection * const pq_ptr;
+
+		QAMQP::Frame::TableField customProperty;
+
 	};
 }
 #endif // amqp_connection_p_h__

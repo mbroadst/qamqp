@@ -169,6 +169,7 @@ void ClientPrivate::disconnect()
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -367,4 +368,14 @@ void QAMQP::Client::setAutoReconnect( bool value )
 bool QAMQP::Client::isConnected() const
 {
 	return pd_func()->connection_->isConnected();
+}
+
+void QAMQP::Client::addCustomProperty( const QString & name, const QString & value )
+{
+	return pd_func()->connection_->addCustomProperty(name, value);
+}
+
+QString QAMQP::Client::customProperty( const QString & name ) const
+{
+	return pd_func()->connection_->customProperty(name);
 }

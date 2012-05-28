@@ -18,6 +18,7 @@ namespace QAMQP
 		ClientPrivate(Client * q ) ;
 		~ClientPrivate();
 
+
 		void init(QObject * parent);
 		void init(QObject * parent, const QUrl & connectionString);
 		void printConnect() const;
@@ -45,5 +46,6 @@ namespace QAMQP
 		Client * const pq_ptr;
 
 	};
+
 }
 #endif // amqp_p_h__

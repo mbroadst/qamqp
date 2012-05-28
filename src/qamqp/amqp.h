@@ -40,6 +40,9 @@ namespace QAMQP
 		void printConnect() const;
 		void closeChannel();
 
+		void addCustomProperty(const QString & name, const QString & value);
+		QString customProperty(const QString & name) const;
+
 		Exchange * createExchange(int channelNumber = -1);
 		Exchange * createExchange(const QString &name, int channelNumber = -1);
 

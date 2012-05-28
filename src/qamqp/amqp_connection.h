@@ -20,6 +20,10 @@ namespace QAMQP
 	public:		
 		~Connection();
 
+
+		void addCustomProperty(const QString & name, const QString & value);
+		QString customProperty(const QString & name) const;
+
 		void startOk();
 		void secureOk();
 		void tuneOk();

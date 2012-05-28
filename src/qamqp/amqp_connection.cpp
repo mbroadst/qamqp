@@ -8,6 +8,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
+#include <QVariant>
 
 using namespace QAMQP;
 
@@ -29,6 +30,8 @@ namespace QAMQP
 	};
 
 	
+
+
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +65,7 @@ void ConnectionPrivate::startOk()
 	clientProperties["version"] = QString(QAMQP_VERSION);
 	clientProperties["platform"] = QString("Qt %1").arg(qVersion());
 	clientProperties["product"] = QString("QAMQP");
+	clientProperties.unite(customProperty);
 	QAMQP::Frame::serialize(stream, clientProperties);
 
 	client_->pd_func()->auth_->write(stream);
@@ -345,4 +349,19 @@ bool Connection::isConnected() const
 void Connection::setQOS( qint32 prefetchSize, quint16 prefetchCount )
 {
 	pd_func()->setQOS(prefetchSize, prefetchCount, 0, true);
+}
+
+
+void Connection::addCustomProperty( const QString & name, const QString & value )
+{
+	pd_func()->customProperty[name] = value;
+}
+
+QString Connection::customProperty( const QString & name ) const
+{
+	if(pd_func()->customProperty.contains(name))
+	{
+		return pd_func()->customProperty.value(name).toString();
+	}
+	return QString();	
 }
