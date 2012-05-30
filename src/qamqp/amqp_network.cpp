@@ -73,16 +73,17 @@ void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 		case QAbstractSocket::ProxyConnectionClosedError:
 		case QAbstractSocket::ProxyConnectionRefusedError:
 		case QAbstractSocket::ProxyConnectionTimeoutError:
-			if( autoReconnect_ && connect_ )
-			{
-				QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
-			}
-			break;
-
+			
 		default:
 			qWarning() << "AMQP Socket Error: " << socket_->errorString();
 			break;
 	}
+
+	if( autoReconnect_ && connect_ )
+	{
+		QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
+	}
+
 }
 
 void QAMQP::Network::readyRead()
