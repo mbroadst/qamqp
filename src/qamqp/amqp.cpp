@@ -9,7 +9,9 @@
 
 using namespace QAMQP;
 
-struct QAMQP::ClientExceptionCleaner
+namespace QAMQP
+{
+struct ClientExceptionCleaner
 {
 	/* this cleans up when the constructor throws an exception */
 	static inline void cleanup(Client *that, ClientPrivate *d)
@@ -23,6 +25,7 @@ struct QAMQP::ClientExceptionCleaner
 #endif
 	}
 };
+}
 
 //////////////////////////////////////////////////////////////////////////
 

@@ -49,10 +49,9 @@ namespace QAMQP
 			quint32 value;
 
 		};
-		Q_DECLARE_METATYPE(QAMQP::Frame::decimal);
+
 
 		typedef QHash<QString, QVariant> TableField;
-		Q_DECLARE_METATYPE(QAMQP::Frame::TableField);
 
 		QDataStream & serialize( QDataStream & stream, const QAMQP::Frame::TableField & f );
 		QDataStream & deserialize( QDataStream & stream, QAMQP::Frame::TableField & f );
@@ -173,5 +172,8 @@ namespace QAMQP
 		};
 	}
 }
+
+Q_DECLARE_METATYPE(QAMQP::Frame::decimal);
+Q_DECLARE_METATYPE(QAMQP::Frame::TableField);
 
 #endif // amqp_frame_h__

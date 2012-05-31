@@ -9,7 +9,8 @@
 using namespace QAMQP::Frame;
 Base::Base( Type type ) :type_(type), channel_(0), size_(0) {}
 
-Base::Base( QDataStream& raw ){
+Base::Base( QDataStream& raw )
+{
 	readHeader(raw);
 }
 
