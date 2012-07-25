@@ -35,7 +35,10 @@ void Test::declared()
 	qDebug("\t-= Ready =-");
 	//queue_->purge();
 
-	exchange_->publish("123", exchange_->name());
+	QAMQP::Exchange::MessageProperties properties;
+	properties[QAMQP::Frame::Content::cpDeliveryMode] = 2; // Make message persistent
+	exchange_->publish("123", exchange_->name(), properties);
+
 	//queue_->remove(true, false, false);
 	queue_->setQOS(0,10);
 	queue_->setConsumerTag("qamqp-consumer");
