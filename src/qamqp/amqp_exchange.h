@@ -37,6 +37,8 @@ namespace QAMQP
 		};
 		Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
 		
+		typedef QHash<QAMQP::Frame::Content::Property, QVariant> MessageProperties;
+
 		~Exchange();
 
 		QString type() const;
@@ -49,9 +51,9 @@ namespace QAMQP
 		void bind(const QString & queueName);
 		void bind(const QString & queueName, const QString &key);
 
-		void publish(const QString & message, const QString & key);
-		void publish(const QByteArray & message, const QString & key, const QString &mimeType);
-		void publish(const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType);
+		void publish(const QString & message, const QString & key, const MessageProperties &property = MessageProperties() );
+		void publish(const QByteArray & message, const QString & key, const QString &mimeType, const MessageProperties &property = MessageProperties());
+		void publish(const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType, const MessageProperties &property = MessageProperties());
 
 	Q_SIGNALS:
 		void declared();

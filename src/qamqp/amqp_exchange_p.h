@@ -24,7 +24,7 @@ namespace QAMQP
 		void declareOk(const QAMQP::Frame::Method & frame);
 		void deleteOk(const QAMQP::Frame::Method & frame);
 
-		void publish(const QByteArray & message, const QString & key, const QString &mimeType = QString::fromLatin1("text/plain"), const QVariantHash & headers = QVariantHash());
+		void publish(const QByteArray & message, const QString & key, const QString &mimeType = QString::fromLatin1("text/plain"), const QVariantHash & headers = QVariantHash(), const Exchange::MessageProperties & properties = Exchange::MessageProperties());
 
 		QString type;
 		Exchange::ExchangeOptions options;

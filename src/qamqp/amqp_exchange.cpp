@@ -104,20 +104,20 @@ void Exchange::bind( const QString & queueName, const QString &key )
 	qWarning("Not implement");
 }
 
-void Exchange::publish( const QString & message, const QString & key )
+void Exchange::publish( const QString & message, const QString & key, const MessageProperties &prop )
 {
-	pd_func()->publish(message.toUtf8(), key);
+	pd_func()->publish(message.toUtf8(), key, QString::fromLatin1("text.plain"), QVariantHash(), prop);
 }
 
 
-void Exchange::publish( const QByteArray & message, const QString & key, const QString &mimeType )
+void Exchange::publish( const QByteArray & message, const QString & key, const QString &mimeType, const MessageProperties &prop )
 {
-	pd_func()->publish(message, key, mimeType);
+	pd_func()->publish(message, key, mimeType, QVariantHash(), prop);
 }
 
-void Exchange::publish( const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType )
+void Exchange::publish( const QByteArray & message, const QString & key, const QVariantHash &headers, const QString &mimeType, const MessageProperties &prop )
 {
-	pd_func()->publish(message, key, mimeType, headers);
+	pd_func()->publish(message, key, mimeType, headers, prop);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -221,7 +221,7 @@ void ExchangePrivate::remove( bool ifUnused /*= true*/, bool noWait /*= true*/ )
 	sendFrame(frame);
 }
 
-void ExchangePrivate::publish( const QByteArray & message, const QString & key, const QString &mimeType /*= QString::fromLatin1("text/plain")*/, const QVariantHash & headers )
+void ExchangePrivate::publish( const QByteArray & message, const QString & key, const QString &mimeType /*= QString::fromLatin1("text/plain")*/, const QVariantHash & headers, const Exchange::MessageProperties & prop )
 {
 	QAMQP::Frame::Method frame(QAMQP::Frame::fcBasic, bmPublish);
 	frame.setChannel(number);
@@ -243,6 +243,14 @@ void ExchangePrivate::publish( const QByteArray & message, const QString & key, 
 	content.setProperty(Content::cpContentEncoding, "utf-8");
 	content.setProperty(Content::cpHeaders, headers);
 	content.setProperty(Content::cpMessageId, "0");	
+
+	Exchange::MessageProperties::ConstIterator i;
+
+	for(i = prop.begin(); i != prop.end(); ++i)
+	{
+		content.setProperty(i.key(), i.value());	
+	}
+
 	content.setBody(message);
 	sendFrame(content);
 	
