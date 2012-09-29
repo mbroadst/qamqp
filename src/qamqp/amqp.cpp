@@ -163,6 +163,7 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 void ClientPrivate::disconnect()
 {
 	P_Q(QAMQP::Client);
+	Q_UNUSED(q);
 	if(network_->state() != QAbstractSocket::UnconnectedState)
 	{
 		network_->QAMQP::Network::disconnect();	

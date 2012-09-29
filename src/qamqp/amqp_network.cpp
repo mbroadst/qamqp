@@ -195,6 +195,7 @@ void QAMQP::Network::initSocket( bool ssl /*= false*/ )
 
 void QAMQP::Network::sslErrors( const QList<QSslError> & errors )
 {
+	Q_UNUSED(errors);
 	static_cast<QSslSocket*>(socket_.data())->ignoreSslErrors();
 }
 
