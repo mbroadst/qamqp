@@ -64,7 +64,7 @@ void QAMQP::Frame::Base::readHeader( QDataStream & stream )
 
 void QAMQP::Frame::Base::readEnd( QDataStream & stream )
 {
-	char end_  = 0;
+	unsigned char end_  = 0;
 	stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
 	if(end_ != AMQP_FRAME_END )
 	{
