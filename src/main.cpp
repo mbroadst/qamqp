@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #include <QtCore/QCoreApplication>
 #include "test.h"
 
