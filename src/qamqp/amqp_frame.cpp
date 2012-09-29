@@ -7,7 +7,7 @@
 #include <float.h>
 
 using namespace QAMQP::Frame;
-Base::Base( Type type ) :type_(type), channel_(0), size_(0) {}
+Base::Base( Type type ) : size_(0), type_(type), channel_(0) {}
 
 Base::Base( QDataStream& raw )
 {
@@ -64,7 +64,7 @@ void QAMQP::Frame::Base::readHeader( QDataStream & stream )
 
 void QAMQP::Frame::Base::readEnd( QDataStream & stream )
 {
-	char end_  = 0;
+	unsigned char end_  = 0;
 	stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
 	if(end_ != AMQP_FRAME_END )
 	{
@@ -472,6 +472,7 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	case QVariant::List:
 		type = 'A';
 		break;
+	default:;
 	}
 
 	if(type)

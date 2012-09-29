@@ -30,10 +30,10 @@ struct ClientExceptionCleaner
 //////////////////////////////////////////////////////////////////////////
 
 ClientPrivate::ClientPrivate( Client * q ) : 
-	 pq_ptr(q)
-	 , port(AMQPPORT)
+	 port(AMQPPORT)
 	 , host(QString::fromLatin1(AMQPHOST))
 	 , virtualHost(QString::fromLatin1(AMQPVHOST))
+	 , pq_ptr(q)
 {
 	
 }
@@ -163,6 +163,7 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 void ClientPrivate::disconnect()
 {
 	P_Q(QAMQP::Client);
+	Q_UNUSED(q);
 	if(network_->state() != QAbstractSocket::UnconnectedState)
 	{
 		network_->QAMQP::Network::disconnect();	

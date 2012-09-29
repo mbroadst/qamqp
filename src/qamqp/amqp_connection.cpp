@@ -37,9 +37,9 @@ namespace QAMQP
 
 
 ConnectionPrivate::ConnectionPrivate( Connection * q)
-	:pq_ptr(q)
-	, closed_(false)
+	: closed_(false)
 	, connected(false)
+	, pq_ptr(q)
 {
 
 }

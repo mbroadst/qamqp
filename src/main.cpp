@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #include <QtCore/QCoreApplication>
 #include "test.h"
 
@@ -31,6 +33,7 @@ int main(int argc, char *argv[])
 
 	
 	Test test[1];
+	Q_UNUSED(test);
 
 	return a.exec();
 }
