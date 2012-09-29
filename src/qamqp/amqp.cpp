@@ -30,10 +30,10 @@ struct ClientExceptionCleaner
 //////////////////////////////////////////////////////////////////////////
 
 ClientPrivate::ClientPrivate( Client * q ) : 
-	 pq_ptr(q)
-	 , port(AMQPPORT)
+	 port(AMQPPORT)
 	 , host(QString::fromLatin1(AMQPHOST))
 	 , virtualHost(QString::fromLatin1(AMQPVHOST))
+	 , pq_ptr(q)
 {
 	
 }

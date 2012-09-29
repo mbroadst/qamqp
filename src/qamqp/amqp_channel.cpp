@@ -131,10 +131,10 @@ void QAMQP::Channel::setQOS( qint32 prefetchSize, quint16 prefetchCount )
 //////////////////////////////////////////////////////////////////////////
 
 ChannelPrivate::ChannelPrivate(Channel * q)
-	:pq_ptr(q)
-	, number(0)
+	: number(0)
 	, opened(false)
 	, needOpen(true)
+	, pq_ptr(q)
 {
 
 }

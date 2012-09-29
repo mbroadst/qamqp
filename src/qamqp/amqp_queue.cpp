@@ -180,8 +180,8 @@ QueuePrivate::QueuePrivate(Queue * q)
 	:ChannelPrivate(q)
 	,  deleyedDeclare(false)
 	,  declared(false)
-	,  recievingMessage(false)
 	,  noAck(true)
+	,  recievingMessage(false)
 {
 
 }

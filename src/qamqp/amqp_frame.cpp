@@ -7,7 +7,7 @@
 #include <float.h>
 
 using namespace QAMQP::Frame;
-Base::Base( Type type ) :type_(type), channel_(0), size_(0) {}
+Base::Base( Type type ) : size_(0), type_(type), channel_(0) {}
 
 Base::Base( QDataStream& raw )
 {
