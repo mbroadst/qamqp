@@ -472,6 +472,7 @@ void QAMQP::Frame::writeField( QDataStream &s, const QVariant & value )
 	case QVariant::List:
 		type = 'A';
 		break;
+	default:;
 	}
 
 	if(type)
