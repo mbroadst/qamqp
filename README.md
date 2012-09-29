@@ -104,3 +104,6 @@ Usage
 			}
 		}
 	}
+
+	
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/fda6b79d2e88186cba0c70e204c4f10b "githalytics.com")](http://githalytics.com/fuCtor/QAMQP)
