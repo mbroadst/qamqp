@@ -54,11 +54,6 @@ void QAMQP::Frame::Base::readHeader( QDataStream & stream )
 	stream >> type_;
 	stream >> channel_;
 	stream >> size_;
-
-	/*
-	stream.readRawData(reinterpret_cast<char*>(&type_), sizeof(type_));
-		stream.readRawData(reinterpret_cast<char*>(&channel_), sizeof(channel_));
-		stream.readRawData(reinterpret_cast<char*>(&size_), sizeof(size_));*/
 	
 }
 
@@ -154,46 +149,56 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 	QVariant value;
 	QByteArray tmp;
 	qint8 nameSize_;
-	char octet[1] = {0}, octet2[2] = {0}, octet4[4] = {0}, octet8[8] = {0};
+	char octet = 0;	
+
 	switch(valueType)
 	{
 	case 't':
-		s.readRawData(octet, sizeof(octet));
-		value = QVariant::fromValue<bool>(*octet > 0);
+		s.readRawData(&octet, sizeof(octet));
+		value = QVariant::fromValue<bool>(octet > 0);
 		break;
 	case 'b':
-		s.readRawData(octet, sizeof(octet));
-		value = QVariant::fromValue<int>(*octet);
+		s.readRawData(&octet, sizeof(octet));
+		value = QVariant::fromValue<int>(octet);
 		break;
 	case 'B':
-		s.readRawData(octet, sizeof(octet));
-		value = QVariant::fromValue<uint>(*octet);
+		s.readRawData(&octet, sizeof(octet));
+		value = QVariant::fromValue<uint>(octet);
 		break;
 	case 'U':
-		s.readRawData(octet2, sizeof(octet2));
-		value = QVariant::fromValue<int>(*reinterpret_cast<qint16*>(octet2));
-		break;
+		{
+			qint16 tmp_value_ = 0;
+			s >> tmp_value_;
+			value = QVariant::fromValue<int>(tmp_value_);
+			break;
+		}
 	case 'u':
-		s.readRawData(octet2, sizeof(octet2));
-		value = QVariant::fromValue<uint>(*reinterpret_cast<quint16*>(octet2));
-		break;
+		{
+			quint16 tmp_value_ = 0;
+			s >> tmp_value_;
+			value = QVariant::fromValue<uint>(tmp_value_);
+			break;
+		}
 	case 'I':
-		s.readRawData(octet4, sizeof(octet4));
-		value = QVariant::fromValue<int>(*reinterpret_cast<qint32*>(octet4));
-		break;
+		{
+			qint32 tmp_value_ = 0;
+			s >> tmp_value_;
+			value = QVariant::fromValue<int>(tmp_value_);
+			break;
+		}
 	case 'i':
-		s.readRawData(octet4, sizeof(octet4));
-		value = QVariant::fromValue<uint>(*reinterpret_cast<quint32*>(octet4));
-		break;
+		{
+			quint32 tmp_value_ = 0;
+			s >> tmp_value_;
+			value = QVariant::fromValue<uint>(tmp_value_);
+			break;
+		}
 	case 'L':
 		{
 			qlonglong v = 0 ;
 			s >> v;
 			value = v;
 		}
-		/*
-		s.readRawData(octet8, sizeof(octet8));
-				value = QVariant::fromValue<qlonglong>(*reinterpret_cast<qlonglong*>(octet8));*/
 		
 		break;
 	case 'l':
@@ -202,19 +207,22 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 			s >> v;
 			value = v;
 		}
-		/*
-		s.readRawData(octet8, sizeof(octet8));
-				value = QVariant::fromValue<qulonglong>(*reinterpret_cast<qulonglong*>(octet8));*/
 		
 		break;
 	case 'f':
-		s.readRawData(octet4, sizeof(octet4));
-		value = QVariant::fromValue<float>(*reinterpret_cast<float*>(octet4));
-		break;
+		{
+			float tmp_value_;
+			s >> tmp_value_;
+			value = QVariant::fromValue<float>(tmp_value_);
+			break;
+		}
 	case 'd':
-		s.readRawData(octet8, sizeof(octet8));
-		value = QVariant::fromValue<double>(*reinterpret_cast<double*>(octet8));
-		break;
+		{
+			double tmp_value_;
+			s >> tmp_value_;
+			value = QVariant::fromValue<double>(tmp_value_);
+			break;
+		}
 	case 'D':
 		{
 			QAMQP::Frame::decimal v;
@@ -253,9 +261,12 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		}
 		break;
 	case 'T':
-		s.readRawData(octet8, sizeof(octet8));
-		value = QDateTime::fromMSecsSinceEpoch(*reinterpret_cast<qulonglong*>(octet8));
-		break;
+		{
+			qulonglong tmp_value_;
+			s >> tmp_value_;			
+			value = QDateTime::fromMSecsSinceEpoch(tmp_value_);
+			break;
+		}
 	case 'F':
 		{
 			TableField table_;

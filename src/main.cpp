@@ -9,7 +9,7 @@ void myMessageOutput(QtMsgType type, const char *msg)
 	switch (type) {
 	 case QtDebugMsg:
 
-		 //fprintf(stderr, "# %s\n", msg);
+		 fprintf(stderr, "# %s\n", msg);
 
 		 break;
 	 case QtWarningMsg:
