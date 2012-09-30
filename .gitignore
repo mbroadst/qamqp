@@ -1,0 +1,4 @@
+*.user
+*.ncb
+/Debug
+/GeneratedFiles
