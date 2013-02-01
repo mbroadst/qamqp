@@ -202,7 +202,7 @@ void ChannelPrivate::sendFrame( const QAMQP::Frame::Base & frame )
 
 void ChannelPrivate::open()
 {
-	if(!needOpen)
+	if(!needOpen || opened)
 		return;
 
 	if(!client_->pd_func()->connection_->isConnected())
