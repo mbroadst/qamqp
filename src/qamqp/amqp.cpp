@@ -4,7 +4,9 @@
 #include <QTextStream>
 #include <QCoreApplication>
 #include "amqp_exchange.h"
+#include "amqp_exchange_p.h"
 #include "amqp_queue.h"
+#include "amqp_queue_p.h"
 #include "amqp_authenticator.h"
 
 using namespace QAMQP;
@@ -136,6 +138,7 @@ Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name 
 		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
 	QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
+	exchange_->pd_func()->open();
 	QObject::connect(pq_func(), SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
 	exchange_->setName(name);
 	return exchange_;
@@ -152,8 +155,9 @@ Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 
 	QObject::connect(network_, SIGNAL(body(int, const QByteArray &)),
 		queue_, SLOT(_q_body(int, const QByteArray &)));
-
+	
 	QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
+	queue_->pd_func()->open();
 	QObject::connect(pq_func(), SIGNAL(disconnected()), queue_, SLOT(_q_disconnected()));
 	queue_->setName(name);
 	return queue_;
