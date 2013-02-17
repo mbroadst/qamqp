@@ -148,7 +148,7 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 {
 	QVariant value;
 	QByteArray tmp;
-	qint8 nameSize_;
+	qint8 nameSize_ = 0;
 	char octet = 0;	
 
 	switch(valueType)
@@ -235,7 +235,11 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		s >> nameSize_;
 		tmp.resize(nameSize_);
 		s.readRawData(tmp.data(), tmp.size());
+		#if QT_VERSION < 0x050000
 		value = QString::fromAscii(tmp.data(), nameSize_);
+		#else // For Qt5
+		value = QString::fromLatin1(tmp.data(), nameSize_);
+		#endif
 		break;
 	case 'S':
 		{
@@ -244,7 +248,11 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 			tmp.resize(length_);
 		}		
 		s.readRawData(tmp.data(), tmp.size());
-		value = QString::fromAscii(tmp.data(), tmp.size());
+		#if QT_VERSION < 0x050000
+		value = QString::fromAscii(tmp.data(), nameSize_);
+		#else // For Qt5
+		value = QString::fromLatin1(tmp.data(), nameSize_);
+		#endif
 		break;
 	case 'A':
 		{
@@ -391,14 +399,22 @@ void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant &
 		{
 			QString str = value.toString();
 			s << quint8(str.length());
+			#if QT_VERSION < 0x050000
 			s.writeRawData(str.toAscii().data(), str.length());
+			#else // For Qt5
+			s.writeRawData(str.toLatin1().data(), str.length());
+			#endif			
 		}
 		break;
 	case 'S':
 		{
 			QString str = value.toString();
 			s << quint32(str.length());
+			#if QT_VERSION < 0x050000
 			s.writeRawData(str.toAscii().data(), str.length());
+			#else // For Qt5
+			s.writeRawData(str.toLatin1().data(), str.length());
+			#endif
 		}
 		break;
 	case 'A':
