@@ -562,6 +562,6 @@ void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 	
 	if(message->leftSize == 0 && messages_.size() == 1)
 	{
-		QMetaObject::invokeMethod(pq_func(), "messageRecieved");
+		QMetaObject::invokeMethod(pq_func(), "messageReceived");
 	}
 }
