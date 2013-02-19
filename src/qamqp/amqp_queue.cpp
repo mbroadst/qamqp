@@ -48,7 +48,7 @@ Queue::~Queue()
 void Queue::onOpen()
 {
 	P_D(Queue);
-	if(d->deleyedDeclare)
+	if(d->delayedDeclare)
 	{
 		d->declare();
 	}
@@ -178,7 +178,7 @@ void Queue::ack( const MessagePtr & message )
 
 QueuePrivate::QueuePrivate(Queue * q)
 	:ChannelPrivate(q)
-	,  deleyedDeclare(false)
+	,  delayedDeclare(false)
 	,  declared(false)
 	,  noAck(true)
 	,  recievingMessage(false)
@@ -296,7 +296,7 @@ void QueuePrivate::declare()
 {
 	if(!opened)
 	{
-		deleyedDeclare = true;
+		delayedDeclare = true;
 		return;
 	}
 
@@ -311,7 +311,7 @@ void QueuePrivate::declare()
 
 	frame.setArguments(arguments_);
 	sendFrame(frame);
-	deleyedDeclare = false;
+	delayedDeclare = false;
 	
 
 }

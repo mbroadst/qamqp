@@ -33,7 +33,7 @@ namespace QAMQP
 		bool _q_method(const QAMQP::Frame::Method & frame);
 		void _q_disconnected();
 		
-		bool deleyedDeclare;
+		bool delayedDeclare;
 		bool declared;
 
 	};	
