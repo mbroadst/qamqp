@@ -53,7 +53,7 @@ namespace QAMQP
 
 		bool _q_method(const QAMQP::Frame::Method & frame);
 
-		bool deleyedDeclare;
+		bool delayedDeclare;
 		bool declared;
 		bool noAck;
 		QString consumerTag;

@@ -49,7 +49,7 @@ Exchange::~Exchange()
 void Exchange::onOpen()
 {
 	P_D(Exchange);
-	if(d->deleyedDeclare)
+	if(d->delayedDeclare)
 	{
 		d->declare();
 	}
@@ -125,7 +125,7 @@ void Exchange::publish( const QByteArray & message, const QString & key, const Q
 
 ExchangePrivate::ExchangePrivate(Exchange * q)
 	:ChannelPrivate(q)
-	,  deleyedDeclare(false)
+	,  delayedDeclare(false)
 	,  declared(false)
 {
 }
@@ -177,7 +177,7 @@ void ExchangePrivate::declare( )
 {
 	if(!opened)
 	{
-		deleyedDeclare = true;
+		delayedDeclare = true;
 		return;
 	}
 
@@ -197,7 +197,7 @@ void ExchangePrivate::declare( )
 
 	frame.setArguments(arguments_);
 	sendFrame(frame);
-	deleyedDeclare = false;
+	delayedDeclare = false;
 }
 
 void ExchangePrivate::remove( bool ifUnused /*= true*/, bool noWait /*= true*/ )
@@ -271,6 +271,6 @@ void ExchangePrivate::_q_disconnected()
 {
 	ChannelPrivate::_q_disconnected();
 	qDebug() << "Exchange " << name << " disconnected";
-	deleyedDeclare = false;
+	delayedDeclare = false;
 	declared = false;
 }
