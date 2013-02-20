@@ -21,8 +21,8 @@ Test::Test()
 
 	connect(queue2_, SIGNAL(declared()), this, SLOT(declared()));
 
-	connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
-	connect(queue2_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));
+	connect(queue_, SIGNAL(messageReceived()), this, SLOT(newMessage()));	
+	connect(queue2_, SIGNAL(messageReceived()), this, SLOT(newMessage()));
 }
 
 Test::~Test()

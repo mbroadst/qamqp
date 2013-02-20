@@ -1,14 +1,15 @@
 TEMPLATE = app
 TARGET = qamqp
-DEPENDPATH += . \
-              src 
-			  
+DEPENDPATH += . src
+
 INCLUDEPATH += . ./src
 
-# Input
-HEADERS += src/test.h
+HEADERS += \
+  src/QamqpApp.h \
+  src/sendreceive/Receive.h \
+  src/sendreceive/Send.h \
 
-SOURCES += src/main.cpp \
-           src/test.cpp
-		   
+SOURCES += \
+  src/main.cpp \
+
 include(src/qamqp/qamqp.pri)

@@ -77,7 +77,7 @@ namespace QAMQP
 		void declared();
 		void binded(bool);
 		void removed();
-		void messageRecieved();
+		void messageReceived();
 		void empty();
 
 	private:

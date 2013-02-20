@@ -110,6 +110,11 @@ namespace QAMQP
 			Base(QDataStream& raw);
 
 			/*!
+			Base class virtual destructor
+			*/
+			virtual ~Base();
+
+			/*!
 			Frame type
 			@detailed Return type of current frame.
 			*/

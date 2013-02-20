@@ -19,6 +19,9 @@ Type Base::type() const
 	return Type(type_);
 }
 
+Base::~Base()
+{}
+
 void Base::setChannel( qint16 channel )
 {
 	channel_ = channel;
@@ -343,7 +346,7 @@ void QAMQP::Frame::writeField( qint8 valueType, QDataStream &s, const QVariant &
 {
 	QByteArray tmp;
 	if(withType)
-		s << valueType; // Запишем тип поля
+		s << valueType;
 
 	switch(valueType)
 	{
