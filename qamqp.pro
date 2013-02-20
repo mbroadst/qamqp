@@ -8,6 +8,8 @@ HEADERS += \
   src/QamqpApp.h \
   src/sendreceive/Receive.h \
   src/sendreceive/Send.h \
+  src/workqueues/NewTask.h \
+  src/workqueues/Worker.h \
 
 SOURCES += \
   src/main.cpp \

@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDebug>
 #include <QStringList>
 #include <QTextStream>
@@ -14,6 +15,8 @@
 
 #include "sendreceive/Send.h"
 #include "sendreceive/Receive.h"
+#include "workqueues/NewTask.h"
+#include "workqueues/Worker.h"
 
 namespace QAMQP
 {
@@ -31,6 +34,7 @@ public:
     explicit QamqpApp(int& argc, char** argv)
         : super(argc, argv)
     {
+        qsrand(QDateTime::currentMSecsSinceEpoch());
         QTimer::singleShot(0, this, SLOT(run()));
     }
 
@@ -77,10 +81,26 @@ protected slots:
             else if ("receive" == command)
             {
                 if (args.size() < 3)
-                    throw std::runtime_error("Mandatory argument(s) missing!");
+                    throw std::runtime_error("Mandatory argument missing!");
 
                 QString url = args[2];
                 commandImpl = new Receive(url, this);
+            }
+            else if ("new_task" == command)
+            {
+                if (args.size() < 3)
+                    throw std::runtime_error("Mandatory argument missing!");
+
+                QString url = args[2];
+                commandImpl = new NewTask(url, this);
+            }
+            else if ("worker" == command)
+            {
+                if (args.size() < 3)
+                    throw std::runtime_error("Mandatory argument missing!");
+
+                QString url = args[2];
+                commandImpl = new Worker(url, this);
             }
             else
             {
@@ -108,9 +128,13 @@ USAGE: %1 [-h|--help]                       -- Show this help message.\n\
 USAGE: %1 send    <server-url> <message>    -- Send a message.\n\
        %1 receive <server-url>              -- Receive messages.\n\
 \n\
-Send-Receive Sample:\n\
+Simple \"Hello World!\":\n\
 * Producer: %1 send    amqp://guest:guest@127.0.0.1:5672/ \"Hello World\"\n\
 * Consumer: %1 receive amqp://guest:guest@127.0.0.1:5672/\n\
+\n\
+Work Queues:\n\
+* Producer: %1 new_task amqp://guest:guest@127.0.0.1:5672/\n\
+* Consumer: %1 worker   amqp://guest:guest@127.0.0.1:5672/\n\
 \n").arg(executable);
     }
 };
