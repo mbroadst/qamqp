@@ -13,6 +13,8 @@
 #include "qamqp/amqp_exchange.h"
 #include "qamqp/amqp_queue.h"
 
+#include "pubsub/EmitLog.h"
+#include "pubsub/ReceiveLog.h"
 #include "sendreceive/Send.h"
 #include "sendreceive/Receive.h"
 #include "workqueues/NewTask.h"
@@ -102,6 +104,22 @@ protected slots:
                 QString url = args[2];
                 commandImpl = new Worker(url, this);
             }
+            else if ("emit_log" == command)
+            {
+                if (args.size() < 3)
+                    throw std::runtime_error("Mandatory argument missing!");
+
+                QString url = args[2];
+                commandImpl = new EmitLog(url, this);
+            }
+            else if ("receive_log" == command)
+            {
+                if (args.size() < 3)
+                    throw std::runtime_error("Mandatory argument missing!");
+
+                QString url = args[2];
+                commandImpl = new ReceiveLog(url, this);
+            }
             else
             {
                 throw std::runtime_error(QString("Unknown command: '%1'").arg(command).toStdString());
@@ -135,6 +153,10 @@ Simple \"Hello World!\":\n\
 Work Queues:\n\
 * Producer: %1 new_task amqp://guest:guest@127.0.0.1:5672/\n\
 * Consumer: %1 worker   amqp://guest:guest@127.0.0.1:5672/\n\
+\n\
+Publish/Subscribe:\n\
+* Producer: %1 emit_log    amqp://guest:guest@127.0.0.1:5672/\n\
+* Consumer: %1 receive_log amqp://guest:guest@127.0.0.1:5672/\n\
 \n").arg(executable);
     }
 };
