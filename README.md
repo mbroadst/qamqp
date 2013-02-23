@@ -1,6 +1,6 @@
 QAMQP
 =============
-Qt4 implementation of AMQP 0.9.1.
+Qt4/Qt5 implementation of AMQP 0.9.1.
 
 Implement
 ------------

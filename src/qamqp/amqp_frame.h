@@ -361,6 +361,24 @@ namespace QAMQP
 		private:
 			QByteArray body_;
 		};
+
+		/*!
+		@brief Class for working with heartbeat frames.
+		@detailed Implement frame for heartbeat send.		
+		*/
+		class Heartbeat : public Base
+		{
+		public:
+			/*!
+			Heartbeat class constructor.
+			@detailed Construct frame class for sending.
+			*/
+			Heartbeat();			
+
+		protected:
+			void writePayload(QDataStream & stream) const;
+			void readPayload(QDataStream & stream);
+		};
 	}
 }
 

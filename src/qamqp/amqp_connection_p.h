@@ -5,6 +5,8 @@
 
 #include <QPointer>
 
+class QTimer;
+
 namespace QAMQP
 {
 	class Client;
@@ -39,12 +41,14 @@ namespace QAMQP
 		void close(const QAMQP::Frame::Method & frame);
 		void closeOk(const QAMQP::Frame::Method & frame);
 		bool _q_method(const QAMQP::Frame::Method & frame);
+		void _q_heartbeat();
 
 		void setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global);
 
 		QPointer<Client> client_;
 		bool closed_;
 		bool connected;
+		QPointer<QTimer> heartbeatTimer_;
 
 		Connection * const pq_ptr;
 
