@@ -6,8 +6,14 @@ INCLUDEPATH += . ./src
 
 HEADERS += \
   src/QamqpApp.h \
+  src/pubsub/EmitLog.h \
+  src/pubsub/ReceiveLog.h \
+  src/routing/EmitLogDirect.h \
+  src/routing/ReceiveLogDirect.h \
   src/sendreceive/Receive.h \
   src/sendreceive/Send.h \
+  src/workqueues/NewTask.h \
+  src/workqueues/Worker.h \
 
 SOURCES += \
   src/main.cpp \
