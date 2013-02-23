@@ -141,6 +141,11 @@ void QAMQP::Network::readyRead()
 					emit body(frame.channel(), frame.body());
 				}
 				break;
+			case QAMQP::Frame::ftHeartbeat:
+				{
+					qDebug("Heartbeat");
+				}
+				break;
 			default:
 				qWarning("Unknown frame type");
 			}

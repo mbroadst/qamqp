@@ -4,11 +4,11 @@
 #include "amqp_p.h"
 #include "amqp_frame.h"
 
-
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
 #include <QVariant>
+#include <QTimer>
 
 using namespace QAMQP;
 
@@ -53,6 +53,9 @@ void ConnectionPrivate::init(Client * parent)
 {
 	pq_func()->setParent(parent);
 	client_ = parent;
+	heartbeatTimer_ = new QTimer(parent);
+	QObject::connect(heartbeatTimer_, SIGNAL(timeout()), 
+		pq_func(), SLOT(_q_heartbeat()));
 }
 
 void ConnectionPrivate::startOk()
@@ -91,7 +94,7 @@ void ConnectionPrivate::tuneOk()
 
 	stream << qint16(0); //channel_max
 	stream << qint32(FRAME_MAX); //frame_max
-	stream << qint16(0); //heartbeat
+	stream << qint16(heartbeatTimer_->interval()/1000); //heartbeat
 
 	frame.setArguments(arguments_);
 	client_->pd_func()->network_->sendFrame(frame);
@@ -157,10 +160,16 @@ void ConnectionPrivate::tune( const QAMQP::Frame::Method & frame )
 	stream >> channel_max;
 	stream >> frame_max;
 	stream >> heartbeat;
+
 	qDebug(">> channel_max: %d", channel_max);
 	qDebug(">> frame_max: %d", frame_max);
 	qDebug(">> heartbeat: %d", heartbeat);
 
+	if(heartbeatTimer_)
+	{
+		heartbeatTimer_->setInterval(heartbeat * 1000);
+		heartbeatTimer_->start();
+	}
 	tuneOk();
 	open();
 }
@@ -239,7 +248,6 @@ void ConnectionPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount, int 
 	client_->pd_func()->network_->sendFrame(frame);	
 }
 
-
 bool ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
 	if(frame.methodClass() != QAMQP::Frame::fcConnection)
@@ -279,6 +287,12 @@ bool ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 			return false;
 	}
 	return true;
+}
+
+void ConnectionPrivate::_q_heartbeat()
+{
+	QAMQP::Frame::Heartbeat frame;	
+	client_->pd_func()->network_->sendFrame(frame);
 }
 
 //////////////////////////////////////////////////////////////////////////

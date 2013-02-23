@@ -46,6 +46,7 @@ namespace QAMQP
 		friend class ClientPrivate;
 		friend class ChannelPrivate;
 		Q_PRIVATE_SLOT(pd_func(), void _q_method(const QAMQP::Frame::Method & frame))
+		Q_PRIVATE_SLOT(pd_func(), void _q_heartbeat())
 	};
 }
 

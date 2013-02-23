@@ -16,7 +16,7 @@ public:
 private slots:
 
 	void declared();
-	void newMessage();
+	void newMessage();	
 
 private:
 	QPointer<QAMQP::Client> client_;

@@ -4,7 +4,7 @@
 
 Test::Test()
 {
-	QUrl con(QString("amqp://guest:guest@localhost:5672/"));
+	QUrl con(QString("amqp://guest:guest@192.168.28.128:5672/"));
 	client_ = new QAMQP::Client(this);
 	client_->open(con);
 	exchange_ =  client_->createExchange("test.test2");

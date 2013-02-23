@@ -703,3 +703,11 @@ qint32 QAMQP::Frame::ContentBody::size() const
 {
 	return body_.size();
 }
+
+//////////////////////////////////////////////////////////////////////////
+
+QAMQP::Frame::Heartbeat::Heartbeat() : Base(ftHeartbeat) {}
+
+void QAMQP::Frame::Heartbeat::readPayload(QDataStream & stream) {}
+void QAMQP::Frame::Heartbeat::writePayload(QDataStream & stream) const {}
+
