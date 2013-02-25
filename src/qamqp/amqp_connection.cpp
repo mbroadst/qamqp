@@ -170,9 +170,9 @@ void ConnectionPrivate::tune( const QAMQP::Frame::Method & frame )
 		heartbeatTimer_->setInterval(heartbeat * 1000);
 		if(heartbeatTimer_->interval())
 		{
-			heartbeatTimer_->start()
+			heartbeatTimer_->start();
 		} else {
-			heartbeatTimer_->stop()
+			heartbeatTimer_->stop();
 		}
 	}
 	tuneOk();
