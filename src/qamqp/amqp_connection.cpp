@@ -238,7 +238,7 @@ void ConnectionPrivate::closeOk( const QAMQP::Frame::Method & )
 	QMetaObject::invokeMethod(pq_func(), "disconnected");
 	if(heartbeatTimer_)
 	{
-		heartbeatTimer_->stop()
+		heartbeatTimer_->stop();
 	}
 }
 
