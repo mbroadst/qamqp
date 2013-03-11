@@ -13,7 +13,7 @@
 #define AMQPPSWD  "guest"
 #define FRAME_MAX 131072
 
-#define QAMQP_VERSION "0.1.0"
+#define QAMQP_VERSION "0.1.2"
 
 
 

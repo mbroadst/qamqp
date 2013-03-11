@@ -3,7 +3,9 @@
 
 #include <QObject>
 #include <QTcpSocket>
+#ifndef QT_NO_SSL
 #include <QSslSocket>
+#endif
 #include <QPointer>
 #include <QBuffer>
 
@@ -45,7 +47,9 @@ namespace QAMQP
 
 	private slots:		
 		void readyRead();
-		void sslErrors ( const QList<QSslError> & errors );
+
+		void sslErrors ( );
+
 
 		void conectionReady();
 

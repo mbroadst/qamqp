@@ -25,6 +25,11 @@ QAMQP::Network::~Network()
 
 void QAMQP::Network::connectTo( const QString & host, quint32 port )
 {
+	if(!socket_)
+	{
+		qWarning("AMQP: Socket didn't create.");
+		return;
+	}
 	QString h(host);
 	int p(port);
 	connect_ = true;
@@ -35,8 +40,12 @@ void QAMQP::Network::connectTo( const QString & host, quint32 port )
 
 	if (isSsl())
 	{
+#ifndef QT_NO_SSL
 		static_cast<QSslSocket *>(socket_.data())->connectToHostEncrypted(h, p);
-	} else {
+#else
+		qWarning("AMQP: You library has builded with QT_NO_SSL option.");
+#endif
+	} else {		
 		socket_->connectToHost(h, p);
 	}
 
@@ -75,7 +84,7 @@ void QAMQP::Network::error( QAbstractSocket::SocketError socketError )
 		case QAbstractSocket::ProxyConnectionTimeoutError:
 			
 		default:
-			qWarning() << "AMQP Socket Error: " << socket_->errorString();
+			qWarning() << "AMQP: Socket Error: " << socket_->errorString();
 			break;
 	}
 
@@ -143,11 +152,11 @@ void QAMQP::Network::readyRead()
 				break;
 			case QAMQP::Frame::ftHeartbeat:
 				{
-					qDebug("Heartbeat");
+					qDebug("AMQP: Heartbeat");
 				}
 				break;
 			default:
-				qWarning("Unknown frame type");
+				qWarning("AMQP: Unknown frame type");
 			}
 			buffer_->reset();
 		}
@@ -165,7 +174,10 @@ void QAMQP::Network::sendFrame( const QAMQP::Frame::Base & frame )
 
 bool QAMQP::Network::isSsl() const
 {
-	return QString(socket_->metaObject()->className()).compare( "QSslSocket", Qt::CaseInsensitive) == 0;
+	if(socket_)
+	{
+		return QString(socket_->metaObject()->className()).compare( "QSslSocket", Qt::CaseInsensitive) == 0;	
+	}
 }
 
 void QAMQP::Network::setSsl( bool value )
@@ -180,6 +192,7 @@ void QAMQP::Network::initSocket( bool ssl /*= false*/ )
 
 	if(ssl)
 	{		
+#ifndef QT_NO_SSL
 		socket_ = new QSslSocket(this);
 		QSslSocket * ssl_= static_cast<QSslSocket*> (socket_.data());
 		ssl_->setProtocol(QSsl::AnyProtocol);
@@ -188,21 +201,30 @@ void QAMQP::Network::initSocket( bool ssl /*= false*/ )
 
 		//connect(socket_, SIGNAL(encrypted()), this, SLOT(conectionReady()));
 		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
+#else
+	qWarning("AMQP: You library has builded with QT_NO_SSL option.");
+#endif
 	} else {
 		socket_ = new QTcpSocket(this);		
 		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
 	}
 	
-	connect(socket_, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
-	connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
-	connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));	
+	if(socket_)
+	{
+		connect(socket_, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
+		connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
+		connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));	
+	}
 }
 
-void QAMQP::Network::sslErrors( const QList<QSslError> & errors )
+
+void QAMQP::Network::sslErrors( )
 {
-	Q_UNUSED(errors);
+	#ifndef QT_NO_SSL
 	static_cast<QSslSocket*>(socket_.data())->ignoreSslErrors();
+	#endif
 }
+
 
 void QAMQP::Network::conectionReady()
 {
@@ -224,5 +246,11 @@ void QAMQP::Network::setAutoReconnect( bool value )
 
 QAbstractSocket::SocketState QAMQP::Network::state() const
 {
-	return socket_->state();
+	if(socket_)
+	{
+		return socket_->state();
+	} else {
+		return QAbstractSocket::UnconnectedState;
+	}
+	
 }
