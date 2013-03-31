@@ -67,17 +67,21 @@ Usage
 	{
 		QUrl con(QString("amqp://guest:guest@localhost:5672/"));
 		client_ = new QAMQP::Client(this);
+		connect(client_, SIGNAL(connected()), this, SLOT(connected()));
 		client_->open(con);
 		exchange_ =  client_->createExchange("test.test2");
-		exchange_->declare("fanout");
-
 		queue_ = client_->createQueue("test.my_queue", exchange_->channelNumber());
-		queue_->declare();
-		exchange_->bind(queue_);
-
+			
 		connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
 		connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
 
+	}
+	
+	void Test::connected()
+	{
+		exchange_->declare("fanout");		
+		queue_->declare();
+		exchange_->bind(queue_);
 	}
 
 	void Test::declared()
