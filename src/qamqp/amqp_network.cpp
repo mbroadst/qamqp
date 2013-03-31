@@ -100,13 +100,10 @@ void QAMQP::Network::readyRead()
 	QDataStream streamA(socket_);
 	QDataStream streamB(buffer_);
 	
-	/*
-	Вычитать заголовок, поместить в буфер
-	вычитать весь фрейм, если фрейм вычитан то кинуть на разбор его
-	*/
+
 	while(!socket_->atEnd())
 	{
-		if(leftSize == 0) // Если ранее прочитан был весь фрейм, то читаем заголовок фрейма
+		if(leftSize == 0)
 		{
 			lastType_  = 0;
 			qint16 channel_  = 0;
@@ -119,7 +116,7 @@ void QAMQP::Network::readyRead()
 			streamB << channel_;
 			streamA >> leftSize;
 			streamB << leftSize;
-			leftSize++; // увеличим размер на 1, для захвата конца фрейма
+			leftSize++;
 		}
 
 		QByteArray data_;
@@ -199,7 +196,6 @@ void QAMQP::Network::initSocket( bool ssl /*= false*/ )
 		connect(socket_, SIGNAL(sslErrors(const QList<QSslError> &)),
 			this, SLOT(sslErrors(const QList<QSslError> &)));	
 
-		//connect(socket_, SIGNAL(encrypted()), this, SLOT(conectionReady()));
 		connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
 #else
 	qWarning("AMQP: You library has builded with QT_NO_SSL option.");
