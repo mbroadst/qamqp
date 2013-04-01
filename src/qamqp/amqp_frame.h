@@ -33,6 +33,21 @@ namespace QAMQP
 	*/
 	namespace Frame
 	{
+		typedef quint16 channel_t;
+		/*!
+		@brief Header size in bytes
+		*/
+		static const qint64 HEADER_SIZE = 7;
+		/*!
+		@brief Frame end indicator size in bytes
+		*/
+		static const qint64 FRAME_END_SIZE = 1;
+
+		/*!
+		@brief Frame end marker
+		*/
+		static const quint8 FRAME_END = 0xCE;
+
 		/*!
 		@brief Frame type
 		*/
@@ -85,9 +100,9 @@ namespace QAMQP
 		All frames start with a 7-octet header composed of a type field (octet), a channel field (short integer) and a
 		size field (long integer):
 		@code Frame struct
-		  0      1         3       7                  size+7    size+8
+		  0	  1		 3	   7				  size+7	size+8
 		  +------+---------+---------+ +-------------+ +-----------+
-		  | type | channel | size    | | payload     | | frame-end |
+		  | type | channel | size	| | payload	 | | frame-end |
 		  +------+---------+---------+ +-------------+ +-----------+
 		@endcode
 		octet short long 'size' octets octet
@@ -167,11 +182,11 @@ namespace QAMQP
 		Method frame bodies consist of an invariant list of data fields, called "arguments". All method bodies start
 		with identifier numbers for the class and method:
 		@code Frame struct
-		0		   2           4
+		0		   2		   4
 		+----------+-----------+-------------- - -
 		| class-id | method-id | arguments...
 		+----------+-----------+-------------- - -
-		    short      short    ...
+			short	  short	...
 		@endcode
 		*/
 		class Method : public Base
@@ -239,7 +254,7 @@ namespace QAMQP
 		+----------+--------+-----------+----------------+------------- - -
 		| class-id | weight | body size | property flags | property list...
 		+----------+--------+-----------+----------------+------------- - -
-		   short     short   long long        short        remainder...
+		   short	 short   long long		short		remainder...
 		@endcode
 		
 		| Property | Description |
@@ -378,6 +393,24 @@ namespace QAMQP
 		protected:
 			void writePayload(QDataStream & stream) const;
 			void readPayload(QDataStream & stream);
+		};
+
+		class MethodHandler
+		{
+		public:
+			virtual void _q_method(const QAMQP::Frame::Method & frame) = 0;
+		};
+
+		class ContentHandler
+		{
+		public:
+			virtual void _q_content(const QAMQP::Frame::Content & frame) = 0;
+		};
+
+		class ContentBodyHandler
+		{
+		public:
+			virtual void _q_body(const QAMQP::Frame::ContentBody & frame) = 0;
 		};
 	}
 }

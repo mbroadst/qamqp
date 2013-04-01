@@ -109,6 +109,11 @@ void QAMQP::Channel::stateChanged( int state )
 	}
 }
 
+void QAMQP::Channel::_q_method(const Frame::Method &frame)
+{
+	pd_func()->_q_method(frame);
+}
+
 bool QAMQP::Channel::isOpened() const
 {
 	return pd_func()->opened;
@@ -156,6 +161,7 @@ void ChannelPrivate::init(int channelNumber, Client * parent)
 
 bool ChannelPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
+	Q_ASSERT(frame.channel() == number);
 	if(frame.channel() != number )
 		return true;
 

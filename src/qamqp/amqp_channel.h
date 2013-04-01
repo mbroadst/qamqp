@@ -9,7 +9,7 @@ namespace QAMQP
 {
 	class ChannelPrivate;
 	class Client;
-	class Channel : public QObject
+	class Channel : public QObject, public Frame::MethodHandler
 	{
 		Q_OBJECT
 
@@ -47,8 +47,9 @@ namespace QAMQP
 	private:
 		void stateChanged(int state);
 		friend class ClientPrivate;
+		void _q_method(const QAMQP::Frame::Method & frame);
+
 		Q_PRIVATE_SLOT(pd_func(), void _q_open())
-		Q_PRIVATE_SLOT(pd_func(), void _q_method(const QAMQP::Frame::Method & frame))
 		Q_PRIVATE_SLOT(pd_func(), void _q_disconnected())
 	};
 }

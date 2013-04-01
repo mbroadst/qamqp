@@ -49,7 +49,8 @@ ClientPrivate::~ClientPrivate()
 void ClientPrivate::init(QObject * parent)
 {
 	pq_func()->setParent(parent);
-	if(!network_){
+	if(!network_)
+	{
 		network_ = new QAMQP::Network(pq_func());
 	}
 
@@ -58,10 +59,9 @@ void ClientPrivate::init(QObject * parent)
 		connection_ = new QAMQP::Connection(pq_func());
 	}
 
-	setAuth(new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
+	network_->setMethodHandlerConnection(connection_);
 
-	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
-		connection_, SLOT(_q_method(const QAMQP::Frame::Method &)));
+	setAuth(new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
 
 	QObject::connect(connection_, SIGNAL(connected()), pq_func(), SIGNAL(connected()));
 	QObject::connect(connection_, SIGNAL(disconnected()), pq_func(), SIGNAL(disconnected()));
@@ -134,32 +134,30 @@ void ClientPrivate::login()
 Exchange * ClientPrivate::createExchange(int channelNumber, const QString &name )
 {
 	Exchange * exchange_ = new Exchange(channelNumber, pq_func());
-	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
-		exchange_, SLOT(_q_method(const QAMQP::Frame::Method &)));
+
+	network_->addMethodHandlerForChannel(exchange_->channelNumber(), exchange_);
 
 	QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
 	exchange_->pd_func()->open();
 	QObject::connect(pq_func(), SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
 	exchange_->setName(name);
+
 	return exchange_;
 }
 
 Queue * ClientPrivate::createQueue(int channelNumber, const QString &name )
 {
 	Queue * queue_ = new Queue(channelNumber, pq_func());
-	QObject::connect(network_, SIGNAL(method(const QAMQP::Frame::Method &)),
-		queue_, SLOT(_q_method(const QAMQP::Frame::Method &)));
 
-	QObject::connect(network_, SIGNAL(content(const QAMQP::Frame::Content &)),
-		queue_, SLOT(_q_content(const QAMQP::Frame::Content &)));
-
-	QObject::connect(network_, SIGNAL(body(int, const QByteArray &)),
-		queue_, SLOT(_q_body(int, const QByteArray &)));
+	network_->addMethodHandlerForChannel(queue_->channelNumber(), queue_);
+	network_->addContentHandlerForChannel(queue_->channelNumber(), queue_);
+	network_->addContentBodyHandlerForChannel(queue_->channelNumber(), queue_);
 	
 	QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
 	queue_->pd_func()->open();
 	QObject::connect(pq_func(), SIGNAL(disconnected()), queue_, SLOT(_q_disconnected()));
 	queue_->setName(name);
+
 	return queue_;
 }
 
