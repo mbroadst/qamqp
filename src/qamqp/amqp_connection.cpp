@@ -260,6 +260,7 @@ void ConnectionPrivate::setQOS( qint32 prefetchSize, quint16 prefetchCount, int 
 
 bool ConnectionPrivate::_q_method( const QAMQP::Frame::Method & frame )
 {
+	Q_ASSERT(frame.methodClass() == QAMQP::Frame::fcConnection);
 	if(frame.methodClass() != QAMQP::Frame::fcConnection)
 		return true;
 
@@ -362,6 +363,11 @@ void Connection::closeOk()
 void Connection::openOk()
 {
 	emit connected();
+}
+
+void Connection::_q_method(const QAMQP::Frame::Method & frame)
+{
+	pd_func()->_q_method(frame);
 }
 
 bool Connection::isConnected() const
