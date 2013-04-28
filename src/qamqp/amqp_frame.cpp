@@ -247,6 +247,7 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		{
 			quint32 length_ = 0;
 			s >> length_;
+			nameSize_ = length_;
 			tmp.resize(length_);
 		}		
 		s.readRawData(tmp.data(), tmp.size());
