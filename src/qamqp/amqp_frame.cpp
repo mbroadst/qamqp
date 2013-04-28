@@ -252,9 +252,9 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		}		
 		s.readRawData(tmp.data(), tmp.size());
 		#if QT_VERSION < 0x050000
-		value = QString::fromAscii(tmp.data(), nameSize_);
+		value = QString::fromAscii(tmp.data(), tmp.size());
 		#else // For Qt5
-		value = QString::fromLatin1(tmp.data(), nameSize_);
+		value = QString::fromLatin1(tmp.data(), tmp.size());
 		#endif
 		break;
 	case 'A':
