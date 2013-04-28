@@ -73,7 +73,7 @@ Usage
 		queue_ = client_->createQueue("test.my_queue", exchange_->channelNumber());
 			
 		connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
-		connect(queue_, SIGNAL(messageRecieved()), this, SLOT(newMessage()));	
+		connect(queue_, SIGNAL(messageReceived(QAMQP::Queue * )), this, SLOT(newMessage(QAMQP::Queue *)));	
 
 	}
 	
@@ -92,9 +92,8 @@ Usage
 		queue_->consume(QAMQP::Queue::coNoAck);
 	}
 
-	void Test::newMessage()
+	void Test::newMessage(QAMQP::Queue * q)
 	{
-		QAMQP::Queue * q = qobject_cast<QAMQP::Queue *>(sender());
 		while (q->hasMessage())
 		{
 			QAMQP::MessagePtr message = q->getMessage();
