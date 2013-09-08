@@ -54,10 +54,10 @@ void Queue::onOpen()
 	}
 	if(!d->delayedBindings.isEmpty())
 	{
-		QMap<QString, QString>::iterator i;
-		for(i = d->delayedBindings.begin(); i!= d->delayedBindings.end(); ++i )
+		typedef QPair<QString, QString> BindingPair;
+		foreach(BindingPair binding, d->delayedBindings)
 		{
-			d->bind(i.value(), i.key());
+			d->bind(binding.first, binding.second);
 		}
 		d->delayedBindings.clear();
 	}
@@ -129,6 +129,15 @@ void Queue::unbind( Exchange * exchange, const QString & key )
 		pd_func()->unbind(exchange->name(), key);
 }
 
+void Queue::_q_content(const Content &frame)
+{
+	pd_func()->_q_content(frame);
+}
+
+void Queue::_q_body(const ContentBody &frame)
+{
+	pd_func()->_q_body(frame);
+}
 
 QAMQP::MessagePtr Queue::getMessage()
 {
@@ -365,7 +374,7 @@ void QueuePrivate::bind( const QString & exchangeName, const QString & key )
 {
 	if(!opened)
 	{
-		delayedBindings[exchangeName] = key;
+		delayedBindings.append(QPair<QString,QString>(exchangeName, key));
 		return;
 	}
 
@@ -530,6 +539,7 @@ void QueuePrivate::deliver( const QAMQP::Frame::Method & frame )
 
 void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
 {
+	Q_ASSERT(frame.channel() == number);
 	if(frame.channel() != number)
 		return;
 	if(messages_.isEmpty())
@@ -537,7 +547,7 @@ void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
 		qErrnoWarning("Received content-header without method frame before");
 		return;
 	}
-	MessagePtr &message = messages_.head();
+	MessagePtr &message = messages_.last();
 	message->leftSize = frame.bodySize();
 	QHash<int, QVariant>::ConstIterator i;
 	for (i = frame.properties_.begin(); i != frame.properties_.end(); ++i)
@@ -546,9 +556,10 @@ void QueuePrivate::_q_content( const QAMQP::Frame::Content & frame )
 	}
 }
 
-void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
+void QueuePrivate::_q_body(const QAMQP::Frame::ContentBody & frame)
 {
-	if(channeNumber!= number)
+	Q_ASSERT(frame.channel() == number);
+	if(frame.channel() != number)
 		return;
 
 	if(messages_.isEmpty())
@@ -556,12 +567,12 @@ void QueuePrivate::_q_body( int channeNumber, const QByteArray & body )
 		qErrnoWarning("Received content-body without method frame before");
 		return;
 	}
-	MessagePtr &message = messages_.head();	
-	message->payload.append(body);
-	message->leftSize -= body.size();
+	MessagePtr &message = messages_.last();
+	message->payload.append(frame.body());
+	message->leftSize -= frame.body().size();
 	
 	if(message->leftSize == 0 && messages_.size() == 1)
 	{
-		QMetaObject::invokeMethod(pq_func(), "messageReceived");
+		emit pq_func()->messageReceived(pq_func());
 	}
 }

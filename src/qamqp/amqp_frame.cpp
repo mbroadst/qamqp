@@ -1,5 +1,4 @@
 #include "amqp_frame.h"
-#define AMQP_FRAME_END 0xCE
 
 #include <QDateTime>
 #include <QList>
@@ -47,7 +46,7 @@ void QAMQP::Frame::Base::writeHeader( QDataStream & stream ) const
 
 void QAMQP::Frame::Base::writeEnd( QDataStream & stream ) const
 {
-	stream << qint8(AMQP_FRAME_END);
+	stream << qint8(FRAME_END);
 }
 
 void QAMQP::Frame::Base::writePayload( QDataStream & ) const{}
@@ -64,7 +63,7 @@ void QAMQP::Frame::Base::readEnd( QDataStream & stream )
 {
 	unsigned char end_  = 0;
 	stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
-	if(end_ != AMQP_FRAME_END )
+	if(end_ != FRAME_END )
 	{
 		qWarning("Wrong end of frame");
 	}
@@ -248,13 +247,14 @@ QVariant QAMQP::Frame::readField( qint8 valueType, QDataStream &s )
 		{
 			quint32 length_ = 0;
 			s >> length_;
+			nameSize_ = length_;
 			tmp.resize(length_);
 		}		
 		s.readRawData(tmp.data(), tmp.size());
 		#if QT_VERSION < 0x050000
-		value = QString::fromAscii(tmp.data(), nameSize_);
+		value = QString::fromAscii(tmp.data(), tmp.size());
 		#else // For Qt5
-		value = QString::fromLatin1(tmp.data(), nameSize_);
+		value = QString::fromLatin1(tmp.data(), tmp.size());
 		#endif
 		break;
 	case 'A':
@@ -711,6 +711,6 @@ qint32 QAMQP::Frame::ContentBody::size() const
 
 QAMQP::Frame::Heartbeat::Heartbeat() : Base(ftHeartbeat) {}
 
-void QAMQP::Frame::Heartbeat::readPayload(QDataStream & stream) {}
-void QAMQP::Frame::Heartbeat::writePayload(QDataStream & stream) const {}
+void QAMQP::Frame::Heartbeat::readPayload(QDataStream & ) {}
+void QAMQP::Frame::Heartbeat::writePayload(QDataStream & ) const {}
 

@@ -11,7 +11,7 @@ namespace QAMQP
 	class ChannelPrivate;
 	class ClientPrivate;
 	class Client;
-	class Connection : public QObject
+	class Connection : public QObject, public Frame::MethodHandler
 	{
 		Q_OBJECT
 		P_DECLARE_PRIVATE(QAMQP::Connection)
@@ -45,8 +45,9 @@ namespace QAMQP
 		void openOk();
 		friend class ClientPrivate;
 		friend class ChannelPrivate;
-		Q_PRIVATE_SLOT(pd_func(), void _q_method(const QAMQP::Frame::Method & frame))
-		Q_PRIVATE_SLOT(pd_func(), void _q_heartbeat())
+
+		void _q_method(const QAMQP::Frame::Method & frame);
+		Q_PRIVATE_SLOT(pd_func(), void _q_heartbeat());
 	};
 }
 

@@ -10,7 +10,7 @@ namespace QAMQP
 	class ClientPrivate;
 	class Exchange;
 	class QueuePrivate;
-	class Queue : public Channel
+	class Queue : public Channel, public Frame::ContentHandler, public Frame::ContentBodyHandler
 	{
 		Q_OBJECT
 		Queue(int channelNumber = -1, Client * parent = 0);
@@ -77,12 +77,12 @@ namespace QAMQP
 		void declared();
 		void binded(bool);
 		void removed();
-		void messageReceived();
+		void messageReceived(QAMQP::Queue* pQueue);
 		void empty();
 
 	private:
-		Q_PRIVATE_SLOT(pd_func(), void _q_content(const QAMQP::Frame::Content & frame))
-		Q_PRIVATE_SLOT(pd_func(), void _q_body(int channeNumber, const QByteArray & body))
+		void _q_content(const QAMQP::Frame::Content & frame);
+		void _q_body(const QAMQP::Frame::ContentBody & frame);
 	};
 }
 #ifdef QAMQP_P_INCLUDE
