@@ -69,8 +69,8 @@ void ClientPrivate::init(QObject * parent)
 
 void ClientPrivate::init(QObject * parent, const QUrl & con)
 {	
-	parseCnnString(con);
 	init(parent);
+	parseCnnString(con);
 	ClientPrivate::connect();
 }
 
