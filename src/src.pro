@@ -11,16 +11,16 @@ VERSION = $${QAMQP_VERSION}
 win32:DESTDIR = $$OUT_PWD
 
 PRIVATE_HEADERS += \
-    amqp_p.h \
     amqp_channel_p.h \
+    amqp_client_p.h \
     amqp_connection_p.h \
     amqp_exchange_p.h \
     amqp_queue_p.h
 
 INSTALL_HEADERS += \
-    amqp.h \
     amqp_authenticator.h \
     amqp_channel.h \
+    amqp_client.h \
     amqp_connection.h \
     amqp_exchange.h \
     amqp_frame.h \
@@ -34,9 +34,9 @@ HEADERS += \
     $${PRIVATE_HEADERS}
 
 SOURCES += \
-    amqp.cpp \
     amqp_authenticator.cpp \
     amqp_channel.cpp \
+    amqp_client.cpp \
     amqp_connection.cpp \
     amqp_exchange.cpp \
     amqp_frame.cpp \

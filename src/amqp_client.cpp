@@ -1,5 +1,5 @@
-#include "amqp.h"
-#include "amqp_p.h"
+#include "amqp_client.h"
+#include "amqp_client_p.h"
 
 #include <QTextStream>
 #include <QCoreApplication>
@@ -11,26 +11,6 @@
 #include "amqp_authenticator.h"
 
 using namespace QAMQP;
-
-namespace QAMQP
-{
-struct ClientExceptionCleaner
-{
-    /* this cleans up when the constructor throws an exception */
-    static inline void cleanup(Client *that, ClientPrivate *d)
-    {
-#ifdef QT_NO_EXCEPTIONS
-        Q_UNUSED(that);
-        Q_UNUSED(d);
-#else
-        Q_UNUSED(that);
-        Q_UNUSED(d);
-#endif
-    }
-};
-}
-
-//////////////////////////////////////////////////////////////////////////
 
 ClientPrivate::ClientPrivate(Client * q)
     : port(AMQPPORT),

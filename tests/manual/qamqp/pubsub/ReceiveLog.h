@@ -7,7 +7,7 @@
 #include <QThread>
 #include <QTime>
 
-#include "amqp.h"
+#include "amqp_client.h"
 #include "amqp_queue.h"
 
 namespace QAMQP

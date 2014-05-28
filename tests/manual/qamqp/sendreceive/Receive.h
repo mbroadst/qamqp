@@ -9,7 +9,7 @@
 #include <QTimer>
 #include <QDateTime>
 
-#include "amqp.h"
+#include "amqp_client.h"
 #include "amqp_queue.h"
 
 

@@ -9,7 +9,7 @@
 #include <QTextStream>
 #include <QTimer>
 
-#include "amqp.h"
+#include "amqp_client.h"
 #include "amqp_exchange.h"
 #include "amqp_queue.h"
 

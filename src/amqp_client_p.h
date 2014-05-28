@@ -1,5 +1,5 @@
-#ifndef QAMQP_P_H
-#define QAMQP_P_H
+#ifndef amqp_client_p_h__
+#define amqp_client_p_h__
 
 #include <QSharedPointer>
 
@@ -48,4 +48,4 @@ public:
 };
 
 }
-#endif // amqp_p_h__
+#endif // amqp_client_p_h__

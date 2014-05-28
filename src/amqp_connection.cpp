@@ -1,7 +1,7 @@
 #include "amqp_connection.h"
 #include "amqp_connection_p.h"
-#include "amqp.h"
-#include "amqp_p.h"
+#include "amqp_client.h"
+#include "amqp_client_p.h"
 #include "amqp_frame.h"
 
 #include <QCoreApplication>

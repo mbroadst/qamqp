@@ -1,5 +1,5 @@
-#ifndef QAMQP_H
-#define QAMQP_H
+#ifndef amqp_client_h__
+#define amqp_client_h__
 
 #include <QObject>
 #include <QUrl>
@@ -24,7 +24,7 @@ class Client : public QObject
     Q_PROPERTY(QString password READ password WRITE setPassword)
     Q_PROPERTY(bool ssl READ isSsl WRITE setSsl)
     Q_PROPERTY(bool autoReconnect READ autoReconnect WRITE setAutoReconnect)
-    Q_PROPERTY(bool connected READ isConnected )
+    Q_PROPERTY(bool connected READ isConnected)
 
 public:
     Client(QObject *parent = 0);
@@ -85,9 +85,8 @@ private:
 
     friend class ConnectionPrivate;
     friend class ChannelPrivate;
-    friend struct ClientExceptionCleaner;
 };
 
 } // namespace QAMQP
 
-#endif // QAMQP
+#endif // amqp_client_h__
