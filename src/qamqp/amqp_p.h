@@ -1,5 +1,5 @@
-#ifndef qamqp_amqp_p_h__
-#define qamqp_amqp_p_h__
+#ifndef QAMQP_P_H
+#define QAMQP_P_H
 
 #include <QSharedPointer>
 
@@ -10,42 +10,42 @@
 
 namespace QAMQP
 {
-	class ClientPrivate
-	{
-		P_DECLARE_PUBLIC(QAMQP::Client)
 
-	public:
-		ClientPrivate(Client * q ) ;
-		~ClientPrivate();
+class Queue;
+class Exchange;
+class ClientPrivate
+{
+public:
+    ClientPrivate(Client *q);
+    ~ClientPrivate();
 
+    void init(QObject *parent);
+    void init(QObject *parent, const QUrl &connectionString);
 
-		void init(QObject * parent);
-		void init(QObject * parent, const QUrl & connectionString);
-		void printConnect() const;
-		void connect();
-		void disconnect();
-		void parseCnnString( const QUrl & connectionString);
-		void sockConnect();
-		void login();
-		void setAuth(Authenticator* auth);
-		Exchange * createExchange(int channelNumber, const QString &name);
-		Queue * createQueue(int channelNumber, const QString &name);
+    void printConnect() const;
+    void connect();
+    void disconnect();
+    void parseConnectionString( const QUrl &connectionString);
+    void sockConnect();
+    void login();
+    void setAuth(Authenticator* auth);
+    Exchange *createExchange(int channelNumber, const QString &name);
+    Queue *createQueue(int channelNumber, const QString &name);
 
-		quint32 port;
-		QString host;
-		QString virtualHost;
+    quint32 port;
+    QString host;
+    QString virtualHost;
 
-		QPointer<QAMQP::Network> network_;	
-		QPointer<QAMQP::Connection> connection_;
-		QSharedPointer<Authenticator> auth_;
+    QPointer<QAMQP::Network> network_;
+    QPointer<QAMQP::Connection> connection_;
+    QSharedPointer<Authenticator> auth_;
 
-		bool isSSl() const;
+    bool isSSl() const;
 
-		
+    Client * const q_ptr;
+    Q_DECLARE_PUBLIC(QAMQP::Client)
 
-		Client * const pq_ptr;
-
-	};
+};
 
 }
 #endif // amqp_p_h__

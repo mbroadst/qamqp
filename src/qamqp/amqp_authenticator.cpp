@@ -1,47 +1,48 @@
 #include "amqp_authenticator.h"
 #include "amqp_frame.h"
 
-QString QAMQP::AMQPlainAuthenticator::login() const
+using namespace QAMQP;
+
+AMQPlainAuthenticator::AMQPlainAuthenticator(const QString &l, const QString &p)
+    : login_(l),
+      password_(p)
 {
-	return login_;
 }
 
-QString QAMQP::AMQPlainAuthenticator::password() const
+AMQPlainAuthenticator::~AMQPlainAuthenticator()
 {
-	return password_;
 }
 
-QAMQP::AMQPlainAuthenticator::AMQPlainAuthenticator( const QString & l /*= QString()*/, const QString & p /*= QString()*/ )
+QString AMQPlainAuthenticator::login() const
 {
-	login_ = l;
-	password_ = p;
+    return login_;
 }
 
-QAMQP::AMQPlainAuthenticator::~AMQPlainAuthenticator()
+QString AMQPlainAuthenticator::password() const
 {
-
+    return password_;
 }
 
-QString QAMQP::AMQPlainAuthenticator::type() const
+QString AMQPlainAuthenticator::type() const
 {
-	return "AMQPLAIN";
+    return "AMQPLAIN";
 }
 
-void QAMQP::AMQPlainAuthenticator::setLogin( const QString& l )
+void AMQPlainAuthenticator::setLogin(const QString &l)
 {
-	login_ = l;
+    login_ = l;
 }
 
-void QAMQP::AMQPlainAuthenticator::setPassword( const QString &p )
+void AMQPlainAuthenticator::setPassword(const QString &p)
 {
-	password_ = p;
+    password_ = p;
 }
 
-void QAMQP::AMQPlainAuthenticator::write( QDataStream & out )
+void AMQPlainAuthenticator::write(QDataStream &out)
 {
-	QAMQP::Frame::writeField('s', out, type());
-	QAMQP::Frame::TableField response;
-	response["LOGIN"] = login_;
-	response["PASSWORD"] = password_;
-	QAMQP::Frame::serialize(out, response);	
+    QAMQP::Frame::writeField('s', out, type());
+    QAMQP::Frame::TableField response;
+    response["LOGIN"] = login_;
+    response["PASSWORD"] = password_;
+    QAMQP::Frame::serialize(out, response);
 }

@@ -7,53 +7,50 @@
 
 namespace QAMQP
 {
-	class ConnectionPrivate;
-	class ChannelPrivate;
-	class ClientPrivate;
-	class Client;
-	class Connection : public QObject, public Frame::MethodHandler
-	{
-		Q_OBJECT
-		P_DECLARE_PRIVATE(QAMQP::Connection)
-		Q_DISABLE_COPY(Connection)
-		Connection(Client * parent = 0);
-	public:		
-		~Connection();
 
+class Client;
+class ClientPrivate;
+class ChannelPrivate;
+class ConnectionPrivate;
+class Connection : public QObject, public Frame::MethodHandler
+{
+    Q_OBJECT
+public:
+    virtual ~Connection();
 
-		void addCustomProperty(const QString & name, const QString & value);
-		QString customProperty(const QString & name) const;
+    void addCustomProperty(const QString &name, const QString &value);
+    QString customProperty(const QString &name) const;
 
-		void startOk();
-		void secureOk();
-		void tuneOk();
-		void open();
-		void close(int code, const QString & text, int classId = 0, int methodId = 0);
-		void closeOk();	
+    void startOk();
+    void secureOk();
+    void tuneOk();
+    void open();
+    void close(int code, const QString &text, int classId = 0, int methodId = 0);
+    void closeOk();
 
-		bool isConnected() const;
+    bool isConnected() const;
 
-		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 
-	Q_SIGNALS:
-		void disconnected();
-		void connected();
-	protected:
-		ConnectionPrivate * const pd_ptr;
+Q_SIGNALS:
+    void disconnected();
+    void connected();
 
-	private:
-		void openOk();
-		friend class ClientPrivate;
-		friend class ChannelPrivate;
+private:
+    Q_DISABLE_COPY(Connection)
+    Q_DECLARE_PRIVATE(Connection)
+    QScopedPointer<ConnectionPrivate> d_ptr;
 
-		void _q_method(const QAMQP::Frame::Method & frame);
-		Q_PRIVATE_SLOT(pd_func(), void _q_heartbeat());
-	};
+    Connection(Client * parent = 0);
+
+    void openOk();
+    friend class ClientPrivate;
+    friend class ChannelPrivate;
+
+    void _q_method(const QAMQP::Frame::Method &frame);
+    Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())
+};
+
 }
-
-// Include private header so MOC won't complain
-#ifdef QAMQP_P_INCLUDE
-# include "amqp_connection_p.h"
-#endif
 
 #endif // amqp_connection_h__

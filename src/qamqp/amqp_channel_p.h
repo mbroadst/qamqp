@@ -8,78 +8,78 @@
 
 namespace QAMQP
 {
-	class Client;
-	class ClientPrivate;
-	class ChannelPrivate 
-	{
-		P_DECLARE_PUBLIC(QAMQP::Channel)
-	public:
-		enum MethodId
-		{
-			METHOD_ID_ENUM(miOpen, 10),
-			METHOD_ID_ENUM(miFlow, 20),
-			METHOD_ID_ENUM(miClose, 40)
-		};
+class Client;
+class ClientPrivate;
+class ChannelPrivate
+{
+public:
+    enum MethodId {
+         METHOD_ID_ENUM(miOpen, 10),
+         METHOD_ID_ENUM(miFlow, 20),
+         METHOD_ID_ENUM(miClose, 40)
+    };
 
-		enum State {
-			csOpened,
-			csClosed,
-			csIdle,
-			csRunning
-		};
+    enum State {
+        csOpened,
+        csClosed,
+        csIdle,
+        csRunning
+    };
 
-		enum BasicMethod
-		{
-			METHOD_ID_ENUM(bmQos, 10),
-			METHOD_ID_ENUM(bmConsume, 20),
-			METHOD_ID_ENUM(bmCancel, 30),
-			bmPublish = 40,
-			bmReturn = 50,
-			bmDeliver = 60,
-			METHOD_ID_ENUM(bmGet, 70),
-			bmGetEmpty = 72,
-			bmAck = 80,
-			bmReject = 90,
-			bmRecoverAsync = 100,
-			METHOD_ID_ENUM(bmRecover, 110)
-		};
+    enum BasicMethod
+    {
+        METHOD_ID_ENUM(bmQos, 10),
+        METHOD_ID_ENUM(bmConsume, 20),
+        METHOD_ID_ENUM(bmCancel, 30),
+        bmPublish = 40,
+        bmReturn = 50,
+        bmDeliver = 60,
+        METHOD_ID_ENUM(bmGet, 70),
+        bmGetEmpty = 72,
+        bmAck = 80,
+        bmReject = 90,
+        bmRecoverAsync = 100,
+        METHOD_ID_ENUM(bmRecover, 110)
+    };
 
-		ChannelPrivate(Channel * q);
-		virtual ~ChannelPrivate();
+    ChannelPrivate(Channel * q);
+    virtual ~ChannelPrivate();
 
-		void init(int channelNumber, Client * parent);
+    void init(int channelNumber, Client *parent);
 
-		void open();
-		void flow();
-		void flowOk();
-		void close(int code, const QString & text, int classId, int methodId);
-		void closeOk();
+    void open();
+    void flow();
+    void flowOk();
+    void close(int code, const QString &text, int classId, int methodId);
+    void closeOk();
 
-		//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-		void openOk(const QAMQP::Frame::Method & frame);
-		void flow(const QAMQP::Frame::Method & frame);
-		void flowOk(const QAMQP::Frame::Method & frame);
-		void close(const QAMQP::Frame::Method & frame);
-		void closeOk(const QAMQP::Frame::Method & frame);
+    void openOk(const QAMQP::Frame::Method &frame);
+    void flow(const QAMQP::Frame::Method &frame);
+    void flowOk(const QAMQP::Frame::Method &frame);
+    void close(const QAMQP::Frame::Method &frame);
+    void closeOk(const QAMQP::Frame::Method &frame);
 
-		virtual bool _q_method(const QAMQP::Frame::Method & frame);
-		virtual void _q_disconnected();
-		void _q_open();
-		
-		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
-		void sendFrame(const QAMQP::Frame::Base & frame);
+    virtual bool _q_method(const QAMQP::Frame::Method &frame);
+    virtual void _q_disconnected();
+    void _q_open();
 
-		QPointer<Client> client_;
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+    void sendFrame(const QAMQP::Frame::Base &frame);
 
-		QString name;
-		int number;
+    QPointer<Client> client_;
 
-		static int nextChannelNumber_;
-		bool opened;
-		bool needOpen;
+    QString name;
+    int number;
 
-		Channel * const pq_ptr;
-	};
+    static int nextChannelNumber_;
+    bool opened;
+    bool needOpen;
+
+    Q_DECLARE_PUBLIC(QAMQP::Channel)
+    Channel * const q_ptr;
+};
+
 }
 #endif // amqp_channel_p_h__

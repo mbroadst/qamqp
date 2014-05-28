@@ -7,54 +7,52 @@
 
 namespace QAMQP
 {
-	class ChannelPrivate;
-	class Client;
-	class Channel : public QObject, public Frame::MethodHandler
-	{
-		Q_OBJECT
 
-		Q_PROPERTY(int number READ channelNumber);
-		Q_PROPERTY(QString name READ name WRITE setName);		
+class Client;
+class ChannelPrivate;
+class Channel : public QObject, public Frame::MethodHandler
+{
+    Q_OBJECT
+    Q_PROPERTY(int number READ channelNumber)
+    Q_PROPERTY(QString name READ name WRITE setName)
 
-		P_DECLARE_PRIVATE(QAMQP::Channel)
-		Q_DISABLE_COPY(Channel)		
-	public:		
-		~Channel();
+public:
+    ~Channel();
 
-		void closeChannel();
-		void reopen();
+    void closeChannel();
+    void reopen();
 
-		QString name();
-		int channelNumber();		
-				
-		void setName(const QString &name);
-		void setQOS(qint32 prefetchSize, quint16 prefetchCount);
-		bool isOpened() const;
+    QString name() const;
+    int channelNumber() const;
 
-	signals:
-		void opened();
-		void closed();
-		void flowChanged(bool enabled);
+    void setName(const QString &name);
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+    bool isOpened() const;
 
-	protected:
-		Channel(int channelNumber = -1, Client * parent = 0);
-		Channel(ChannelPrivate * d);
-		virtual void onOpen();
-		virtual void onClose();
+signals:
+    void opened();
+    void closed();
+    void flowChanged(bool enabled);
 
-		ChannelPrivate * const pd_ptr;
+protected:
+    Q_DISABLE_COPY(Channel)
+    Q_DECLARE_PRIVATE(QAMQP::Channel)
 
-	private:
-		void stateChanged(int state);
-		friend class ClientPrivate;
-		void _q_method(const QAMQP::Frame::Method & frame);
+    Channel(int channelNumber = -1, Client *parent = 0);
+    Channel(ChannelPrivate *dd, Client *parent = 0);
+    QScopedPointer<ChannelPrivate> d_ptr;
 
-		Q_PRIVATE_SLOT(pd_func(), void _q_open())
-		Q_PRIVATE_SLOT(pd_func(), void _q_disconnected())
-	};
+    Q_PRIVATE_SLOT(d_func(), void _q_open())
+    Q_PRIVATE_SLOT(d_func(), void _q_disconnected())
+
+    virtual void onOpen();
+    virtual void onClose();
+    void stateChanged(int state);
+    void _q_method(const QAMQP::Frame::Method &frame);
+
+    friend class ClientPrivate;
+};
+
 }
 
-#ifdef QAMQP_P_INCLUDE
-# include "amqp_channel_p.h"
 #endif
-#endif // amqp_channel_h__

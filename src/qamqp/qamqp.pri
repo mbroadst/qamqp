@@ -24,5 +24,6 @@ SOURCES += $$PWD/amqp.cpp \
            $$PWD/amqp_connection.cpp \
            $$PWD/amqp_exchange.cpp \
            $$PWD/amqp_frame.cpp \
+           $$PWD/amqp_message.cpp \
            $$PWD/amqp_network.cpp \
            $$PWD/amqp_queue.cpp \

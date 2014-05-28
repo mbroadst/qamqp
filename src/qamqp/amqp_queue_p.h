@@ -7,64 +7,67 @@
 
 namespace QAMQP
 {
-	using namespace QAMQP::Frame;
-	class QueuePrivate: public ChannelPrivate
-	{
-		P_DECLARE_PUBLIC(QAMQP::Queue)
-	public:
 
-		enum MethodId
-		{
-			METHOD_ID_ENUM(miDeclare, 10),
-			METHOD_ID_ENUM(miBind, 20),
-			METHOD_ID_ENUM(miUnbind, 50),
-			METHOD_ID_ENUM(miPurge, 30),
-			METHOD_ID_ENUM(miDelete, 40)
-		};
+using namespace QAMQP::Frame;
 
-		QueuePrivate(Queue * q);
-		~QueuePrivate();
+class QueuePrivate: public ChannelPrivate
+{
+public:
+    enum MethodId {
+        METHOD_ID_ENUM(miDeclare, 10),
+        METHOD_ID_ENUM(miBind, 20),
+        METHOD_ID_ENUM(miUnbind, 50),
+        METHOD_ID_ENUM(miPurge, 30),
+        METHOD_ID_ENUM(miDelete, 40)
+    };
 
-		void declare();
-		void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-		void purge();
-		void bind(const QString & exchangeName, const QString & key);
-		void unbind(const QString & exchangeName, const QString & key);
+    QueuePrivate(Queue *q);
+    ~QueuePrivate();
 
-		void declareOk(const QAMQP::Frame::Method & frame);
-		void deleteOk(const QAMQP::Frame::Method & frame);
-		void bindOk(const QAMQP::Frame::Method & frame);
-		void unbindOk(const QAMQP::Frame::Method & frame);
+    void declare();
+    void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
+    void purge();
+    void bind(const QString &exchangeName, const QString &key);
+    void unbind(const QString &exchangeName, const QString &key);
 
-		/************************************************************************/
-		/* CLASS BASIC METHODS                                                  */
-		/************************************************************************/
+    void declareOk(const QAMQP::Frame::Method &frame);
+    void deleteOk(const QAMQP::Frame::Method &frame);
+    void bindOk(const QAMQP::Frame::Method &frame);
+    void unbindOk(const QAMQP::Frame::Method &frame);
 
-		void consume(Queue::ConsumeOptions options);
-		void consumeOk(const QAMQP::Frame::Method & frame);		
-		void deliver(const QAMQP::Frame::Method & frame);
+    /************************************************************************/
+    /* CLASS BASIC METHODS                                                  */
+    /************************************************************************/
 
-		void get();		
-		void getOk(const QAMQP::Frame::Method & frame);
-		void ack(const MessagePtr & Message);
-		
-		QString type;
-		Queue::QueueOptions options;
+    void consume(Queue::ConsumeOptions options);
+    void consumeOk(const QAMQP::Frame::Method &frame);
+    void deliver(const QAMQP::Frame::Method &frame);
 
-		bool _q_method(const QAMQP::Frame::Method & frame);
+    void get();
+    void getOk(const QAMQP::Frame::Method &frame);
+    void ack(const MessagePtr &Message);
 
-		bool delayedDeclare;
-		bool declared;
-		bool noAck;
-		QString consumerTag;
+    QString type;
+    Queue::QueueOptions options;
 
-		QQueue<QPair<QString, QString> > delayedBindings;
-		QQueue<QAMQP::MessagePtr> messages_;
+    bool _q_method(const QAMQP::Frame::Method &frame);
 
-		bool recievingMessage;
+    bool delayedDeclare;
+    bool declared;
+    bool noAck;
+    QString consumerTag;
 
-		void _q_content(const QAMQP::Frame::Content & frame);
-		void _q_body(const QAMQP::Frame::ContentBody & frame);
-	};	
+    QQueue<QPair<QString, QString> > delayedBindings;
+    QQueue<QAMQP::MessagePtr> messages_;
+
+    bool recievingMessage;
+
+    void _q_content(const QAMQP::Frame::Content &frame);
+    void _q_body(const QAMQP::Frame::ContentBody &frame);
+
+    Q_DECLARE_PUBLIC(QAMQP::Queue)
+
+};
+
 }
 #endif // amqp_queue_p_h__

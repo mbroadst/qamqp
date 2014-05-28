@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #ifndef QT_NO_SSL
-#include <QSslSocket>
+#   include <QSslSocket>
 #endif
 #include <QPointer>
 #include <QBuffer>
@@ -13,65 +13,64 @@
 
 namespace QAMQP
 {
-	class Network : public QObject
-	{
-		Q_OBJECT
-		Q_DISABLE_COPY(Network)
-	public:
-		typedef qint16 Channel;
 
-		Network(QObject * parent = 0);
-		~Network();
-		
-		void disconnect();
-		void sendFrame();
+class Network : public QObject
+{
+    Q_OBJECT
+public:
+    Network(QObject *parent = 0);
+    ~Network();
 
-		void sendFrame(const QAMQP::Frame::Base & frame);
+    void disconnect();
+    void sendFrame();
 
-		bool isSsl() const;
-		void setSsl(bool value);
+    void sendFrame(const QAMQP::Frame::Base &frame);
 
-		bool autoReconnect() const;
-		void setAutoReconnect(bool value);
+    bool isSsl() const;
+    void setSsl(bool value);
 
-		QAbstractSocket::SocketState state() const;
+    bool autoReconnect() const;
+    void setAutoReconnect(bool value);
 
-		void setMethodHandlerConnection(Frame::MethodHandler* pMethodHandlerConnection);
-		void addMethodHandlerForChannel(Channel channel, Frame::MethodHandler* pHandler);
-		void addContentHandlerForChannel(Channel channel, Frame::ContentHandler* pHandler);
-		void addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler* pHandler);
+    QAbstractSocket::SocketState state() const;
 
-	public slots:
-		void connectTo(const QString & host = QString(), quint32 port = 0);
-		void error( QAbstractSocket::SocketError socketError );
+    typedef qint16 Channel;
+    void setMethodHandlerConnection(Frame::MethodHandler *pMethodHandlerConnection);
+    void addMethodHandlerForChannel(Channel channel, Frame::MethodHandler *pHandler);
+    void addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler);
+    void addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler);
 
-	signals:		
-		void connected();
-		void disconnected();
+public slots:
+    void connectTo(const QString &host = QString(), quint16 port = 0);
+    void error(QAbstractSocket::SocketError socketError);
 
-	private slots:		
-		void readyRead();
+Q_SIGNALS:
+    void connected();
+    void disconnected();
 
-		void sslErrors ( );
+private Q_SLOTS:
+    void readyRead();
+    void sslErrors();
+    void conectionReady();
 
+private:
+    Q_DISABLE_COPY(Network)
 
-		void conectionReady();
+    void initSocket(bool ssl = false);
+    QPointer<QTcpSocket> socket_;
+    QByteArray buffer_;
+    QString lastHost_;
+    int lastPort_;
+    bool autoReconnect_;
+    int timeOut_;
+    bool connect_;
 
-	private:
-		void initSocket(bool ssl = false);
-		QPointer<QTcpSocket> socket_;
-        QByteArray buffer_;
-		QString lastHost_;
-		int lastPort_;
-		bool autoReconnect_;
-		int timeOut_;
-		bool connect_;
+    Frame::MethodHandler *m_pMethodHandlerConnection;
 
-		Frame::MethodHandler* m_pMethodHandlerConnection;
+    QHash<Channel, QList<Frame::MethodHandler*> > m_methodHandlersByChannel;
+    QHash<Channel, QList<Frame::ContentHandler*> > m_contentHandlerByChannel;
+    QHash<Channel, QList<Frame::ContentBodyHandler*> > m_bodyHandlersByChannel;
+};
 
-		QHash<Channel, QList<Frame::MethodHandler*> > m_methodHandlersByChannel;
-		QHash<Channel, QList<Frame::ContentHandler*> > m_contentHandlerByChannel;
-		QHash<Channel, QList<Frame::ContentBodyHandler*> > m_bodyHandlersByChannel;
-	};
 }
 #endif // amqp_network_h__
