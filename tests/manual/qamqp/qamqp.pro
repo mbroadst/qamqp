@@ -1,21 +1,20 @@
+DEPTH = ../../..
+include($${DEPTH}/qamqp.pri)
+include($${DEPTH}/tests/tests.pri)
+CONFIG -= testcase
+
 TEMPLATE = app
 TARGET = qamqp
-DEPENDPATH += . src
-
-INCLUDEPATH += . ./src
-
 HEADERS += \
-  src/QamqpApp.h \
-  src/pubsub/EmitLog.h \
-  src/pubsub/ReceiveLog.h \
-  src/routing/EmitLogDirect.h \
-  src/routing/ReceiveLogDirect.h \
-  src/sendreceive/Receive.h \
-  src/sendreceive/Send.h \
-  src/workqueues/NewTask.h \
-  src/workqueues/Worker.h \
+    QamqpApp.h \
+    pubsub/EmitLog.h \
+    pubsub/ReceiveLog.h \
+    routing/EmitLogDirect.h \
+    routing/ReceiveLogDirect.h \
+    sendreceive/Receive.h \
+    sendreceive/Send.h \
+    workqueues/NewTask.h \
+    workqueues/Worker.h
 
 SOURCES += \
-  src/main.cpp \
-
-include(src/qamqp/qamqp.pri)
+    main.cpp

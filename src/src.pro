@@ -1,29 +1,63 @@
-QT += network
+include(../qamqp.pri)
 
-DEPENDPATH += $$PWD
+INCLUDEPATH += .
+TEMPLATE = lib
+TARGET = qamqp
+QT += core network
+QT -= gui
+DEFINES += QAMQP_BUILD
+CONFIG += $${QAMQP_LIBRARY_TYPE}
+VERSION = $${QAMQP_VERSION}
+win32:DESTDIR = $$OUT_PWD
 
-HEADERS += $$PWD/amqp.h \
-           $$PWD/amqp_authenticator.h \
-           $$PWD/amqp_channel.h \
-           $$PWD/amqp_channel_p.h \
-           $$PWD/amqp_connection.h \
-           $$PWD/amqp_connection_p.h \
-           $$PWD/amqp_exchange.h \
-           $$PWD/amqp_exchange_p.h \
-           $$PWD/amqp_frame.h \
-           $$PWD/amqp_message.h \
-           $$PWD/amqp_network.h \
-           $$PWD/amqp_p.h \
-           $$PWD/amqp_queue.h \
-           $$PWD/amqp_queue_p.h \
-           $$PWD/amqp_global.h \
+PRIVATE_HEADERS += \
+    amqp_p.h \
+    amqp_channel_p.h \
+    amqp_connection_p.h \
+    amqp_exchange_p.h \
+    amqp_queue_p.h
 
-SOURCES += $$PWD/amqp.cpp \
-           $$PWD/amqp_authenticator.cpp \
-           $$PWD/amqp_channel.cpp \
-           $$PWD/amqp_connection.cpp \
-           $$PWD/amqp_exchange.cpp \
-           $$PWD/amqp_frame.cpp \
-           $$PWD/amqp_message.cpp \
-           $$PWD/amqp_network.cpp \
-           $$PWD/amqp_queue.cpp \
+INSTALL_HEADERS += \
+    amqp.h \
+    amqp_authenticator.h \
+    amqp_channel.h \
+    amqp_connection.h \
+    amqp_exchange.h \
+    amqp_frame.h \
+    amqp_global.h \
+    amqp_message.h \
+    amqp_network.h \
+    amqp_queue.h
+
+HEADERS += \
+    $${INSTALL_HEADERS} \
+    $${PRIVATE_HEADERS}
+
+SOURCES += \
+    amqp.cpp \
+    amqp_authenticator.cpp \
+    amqp_channel.cpp \
+    amqp_connection.cpp \
+    amqp_exchange.cpp \
+    amqp_frame.cpp \
+    amqp_message.cpp \
+    amqp_network.cpp \
+    amqp_queue.cpp
+
+# install
+headers.files = $${INSTALL_HEADERS}
+headers.path = $${PREFIX}/include/qamqp
+target.path = $${PREFIX}/$${LIBDIR}
+INSTALLS += headers target
+
+# pkg-config support
+CONFIG += create_pc create_prl no_install_prl
+QMAKE_PKGCONFIG_DESTDIR = pkgconfig
+QMAKE_PKGCONFIG_LIBDIR = $$target.path
+QMAKE_PKGCONFIG_INCDIR = $$headers.path
+equals(QAMQP_LIBRARY_TYPE, staticlib) {
+    QMAKE_PKGCONFIG_CFLAGS = -DQAMQP_STATIC
+} else {
+    QMAKE_PKGCONFIG_CFLAGS = -DQAMQP_SHARED
+}
+unix:QMAKE_CLEAN += -r pkgconfig lib$${TARGET}.prl

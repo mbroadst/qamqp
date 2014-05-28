@@ -8,8 +8,8 @@
 #include <QTimer>
 #include <QDateTime>
 
-#include "qamqp/amqp.h"
-#include "qamqp/amqp_exchange.h"
+#include "amqp.h"
+#include "amqp_exchange.h"
 
 namespace QAMQP
 {

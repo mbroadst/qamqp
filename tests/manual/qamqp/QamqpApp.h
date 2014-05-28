@@ -9,9 +9,9 @@
 #include <QTextStream>
 #include <QTimer>
 
-#include "qamqp/amqp.h"
-#include "qamqp/amqp_exchange.h"
-#include "qamqp/amqp_queue.h"
+#include "amqp.h"
+#include "amqp_exchange.h"
+#include "amqp_queue.h"
 
 #include "pubsub/EmitLog.h"
 #include "pubsub/ReceiveLog.h"

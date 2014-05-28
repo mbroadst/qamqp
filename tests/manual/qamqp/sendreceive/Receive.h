@@ -9,8 +9,8 @@
 #include <QTimer>
 #include <QDateTime>
 
-#include "qamqp/amqp.h"
-#include "qamqp/amqp_queue.h"
+#include "amqp.h"
+#include "amqp_queue.h"
 
 
 namespace QAMQP
