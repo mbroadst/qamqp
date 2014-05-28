@@ -3,10 +3,12 @@
 #include <QTimer>
 #include <QtEndian>
 
-QAMQP::Network::Network( QObject * parent)
+using namespace QAMQP;
+
+Network::Network( QObject * parent)
     : QObject(parent)
 {
-    qRegisterMetaType<QAMQP::Frame::Method>("QAMQP::Frame::Method");
+    qRegisterMetaType<Frame::Method>("QAMQP::Frame::Method");
 
     buffer_.reserve(Frame::HEADER_SIZE);
     timeOut_ = 1000;
@@ -15,12 +17,12 @@ QAMQP::Network::Network( QObject * parent)
     initSocket(false);
 }
 
-QAMQP::Network::~Network()
+Network::~Network()
 {
     disconnect();
 }
 
-void QAMQP::Network::connectTo(const QString & host, quint16 port)
+void Network::connectTo(const QString & host, quint16 port)
 {
     if(!socket_) {
         qWarning("AMQP: Socket didn't create.");
@@ -49,14 +51,14 @@ void QAMQP::Network::connectTo(const QString & host, quint16 port)
     lastPort_ = p;
 }
 
-void QAMQP::Network::disconnect()
+void Network::disconnect()
 {
     connect_ = false;
     if (socket_)
         socket_->close();
 }
 
-void QAMQP::Network::error(QAbstractSocket::SocketError socketError)
+void Network::error(QAbstractSocket::SocketError socketError)
 {
     if (timeOut_ == 0) {
         timeOut_ = 1000;
@@ -83,7 +85,7 @@ void QAMQP::Network::error(QAbstractSocket::SocketError socketError)
         QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
 }
 
-void QAMQP::Network::readyRead()
+void Network::readyRead()
 {
     while (socket_->bytesAvailable() >= Frame::HEADER_SIZE) {
         char *headerData = buffer_.data();
@@ -97,15 +99,15 @@ void QAMQP::Network::readyRead()
             const char* bufferData = buffer_.constData();
             const quint8 type = *(quint8*)&bufferData[0];
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE+payloadSize];
-            if (magic != QAMQP::Frame::FRAME_END)
+            if (magic != Frame::FRAME_END)
                 qWarning() << "Wrong end frame";
 
             QDataStream streamB(&buffer_, QIODevice::ReadOnly);
-            switch(QAMQP::Frame::Type(type)) {
-            case QAMQP::Frame::ftMethod:
+            switch(Frame::Type(type)) {
+            case Frame::ftMethod:
             {
-                QAMQP::Frame::Method frame(streamB);
-                if (frame.methodClass() == QAMQP::Frame::fcConnection) {
+                Frame::Method frame(streamB);
+                if (frame.methodClass() == Frame::fcConnection) {
                     m_pMethodHandlerConnection->_q_method(frame);
                 } else {
                     foreach(Frame::MethodHandler* pMethodHandler, m_methodHandlersByChannel[frame.channel()])
@@ -113,21 +115,21 @@ void QAMQP::Network::readyRead()
                 }
             }
                 break;
-            case QAMQP::Frame::ftHeader:
+            case Frame::ftHeader:
             {
-                QAMQP::Frame::Content frame(streamB);
+                Frame::Content frame(streamB);
                 foreach(Frame::ContentHandler* pMethodHandler, m_contentHandlerByChannel[frame.channel()])
                     pMethodHandler->_q_content(frame);
             }
                 break;
-            case QAMQP::Frame::ftBody:
+            case Frame::ftBody:
             {
-                QAMQP::Frame::ContentBody frame(streamB);
+                Frame::ContentBody frame(streamB);
                 foreach(Frame::ContentBodyHandler* pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
                     pMethodHandler->_q_body(frame);
             }
                 break;
-            case QAMQP::Frame::ftHeartbeat:
+            case Frame::ftHeartbeat:
                 qDebug("AMQP: Heartbeat");
                 break;
             default:
@@ -139,7 +141,7 @@ void QAMQP::Network::readyRead()
     }
 }
 
-void QAMQP::Network::sendFrame(const QAMQP::Frame::Base &frame)
+void Network::sendFrame(const Frame::Base &frame)
 {
     if (socket_->state() == QAbstractSocket::ConnectedState) {
         QDataStream stream(socket_);
@@ -147,19 +149,19 @@ void QAMQP::Network::sendFrame(const QAMQP::Frame::Base &frame)
     }
 }
 
-bool QAMQP::Network::isSsl() const
+bool Network::isSsl() const
 {
     if (socket_)
         return QString(socket_->metaObject()->className()).compare("QSslSocket", Qt::CaseInsensitive) == 0;
     return false;
 }
 
-void QAMQP::Network::setSsl(bool value)
+void Network::setSsl(bool value)
 {
     initSocket(value);
 }
 
-void QAMQP::Network::initSocket(bool ssl)
+void Network::initSocket(bool ssl)
 {
     if (socket_) {
         socket_->deleteLater();
@@ -189,14 +191,14 @@ void QAMQP::Network::initSocket(bool ssl)
     }
 }
 
-void QAMQP::Network::sslErrors()
+void Network::sslErrors()
 {
 #ifndef QT_NO_SSL
     static_cast<QSslSocket*>(socket_.data())->ignoreSslErrors();
 #endif
 }
 
-void QAMQP::Network::conectionReady()
+void Network::conectionReady()
 {
     Q_EMIT connected();
     timeOut_ = 0;
@@ -205,39 +207,39 @@ void QAMQP::Network::conectionReady()
     socket_->write(header_, 8);
 }
 
-bool QAMQP::Network::autoReconnect() const
+bool Network::autoReconnect() const
 {
     return autoReconnect_;
 }
 
-void QAMQP::Network::setAutoReconnect(bool value)
+void Network::setAutoReconnect(bool value)
 {
     autoReconnect_ = value;
 }
 
-QAbstractSocket::SocketState QAMQP::Network::state() const
+QAbstractSocket::SocketState Network::state() const
 {
     if (socket_)
         return socket_->state();
     return QAbstractSocket::UnconnectedState;
 }
 
-void QAMQP::Network::setMethodHandlerConnection(Frame::MethodHandler *pMethodHandlerConnection)
+void Network::setMethodHandlerConnection(Frame::MethodHandler *pMethodHandlerConnection)
 {
     m_pMethodHandlerConnection = pMethodHandlerConnection;
 }
 
-void QAMQP::Network::addMethodHandlerForChannel(Channel channel, Frame::MethodHandler *pHandler)
+void Network::addMethodHandlerForChannel(Channel channel, Frame::MethodHandler *pHandler)
 {
     m_methodHandlersByChannel[channel].append(pHandler);
 }
 
-void QAMQP::Network::addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler)
+void Network::addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler)
 {
     m_contentHandlerByChannel[channel].append(pHandler);
 }
 
-void QAMQP::Network::addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler)
+void Network::addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler)
 {
     m_bodyHandlersByChannel[channel].append(pHandler);
 }

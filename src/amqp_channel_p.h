@@ -25,8 +25,7 @@ public:
         csRunning
     };
 
-    enum BasicMethod
-    {
+    enum BasicMethod {
         METHOD_ID_ENUM(bmQos, 10),
         METHOD_ID_ENUM(bmConsume, 20),
         METHOD_ID_ENUM(bmCancel, 30),
@@ -54,18 +53,18 @@ public:
 
     //////////////////////////////////////////////////////////////////////////
 
-    void openOk(const QAMQP::Frame::Method &frame);
-    void flow(const QAMQP::Frame::Method &frame);
-    void flowOk(const QAMQP::Frame::Method &frame);
-    void close(const QAMQP::Frame::Method &frame);
-    void closeOk(const QAMQP::Frame::Method &frame);
+    void openOk(const Frame::Method &frame);
+    void flow(const Frame::Method &frame);
+    void flowOk(const Frame::Method &frame);
+    void close(const Frame::Method &frame);
+    void closeOk(const Frame::Method &frame);
 
-    virtual bool _q_method(const QAMQP::Frame::Method &frame);
+    virtual bool _q_method(const Frame::Method &frame);
     virtual void _q_disconnected();
     void _q_open();
 
     void setQOS(qint32 prefetchSize, quint16 prefetchCount);
-    void sendFrame(const QAMQP::Frame::Base &frame);
+    void sendFrame(const Frame::Base &frame);
 
     QPointer<Client> client_;
 
@@ -76,7 +75,7 @@ public:
     bool opened;
     bool needOpen;
 
-    Q_DECLARE_PUBLIC(QAMQP::Channel)
+    Q_DECLARE_PUBLIC(Channel)
     Channel * const q_ptr;
 };
 

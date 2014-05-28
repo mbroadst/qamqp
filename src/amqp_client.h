@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QUrl>
+#include <QHostAddress>
 
 #include "amqp_global.h"
 
@@ -74,13 +75,13 @@ public:
 
     bool isConnected() const;
 
-signals:
+Q_SIGNALS:
     void connected();
     void disconnected();
 
 private:
     Q_DISABLE_COPY(Client)
-    Q_DECLARE_PRIVATE(QAMQP::Client)
+    Q_DECLARE_PRIVATE(Client)
     QScopedPointer<ClientPrivate> d_ptr;
 
     friend class ConnectionPrivate;

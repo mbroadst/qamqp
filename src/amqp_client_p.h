@@ -35,14 +35,14 @@ public:
     QString host;
     QString virtualHost;
 
-    QPointer<QAMQP::Network> network_;
-    QPointer<QAMQP::Connection> connection_;
+    QPointer<Network> network_;
+    QPointer<Connection> connection_;
     QSharedPointer<Authenticator> auth_;
 
     bool isSSl() const;
 
     Client * const q_ptr;
-    Q_DECLARE_PUBLIC(QAMQP::Client)
+    Q_DECLARE_PUBLIC(Client)
 
 };
 
