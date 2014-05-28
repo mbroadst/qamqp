@@ -1,14 +1,14 @@
 #ifndef amqp_connection_p_h__
 #define amqp_connection_p_h__
 
-#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
-
 #include <QPointer>
 
-class QTimer;
+#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
+class QTimer;
 namespace QAMQP
 {
+
 class Client;
 class ClientPrivate;
 class Connection;
@@ -34,14 +34,14 @@ public:
     void close(int code, const QString & text, int classId = 0, int methodId = 0);
     void closeOk();
 
-    void start(const QAMQP::Frame::Method &frame);
-    void secure(const QAMQP::Frame::Method &frame);
-    void tune(const QAMQP::Frame::Method &frame);
-    void openOk(const QAMQP::Frame::Method &frame);
-    void close(const QAMQP::Frame::Method &frame);
-    void closeOk(const QAMQP::Frame::Method &frame);
+    void start(const Frame::Method &frame);
+    void secure(const Frame::Method &frame);
+    void tune(const Frame::Method &frame);
+    void openOk(const Frame::Method &frame);
+    void close(const Frame::Method &frame);
+    void closeOk(const Frame::Method &frame);
 
-    bool _q_method(const QAMQP::Frame::Method &frame);
+    bool _q_method(const Frame::Method &frame);
     void _q_heartbeat();
 
     void setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global);
@@ -51,12 +51,12 @@ public:
     bool connected;
     QPointer<QTimer> heartbeatTimer_;
 
-    QAMQP::Frame::TableField customProperty;
+    Frame::TableField customProperty;
 
-    Q_DECLARE_PUBLIC(QAMQP::Connection)
+    Q_DECLARE_PUBLIC(Connection)
     Connection * const q_ptr;
 };
 
-}
+} // namespace QAMQP
 
 #endif // amqp_connection_p_h__

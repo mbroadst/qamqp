@@ -1,14 +1,14 @@
 #include "amqp_client.h"
 #include "amqp_client_p.h"
-
-#include <QTextStream>
-#include <QCoreApplication>
+#include "amqp_global.h"
 #include "amqp_exchange.h"
 #include "amqp_exchange_p.h"
 #include "amqp_queue.h"
 #include "amqp_queue_p.h"
 #include "amqp_connection_p.h"
 #include "amqp_authenticator.h"
+
+#include <QTextStream>
 
 using namespace QAMQP;
 

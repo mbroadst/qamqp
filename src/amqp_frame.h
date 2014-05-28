@@ -28,7 +28,6 @@ namespace QAMQP
 {
 
 class QueuePrivate;
-
 namespace Frame
 {
     typedef quint16 channel_t;
@@ -86,12 +85,12 @@ namespace Frame
      */
     typedef QHash<QString, QVariant> TableField;
 
-    QDataStream & serialize( QDataStream & stream, const QAMQP::Frame::TableField & f );
-    QDataStream & deserialize( QDataStream & stream, QAMQP::Frame::TableField & f );
+    QDataStream & serialize( QDataStream & stream, const Frame::TableField & f );
+    QDataStream & deserialize( QDataStream & stream, Frame::TableField & f );
     QVariant readField( qint8 valueType, QDataStream &s );
     void writeField( QDataStream &s, const QVariant & value );
     void writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType = false );
-    void print( const QAMQP::Frame::TableField & f );
+    void print( const Frame::TableField & f );
 
     /*
      * @brief Base class for any frames.
@@ -280,8 +279,6 @@ namespace Frame
      */
     class Content : public Base
     {
-        friend class QAMQP::QueuePrivate;
-
     public:
         /*
          *  Default content frame property
@@ -357,6 +354,9 @@ namespace Frame
         mutable QByteArray buffer_;
         QHash<int, QVariant> properties_;
         qlonglong bodySize_;
+
+    private:
+        friend class QAMQP::QueuePrivate;
     };
 
     class ContentBody : public Base
@@ -398,22 +398,24 @@ namespace Frame
     class MethodHandler
     {
     public:
-        virtual void _q_method(const QAMQP::Frame::Method &frame) = 0;
+        virtual void _q_method(const Frame::Method &frame) = 0;
     };
 
     class ContentHandler
     {
     public:
-        virtual void _q_content(const QAMQP::Frame::Content & frame) = 0;
+        virtual void _q_content(const Frame::Content & frame) = 0;
     };
 
     class ContentBodyHandler
     {
     public:
-        virtual void _q_body(const QAMQP::Frame::ContentBody & frame) = 0;
+        virtual void _q_body(const Frame::ContentBody & frame) = 0;
     };
-}
-}
+
+} // namespace Frame
+
+} // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Frame::decimal)
 Q_DECLARE_METATYPE(QAMQP::Frame::TableField)

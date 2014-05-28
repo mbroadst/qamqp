@@ -1,14 +1,13 @@
 #ifndef amqp_queue_p_h__
 #define amqp_queue_p_h__
 
-#include "amqp_channel_p.h"
-#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 #include <QQueue>
+#include "amqp_channel_p.h"
+
+#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
 namespace QAMQP
 {
-
-using namespace QAMQP::Frame;
 
 class QueuePrivate: public ChannelPrivate
 {
@@ -30,27 +29,27 @@ public:
     void bind(const QString &exchangeName, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
 
-    void declareOk(const QAMQP::Frame::Method &frame);
-    void deleteOk(const QAMQP::Frame::Method &frame);
-    void bindOk(const QAMQP::Frame::Method &frame);
-    void unbindOk(const QAMQP::Frame::Method &frame);
+    void declareOk(const Frame::Method &frame);
+    void deleteOk(const Frame::Method &frame);
+    void bindOk(const Frame::Method &frame);
+    void unbindOk(const Frame::Method &frame);
 
     /************************************************************************/
     /* CLASS BASIC METHODS                                                  */
     /************************************************************************/
 
     void consume(Queue::ConsumeOptions options);
-    void consumeOk(const QAMQP::Frame::Method &frame);
-    void deliver(const QAMQP::Frame::Method &frame);
+    void consumeOk(const Frame::Method &frame);
+    void deliver(const Frame::Method &frame);
 
     void get();
-    void getOk(const QAMQP::Frame::Method &frame);
+    void getOk(const Frame::Method &frame);
     void ack(const MessagePtr &Message);
 
     QString type;
     Queue::QueueOptions options;
 
-    bool _q_method(const QAMQP::Frame::Method &frame);
+    bool _q_method(const Frame::Method &frame);
 
     bool delayedDeclare;
     bool declared;
@@ -58,16 +57,17 @@ public:
     QString consumerTag;
 
     QQueue<QPair<QString, QString> > delayedBindings;
-    QQueue<QAMQP::MessagePtr> messages_;
+    QQueue<MessagePtr> messages_;
 
     bool recievingMessage;
 
-    void _q_content(const QAMQP::Frame::Content &frame);
-    void _q_body(const QAMQP::Frame::ContentBody &frame);
+    void _q_content(const Frame::Content &frame);
+    void _q_body(const Frame::ContentBody &frame);
 
-    Q_DECLARE_PUBLIC(QAMQP::Queue)
+    Q_DECLARE_PUBLIC(Queue)
 
 };
 
-}
+} // namespace QAMQP
+
 #endif // amqp_queue_p_h__

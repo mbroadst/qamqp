@@ -4,8 +4,6 @@
 #include <QObject>
 #include <QUrl>
 
-#include "amqp_global.h"
-
 namespace QAMQP
 {
 

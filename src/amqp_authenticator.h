@@ -4,8 +4,6 @@
 #include <QString>
 #include <QDataStream>
 
-#include "amqp_global.h"
-
 namespace QAMQP
 {
 
@@ -38,5 +36,6 @@ private:
 
 };
 
-}
+} // namespace QAMQP
+
 #endif // amqp_authenticator_h__

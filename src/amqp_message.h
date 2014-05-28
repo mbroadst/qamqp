@@ -1,3 +1,6 @@
+#ifndef amqp_message_h__
+#define amqp_message_h__
+
 #include "amqp_frame.h"
 #include <QByteArray>
 #include <QHash>
@@ -11,18 +14,20 @@ struct Message
     Message();
     virtual ~Message();
 
-    typedef QAMQP::Frame::Content::Property MessageProperty;
+    typedef Frame::Content::Property MessageProperty;
     Q_DECLARE_FLAGS(MessageProperties, MessageProperty)
 
     qlonglong deliveryTag;
     QByteArray payload;
     QHash<MessageProperty, QVariant> property;
-    QAMQP::Frame::TableField headers;
+    Frame::TableField headers;
     QString routeKey;
     QString exchangeName;
     int leftSize;
 };
 
-typedef QSharedPointer<QAMQP::Message> MessagePtr;
+typedef QSharedPointer<Message> MessagePtr;
 
-}
+} // namespace QAMQP
+
+#endif // amqp_message_h__

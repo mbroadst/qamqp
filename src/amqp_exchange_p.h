@@ -1,3 +1,6 @@
+#ifndef amqp_exchange_p_h__
+#define amqp_exchange_p_h__
+
 #include "amqp_channel_p.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
@@ -5,7 +8,6 @@
 namespace QAMQP
 {
 
-using namespace QAMQP::Frame;
 class ExchangePrivate: public ChannelPrivate
 {
 public:
@@ -20,8 +22,8 @@ public:
     void declare();
     void remove(bool ifUnused = true, bool noWait = true);
 
-    void declareOk(const QAMQP::Frame::Method &frame);
-    void deleteOk(const QAMQP::Frame::Method &frame);
+    void declareOk(const Frame::Method &frame);
+    void deleteOk(const Frame::Method &frame);
 
     void publish(const QByteArray &message, const QString &key,
                  const QString &mimeType = QLatin1String("text/plain"),
@@ -30,15 +32,17 @@ public:
 
     QString type;
     Exchange::ExchangeOptions options;
-    TableField arguments;
+    Frame::TableField arguments;
 
-    bool _q_method(const QAMQP::Frame::Method &frame);
+    bool _q_method(const Frame::Method &frame);
     void _q_disconnected();
 
     bool delayedDeclare;
     bool declared;
 
-    Q_DECLARE_PUBLIC(QAMQP::Exchange)
+    Q_DECLARE_PUBLIC(Exchange)
 };
 
-}
+} // namespace QAMQP
+
+#endif // amqp_exchange_p_h__

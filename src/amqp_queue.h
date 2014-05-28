@@ -68,7 +68,7 @@ Q_SIGNALS:
     void declared();
     void binded(bool);
     void removed();
-    void messageReceived(QAMQP::Queue *pQueue);
+    void messageReceived(Queue *pQueue);
     void empty();
 
 protected:
@@ -78,18 +78,15 @@ protected:
 private:
     Queue(int channelNumber = -1, Client * parent = 0);
 
-    void _q_content(const QAMQP::Frame::Content & frame);
-    void _q_body(const QAMQP::Frame::ContentBody & frame);
+    void _q_content(const Frame::Content & frame);
+    void _q_body(const Frame::ContentBody & frame);
 
     Q_DISABLE_COPY(Queue)
-    Q_DECLARE_PRIVATE(QAMQP::Queue)
+    Q_DECLARE_PRIVATE(Queue)
 
     friend class ClientPrivate;
-
 };
 
-}
-#ifdef QAMQP_P_INCLUDE
-# include "amqp_queue_p.h"
+} // namespace QAMQP
+
 #endif
-#endif // amqp_queue_h__

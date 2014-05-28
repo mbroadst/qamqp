@@ -24,7 +24,7 @@ public:
     void disconnect();
     void sendFrame();
 
-    void sendFrame(const QAMQP::Frame::Base &frame);
+    void sendFrame(const Frame::Base &frame);
 
     bool isSsl() const;
     void setSsl(bool value);
@@ -72,5 +72,6 @@ private:
     QHash<Channel, QList<Frame::ContentBodyHandler*> > m_bodyHandlersByChannel;
 };
 
-}
+} // namespace QAMQP
+
 #endif // amqp_network_h__

@@ -1,7 +1,6 @@
 #ifndef amqp_channel_p_h__
 #define amqp_channel_p_h__
 
-#include "amqp_global.h"
 #include <QPointer>
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
@@ -81,5 +80,6 @@ public:
     Channel * const q_ptr;
 };
 
-}
+} // namespace QAMQP
+
 #endif // amqp_channel_p_h__

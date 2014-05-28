@@ -6,8 +6,6 @@
 namespace QAMQP
 {
 
-using namespace QAMQP::Frame;
-
 class Client;
 class Queue;
 class ClientPrivate;
@@ -30,7 +28,7 @@ public:
     };
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
 
-    typedef QHash<QAMQP::Frame::Content::Property, QVariant> MessageProperties;
+    typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
 
     virtual ~Exchange();
 
@@ -39,10 +37,10 @@ public:
 
     void declare(const QString &type = QLatin1String("direct"),
                  ExchangeOptions option = NoOptions,
-                 const TableField &arg = TableField());
+                 const Frame::TableField &arg = Frame::TableField());
     void remove(bool ifUnused = true, bool noWait = true);
 
-    void bind(QAMQP::Queue *queue);
+    void bind(Queue *queue);
     void bind(const QString &queueName);
     void bind(const QString &queueName, const QString &key);
 
@@ -62,14 +60,15 @@ protected:
     void onClose();
 
 private:
+    explicit Exchange(int channelNumber = -1, Client * parent = 0);
+
     Q_DISABLE_COPY(Exchange)
-    Q_DECLARE_PRIVATE(QAMQP::Exchange)
-    Exchange(int channelNumber = -1, Client * parent = 0);
+    Q_DECLARE_PRIVATE(Exchange)
     friend class ClientPrivate;
 
 };
 
-}
+} // namespace QAMQP
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QAMQP::Exchange::ExchangeOptions)
 

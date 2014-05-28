@@ -2,7 +2,6 @@
 #define amqp_channel_h__
 
 #include <QObject>
-#include "amqp_global.h"
 #include "amqp_frame.h"
 
 namespace QAMQP
@@ -13,46 +12,48 @@ class ChannelPrivate;
 class Channel : public QObject, public Frame::MethodHandler
 {
     Q_OBJECT
-    Q_PROPERTY(int number READ channelNumber)
+    Q_PROPERTY(int number READ channelNumber CONSTANT)
+    Q_PROPERTY(bool opened READ isOpened CONSTANT)
     Q_PROPERTY(QString name READ name WRITE setName)
-
 public:
-    ~Channel();
+    virtual ~Channel();
 
-    void closeChannel();
-    void reopen();
-
-    QString name() const;
     int channelNumber() const;
-
-    void setName(const QString &name);
-    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
     bool isOpened() const;
 
-signals:
+    QString name() const;
+    void setName(const QString &name);
+
+public Q_SLOTS:
+    void closeChannel();
+    void reopen();
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+
+Q_SIGNALS:
     void opened();
     void closed();
     void flowChanged(bool enabled);
 
 protected:
-    Q_DISABLE_COPY(Channel)
-    Q_DECLARE_PRIVATE(QAMQP::Channel)
-
     Channel(int channelNumber = -1, Client *parent = 0);
     Channel(ChannelPrivate *dd, Client *parent = 0);
+
+    Q_DISABLE_COPY(Channel)
+    Q_DECLARE_PRIVATE(Channel)
     QScopedPointer<ChannelPrivate> d_ptr;
 
     Q_PRIVATE_SLOT(d_func(), void _q_open())
     Q_PRIVATE_SLOT(d_func(), void _q_disconnected())
 
+    // should move to private classes
     virtual void onOpen();
     virtual void onClose();
     void stateChanged(int state);
-    void _q_method(const QAMQP::Frame::Method &frame);
+    void _q_method(const Frame::Method &frame);
 
     friend class ClientPrivate;
 };
 
-}
+} // namespace QAMQP
 
 #endif

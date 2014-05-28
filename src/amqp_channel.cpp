@@ -1,11 +1,9 @@
 #include "amqp_channel.h"
 #include "amqp_channel_p.h"
-#include "amqp_connection_p.h"
-
 #include "amqp_client.h"
 #include "amqp_client_p.h"
+#include "amqp_connection_p.h"
 
-#include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
 
@@ -13,59 +11,58 @@ using namespace QAMQP;
 
 //////////////////////////////////////////////////////////////////////////
 
-QAMQP::Channel::Channel(int channelNumber, Client *parent)
+Channel::Channel(int channelNumber, Client *parent)
     : QObject(parent),
       d_ptr(new ChannelPrivate(this))
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     d->init(channelNumber, parent);
 }
 
-QAMQP::Channel::Channel(ChannelPrivate *dd, Client *parent)
+Channel::Channel(ChannelPrivate *dd, Client *parent)
     : QObject(parent),
       d_ptr(dd)
 {
 }
 
-QAMQP::Channel::~Channel()
+Channel::~Channel()
 {
 }
 
-void QAMQP::Channel::closeChannel()
+void Channel::closeChannel()
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     d->needOpen = true;
     if (d->opened)
         d->close(0, QString(), 0,0);
-
 }
 
-void QAMQP::Channel::reopen()
+void Channel::reopen()
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     closeChannel();
     d->open();
 }
 
-QString QAMQP::Channel::name() const
+QString Channel::name() const
 {
-    Q_D(const QAMQP::Channel);
+    Q_D(const Channel);
     return d->name;
 }
 
-int QAMQP::Channel::channelNumber() const
+int Channel::channelNumber() const
 {
-    Q_D(const QAMQP::Channel);
+    Q_D(const Channel);
     return d->number;
 }
 
-void QAMQP::Channel::setName(const QString &name)
+void Channel::setName(const QString &name)
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     d->name = name;
 }
 
-void QAMQP::Channel::stateChanged(int state)
+void Channel::stateChanged(int state)
 {
     switch(ChannelPrivate::State(state)) {
     case ChannelPrivate::csOpened:
@@ -83,29 +80,29 @@ void QAMQP::Channel::stateChanged(int state)
     }
 }
 
-void QAMQP::Channel::_q_method(const Frame::Method &frame)
+void Channel::_q_method(const Frame::Method &frame)
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     d->_q_method(frame);
 }
 
-bool QAMQP::Channel::isOpened() const
+bool Channel::isOpened() const
 {
-    Q_D(const QAMQP::Channel);
+    Q_D(const Channel);
     return d->opened;
 }
 
-void QAMQP::Channel::onOpen()
+void Channel::onOpen()
 {
 }
 
-void QAMQP::Channel::onClose()
+void Channel::onClose()
 {
 }
 
-void QAMQP::Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
+void Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 {
-    Q_D(QAMQP::Channel);
+    Q_D(Channel);
     d->setQOS(prefetchSize, prefetchCount);
 }
 
@@ -126,7 +123,7 @@ ChannelPrivate::~ChannelPrivate()
 
 void ChannelPrivate::init(int channelNumber, Client *parent)
 {
-    Q_Q(QAMQP::Channel);
+    Q_Q(Channel);
     needOpen = channelNumber == -1 ? true : false;
     number = channelNumber == -1 ? ++nextChannelNumber_ : channelNumber;
     nextChannelNumber_ = qMax(channelNumber, (nextChannelNumber_ + 1));
@@ -134,14 +131,13 @@ void ChannelPrivate::init(int channelNumber, Client *parent)
     client_ = parent;
 }
 
-
-bool ChannelPrivate::_q_method(const QAMQP::Frame::Method &frame)
+bool ChannelPrivate::_q_method(const Frame::Method &frame)
 {
     Q_ASSERT(frame.channel() == number);
     if (frame.channel() != number)
         return true;
 
-    if (frame.methodClass() != QAMQP::Frame::fcChannel)
+    if (frame.methodClass() != Frame::fcChannel)
         return false;
 
     qDebug("Channel#%d:", number);
@@ -171,12 +167,10 @@ void ChannelPrivate::_q_open()
     open();
 }
 
-
-void ChannelPrivate::sendFrame(const QAMQP::Frame::Base &frame)
+void ChannelPrivate::sendFrame(const Frame::Base &frame)
 {
-    if (client_) {
+    if (client_)
         client_->d_func()->network_->sendFrame(frame);
-    }
 }
 
 void ChannelPrivate::open()
@@ -188,7 +182,7 @@ void ChannelPrivate::open()
         return;
 
     qDebug("Open channel #%d", number);
-    QAMQP::Frame::Method frame(QAMQP::Frame::fcChannel, miOpen);
+    Frame::Method frame(Frame::fcChannel, miOpen);
     frame.setChannel(number);
     QByteArray arguments_;
     arguments_.resize(1);
@@ -201,7 +195,7 @@ void ChannelPrivate::flow()
 {
 }
 
-void ChannelPrivate::flow(const QAMQP::Frame::Method &frame)
+void ChannelPrivate::flow(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
 }
@@ -210,21 +204,21 @@ void ChannelPrivate::flowOk()
 {
 }
 
-void ChannelPrivate::flowOk(const QAMQP::Frame::Method &frame)
+void ChannelPrivate::flowOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
 }
 
 void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
 {
-    QAMQP::Frame::Method frame(QAMQP::Frame::fcChannel, miClose);
+    Frame::Method frame(Frame::fcChannel, miClose);
     QByteArray arguments_;
     QDataStream stream(&arguments_, QIODevice::WriteOnly);
 
-    QAMQP::Frame::writeField('s',stream, client_->virtualHost());
+    Frame::writeField('s',stream, client_->virtualHost());
 
     stream << qint16(code);
-    QAMQP::Frame::writeField('s', stream, text);
+    Frame::writeField('s', stream, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 
@@ -232,9 +226,9 @@ void ChannelPrivate::close(int code, const QString &text, int classId, int metho
     client_->d_func()->network_->sendFrame(frame);
 }
 
-void ChannelPrivate::close(const QAMQP::Frame::Method &frame)
+void ChannelPrivate::close(const Frame::Method &frame)
 {
-    Q_Q(QAMQP::Channel);
+    Q_Q(Channel);
     q->stateChanged(csClosed);
 
     qDebug(">> CLOSE");
@@ -242,7 +236,7 @@ void ChannelPrivate::close(const QAMQP::Frame::Method &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code_ = 0, classId, methodId;
     stream >> code_;
-    QString text(QAMQP::Frame::readField('s', stream).toString());
+    QString text(Frame::readField('s', stream).toString());
     stream >> classId;
     stream >> methodId;
 
@@ -254,24 +248,24 @@ void ChannelPrivate::close(const QAMQP::Frame::Method &frame)
 
 void ChannelPrivate::closeOk()
 {
-    QAMQP::Frame::Method frame(QAMQP::Frame::fcChannel, miCloseOk);
+    Frame::Method frame(Frame::fcChannel, miCloseOk);
     sendFrame(frame);
 }
 
-void ChannelPrivate::closeOk(const QAMQP::Frame::Method &frame)
+void ChannelPrivate::closeOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    Q_Q(QAMQP::Channel);
+    Q_Q(Channel);
 
     q->stateChanged(csClosed);
     q->onClose();
     opened = false;
 }
 
-void ChannelPrivate::openOk(const QAMQP::Frame::Method &frame)
+void ChannelPrivate::openOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    Q_Q(QAMQP::Channel);
+    Q_Q(Channel);
 
     qDebug(">> OpenOK");
     opened = true;

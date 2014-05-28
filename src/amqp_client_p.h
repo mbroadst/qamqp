@@ -3,7 +3,6 @@
 
 #include <QSharedPointer>
 
-#include "amqp_global.h"
 #include "amqp_network.h"
 #include "amqp_connection.h"
 #include "amqp_authenticator.h"
@@ -47,5 +46,6 @@ public:
 
 };
 
-}
+} // namespace QAMQP
+
 #endif // amqp_client_p_h__
