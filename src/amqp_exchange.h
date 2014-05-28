@@ -10,7 +10,7 @@ class Client;
 class Queue;
 class ClientPrivate;
 class ExchangePrivate;
-class Exchange : public Channel
+class QAMQP_EXPORT Exchange : public Channel
 {
     Q_OBJECT
     Q_PROPERTY(QString type READ type)

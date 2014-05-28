@@ -3,6 +3,7 @@
 
 #include "amqp_channel.h"
 #include "amqp_message.h"
+#include "amqp_global.h"
 
 namespace QAMQP
 {
@@ -11,7 +12,7 @@ class Client;
 class ClientPrivate;
 class Exchange;
 class QueuePrivate;
-class Queue : public Channel, public Frame::ContentHandler, public Frame::ContentBodyHandler
+class QAMQP_EXPORT Queue : public Channel, public Frame::ContentHandler, public Frame::ContentBodyHandler
 {
     Q_OBJECT
     Q_ENUMS(QueueOptions)

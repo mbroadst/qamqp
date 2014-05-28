@@ -5,6 +5,8 @@
 #include <QHash>
 #include <QVariant>
 
+#include "amqp_global.h"
+
 #define AMQP_BASIC_CONTENT_TYPE_FLAG (1 << 15)
 #define AMQP_BASIC_CONTENT_ENCODING_FLAG (1 << 7)
 #define AMQP_BASIC_HEADERS_FLAG (1 << 13)
@@ -105,7 +107,7 @@ namespace Frame
      *   @endcode
      *   octet short long 'size' octets octet
      */
-    class Base
+    class QAMQP_EXPORT Base
     {
     public:
         /*
@@ -187,7 +189,7 @@ namespace Frame
      *     short	  short	...
      * @endcode
      */
-    class Method : public Base
+    class QAMQP_EXPORT Method : public Base
     {
     public:
         /*
@@ -277,7 +279,7 @@ namespace Frame
      * @sa setProperty
      * @sa property
      */
-    class Content : public Base
+    class QAMQP_EXPORT Content : public Base
     {
     public:
         /*
@@ -359,7 +361,7 @@ namespace Frame
         friend class QAMQP::QueuePrivate;
     };
 
-    class ContentBody : public Base
+    class QAMQP_EXPORT ContentBody : public Base
     {
     public:
         ContentBody();
@@ -381,7 +383,7 @@ namespace Frame
      * @brief Class for working with heartbeat frames.
      * @detailed Implement frame for heartbeat send.
      */
-    class Heartbeat : public Base
+    class QAMQP_EXPORT Heartbeat : public Base
     {
     public:
         /*
@@ -395,19 +397,19 @@ namespace Frame
         void readPayload(QDataStream &stream);
     };
 
-    class MethodHandler
+    class QAMQP_EXPORT MethodHandler
     {
     public:
         virtual void _q_method(const Frame::Method &frame) = 0;
     };
 
-    class ContentHandler
+    class QAMQP_EXPORT ContentHandler
     {
     public:
         virtual void _q_content(const Frame::Content & frame) = 0;
     };
 
-    class ContentBodyHandler
+    class QAMQP_EXPORT ContentBodyHandler
     {
     public:
         virtual void _q_body(const Frame::ContentBody & frame) = 0;

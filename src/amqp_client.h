@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QUrl>
 
+#include "amqp_global.h"
+
 namespace QAMQP
 {
 
@@ -12,7 +14,7 @@ class Queue;
 class ClientPrivate;
 class Authenticator;
 class ConnectionPrivate;
-class Client : public QObject
+class QAMQP_EXPORT Client : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(quint32 port READ port WRITE setPort)

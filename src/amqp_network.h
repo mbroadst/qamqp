@@ -10,11 +10,12 @@
 #include <QBuffer>
 
 #include "amqp_frame.h"
+#include "amqp_global.h"
 
 namespace QAMQP
 {
 
-class Network : public QObject
+class QAMQP_EXPORT Network : public QObject
 {
     Q_OBJECT
 public:

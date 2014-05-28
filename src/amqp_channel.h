@@ -9,7 +9,7 @@ namespace QAMQP
 
 class Client;
 class ChannelPrivate;
-class Channel : public QObject, public Frame::MethodHandler
+class QAMQP_EXPORT Channel : public QObject, public Frame::MethodHandler
 {
     Q_OBJECT
     Q_PROPERTY(int number READ channelNumber CONSTANT)

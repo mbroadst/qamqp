@@ -4,10 +4,12 @@
 #include <QString>
 #include <QDataStream>
 
+#include "amqp_global.h"
+
 namespace QAMQP
 {
 
-class Authenticator
+class QAMQP_EXPORT Authenticator
 {
 public:
     virtual ~Authenticator() {}
@@ -15,7 +17,7 @@ public:
     virtual void write(QDataStream &out) = 0;
 };
 
-class AMQPlainAuthenticator : public Authenticator
+class QAMQP_EXPORT AMQPlainAuthenticator : public Authenticator
 {
 public:
     AMQPlainAuthenticator(const QString &login = QString(), const QString &password = QString());

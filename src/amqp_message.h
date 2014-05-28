@@ -1,15 +1,17 @@
 #ifndef amqp_message_h__
 #define amqp_message_h__
 
-#include "amqp_frame.h"
 #include <QByteArray>
 #include <QHash>
 #include <QSharedPointer>
 
+#include "amqp_frame.h"
+#include "amqp_global.h"
+
 namespace QAMQP
 {
 
-struct Message
+struct QAMQP_EXPORT Message
 {
     Message();
     virtual ~Message();

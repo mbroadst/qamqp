@@ -11,7 +11,7 @@ class Client;
 class ClientPrivate;
 class ChannelPrivate;
 class ConnectionPrivate;
-class Connection : public QObject, public Frame::MethodHandler
+class QAMQP_EXPORT Connection : public QObject, public Frame::MethodHandler
 {
     Q_OBJECT
     Q_PROPERTY(bool connected READ isConnected CONSTANT)
