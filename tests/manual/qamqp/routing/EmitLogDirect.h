@@ -30,7 +30,7 @@ public:
     {
         // Create AMQP client
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         // Create the "direct_logs" fanout exchange
         exchange_ =  client->createExchange("direct_logs");

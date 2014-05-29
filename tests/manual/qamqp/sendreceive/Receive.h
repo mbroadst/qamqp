@@ -30,7 +30,7 @@ public:
         : super(parent)
     {
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         queue_ = client->createQueue("hello");
         queue_->declare();

@@ -28,8 +28,11 @@ void ClientPrivate::init(QObject *parent)
 {
     Q_Q(Client);
     q->setParent(parent);
-    if (!network_)
+    if (!network_) {
         network_ = new Network(q);
+        QObject::connect(network_.data(), SIGNAL(connected()), q, SIGNAL(connected()));
+        QObject::connect(network_.data(), SIGNAL(disconnected()), q, SIGNAL(disconnected()));
+    }
 
     if (!connection_)
         connection_ = new Connection(q);
@@ -135,12 +138,14 @@ Queue *ClientPrivate::createQueue(int channelNumber, const QString &name )
 
 void ClientPrivate::disconnect()
 {
-    Q_Q(Client);
-    if (network_->state() != QAbstractSocket::UnconnectedState) {
-        network_->disconnect();
-        connection_->d_func()->connected = false;
-        Q_EMIT q->disconnected();
+//    Q_Q(Client);
+    if (network_->state() == QAbstractSocket::UnconnectedState) {
+        qDebug() << Q_FUNC_INFO << "already disconnected";
+        return;
     }
+
+    network_->disconnect();
+    connection_->d_func()->connected = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -278,32 +283,6 @@ Queue *Client::createQueue( const QString &name, int channelNumber )
     return d->createQueue(channelNumber, name);
 }
 
-void Client::open()
-{
-    Q_D(Client);
-    return d->connect();
-}
-
-void Client::open(const QUrl &connectionString)
-{
-    Q_D(Client);
-    d->parseConnectionString(connectionString);
-    open();
-}
-
-void Client::close()
-{
-    Q_D(Client);
-    return d->disconnect();
-}
-
-void Client::reopen()
-{
-    Q_D(Client);
-    d->disconnect();
-    d->connect();
-}
-
 void Client::setAuth(Authenticator *auth)
 {
     Q_D(Client);
@@ -358,3 +337,28 @@ QString Client::customProperty(const QString &name) const
     return d->connection_->customProperty(name);
 }
 
+void Client::connectToHost(const QString &connectionString)
+{
+    Q_D(Client);
+    if (connectionString.isEmpty()) {
+        d->connect();
+        return;
+    }
+
+    d->parseConnectionString(QUrl::fromUserInput(connectionString));
+    d->connect();
+}
+
+void Client::connectToHost(const QHostAddress &address, quint16 port)
+{
+    Q_D(Client);
+    d->host = address.toString();
+    d->port = port;
+    d->connect();
+}
+
+void Client::disconnectFromHost()
+{
+    Q_D(Client);
+    d->disconnect();
+}

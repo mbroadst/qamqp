@@ -27,7 +27,7 @@ public:
         : super(parent)
     {
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         queue_ = client->createQueue();
         queue_->declare("task_queue", Queue::Durable);

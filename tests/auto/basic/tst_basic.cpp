@@ -1,5 +1,8 @@
 #include <QtTest/QtTest>
 
+#include "amqp_client.h"
+#include "signalspy.h"
+
 class tst_Basic : public QObject
 {
     Q_OBJECT
@@ -12,12 +15,22 @@ private Q_SLOTS:
 
 void tst_Basic::connect()
 {
-    QVERIFY(true);
+    QAMQP::Client client;
+    SignalSpy spy(&client, SIGNAL(connected()));
+    client.connectToHost();
+    QVERIFY(spy.wait());
 }
 
 void tst_Basic::connectDisconnect()
 {
-    QVERIFY(true);
+    QAMQP::Client client;
+    SignalSpy connectSpy(&client, SIGNAL(connected()));
+    client.connectToHost();
+    QVERIFY(connectSpy.wait());
+
+    SignalSpy disconnectSpy(&client, SIGNAL(disconnected()));
+    client.disconnectFromHost();
+    QVERIFY(disconnectSpy.wait());
 }
 
 void tst_Basic::reconnect()

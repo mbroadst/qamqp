@@ -62,11 +62,6 @@ public:
     void setAuth(Authenticator *auth);
     Authenticator *auth() const;
 
-    void open();
-    void open(const QUrl &connectionString);
-    void close();
-    void reopen();
-
     bool isSsl() const;
     void setSsl(bool value);
 
@@ -74,6 +69,10 @@ public:
     void setAutoReconnect(bool value);
 
     bool isConnected() const;
+
+    void connectToHost(const QString &connectionString = QString());
+    void connectToHost(const QHostAddress &address, quint16 port);
+    void disconnectFromHost();
 
 Q_SIGNALS:
     void connected();
@@ -86,6 +85,7 @@ private:
 
     friend class ConnectionPrivate;
     friend class ChannelPrivate;
+
 };
 
 } // namespace QAMQP

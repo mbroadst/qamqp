@@ -29,7 +29,7 @@ public:
     {
         // Create AMQP client
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         // Retrieve the "Default" exchange
         exchange_ =  client->createExchange();

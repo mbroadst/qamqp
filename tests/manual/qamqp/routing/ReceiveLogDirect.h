@@ -31,7 +31,7 @@ public:
     {
         // Create AMQP client
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         // Create an exclusive queue
         queue_ = client->createQueue();

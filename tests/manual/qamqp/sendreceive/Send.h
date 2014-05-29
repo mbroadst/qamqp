@@ -31,7 +31,7 @@ public:
     {
         // Create AMQP client
         QAMQP::Client* client = new QAMQP::Client(this);
-        client->open(QUrl(address));
+        client->connectToHost(address);
 
         // Retrieve the "Default" exchange
         // No need to declare (i.e. to create), nor to bind to a queue
