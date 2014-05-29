@@ -87,7 +87,7 @@ private:
     Q_DISABLE_COPY(Queue)
     Q_DECLARE_PRIVATE(Queue)
 
-    friend class ClientPrivate;
+    friend class Client;
 };
 
 } // namespace QAMQP

@@ -28,8 +28,6 @@ public:
     void sockConnect();
     void login();
     void setAuth(Authenticator* auth);
-    Exchange *createExchange(int channelNumber, const QString &name);
-    Queue *createQueue(int channelNumber, const QString &name);
 
     quint32 port;
     QString host;

@@ -64,7 +64,8 @@ private:
 
     Q_DISABLE_COPY(Exchange)
     Q_DECLARE_PRIVATE(Exchange)
-    friend class ClientPrivate;
+
+    friend class Client;
 
 };
 

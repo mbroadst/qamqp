@@ -104,41 +104,8 @@ void ClientPrivate::login()
 {
 }
 
-Exchange *ClientPrivate::createExchange(int channelNumber, const QString &name)
-{
-    Q_Q(Client);
-    Exchange * exchange_ = new Exchange(channelNumber, q);
-
-    network_->addMethodHandlerForChannel(exchange_->channelNumber(), exchange_);
-
-    QObject::connect(connection_, SIGNAL(connected()), exchange_, SLOT(_q_open()));
-    exchange_->d_func()->open();
-    QObject::connect(q, SIGNAL(disconnected()), exchange_, SLOT(_q_disconnected()));
-    exchange_->setName(name);
-
-    return exchange_;
-}
-
-Queue *ClientPrivate::createQueue(int channelNumber, const QString &name )
-{
-    Q_Q(Client);
-    Queue *queue_ = new Queue(channelNumber, q);
-
-    network_->addMethodHandlerForChannel(queue_->channelNumber(), queue_);
-    network_->addContentHandlerForChannel(queue_->channelNumber(), queue_);
-    network_->addContentBodyHandlerForChannel(queue_->channelNumber(), queue_);
-
-    QObject::connect(connection_, SIGNAL(connected()), queue_, SLOT(_q_open()));
-    queue_->d_func()->open();
-    QObject::connect(q, SIGNAL(disconnected()), queue_, SLOT(_q_disconnected()));
-    queue_->setName(name);
-
-    return queue_;
-}
-
 void ClientPrivate::disconnect()
 {
-//    Q_Q(Client);
     if (network_->state() == QAbstractSocket::UnconnectedState) {
         qDebug() << Q_FUNC_INFO << "already disconnected";
         return;
@@ -261,26 +228,42 @@ void Client::closeChannel()
 
 Exchange *Client::createExchange(int channelNumber)
 {
-    Q_D(Client);
-    return d->createExchange(channelNumber, QString());
+    return createExchange(QString(), channelNumber);
 }
 
-Exchange *Client::createExchange( const QString &name, int channelNumber )
+Exchange *Client::createExchange(const QString &name, int channelNumber)
 {
     Q_D(Client);
-    return d->createExchange(channelNumber, name);
+    Exchange *exchange = new Exchange(channelNumber, this);
+    d->network_->addMethodHandlerForChannel(exchange->channelNumber(), exchange);
+    connect(d->connection_, SIGNAL(connected()), exchange, SLOT(_q_open()));
+    exchange->d_func()->open();
+    connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
+    if (!name.isEmpty())
+        exchange->setName(name);
+    return exchange;
 }
 
 Queue *Client::createQueue(int channelNumber)
 {
-    Q_D(Client);
-    return d->createQueue(channelNumber, QString());
+    return createQueue(QString(), channelNumber);
 }
 
-Queue *Client::createQueue( const QString &name, int channelNumber )
+Queue *Client::createQueue(const QString &name, int channelNumber)
 {
     Q_D(Client);
-    return d->createQueue(channelNumber, name);
+    Queue *queue = new Queue(channelNumber, this);
+    d->network_->addMethodHandlerForChannel(queue->channelNumber(), queue);
+    d->network_->addContentHandlerForChannel(queue->channelNumber(), queue);
+    d->network_->addContentBodyHandlerForChannel(queue->channelNumber(), queue);
+
+    connect(d->connection_, SIGNAL(connected()), queue, SLOT(_q_open()));
+    queue->d_func()->open();
+    connect(this, SIGNAL(disconnected()), queue, SLOT(_q_disconnected()));
+
+    if (!name.isEmpty())
+        queue->setName(name);
+    return queue;
 }
 
 void Client::setAuth(Authenticator *auth)
