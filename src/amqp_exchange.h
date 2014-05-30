@@ -45,11 +45,12 @@ public:
     void bind(const QString &queueName, const QString &key);
 
     void publish(const QString &message, const QString &key,
-                 const MessageProperties &property = MessageProperties());
+                 const MessageProperties &properties = MessageProperties());
     void publish(const QByteArray &message, const QString &key,
-                 const QString &mimeType, const MessageProperties &property = MessageProperties());
-    void publish(const QByteArray &message, const QString &key, const QVariantHash &headers,
-                 const QString &mimeType, const MessageProperties &property = MessageProperties());
+                 const QString &mimeType, const MessageProperties &properties = MessageProperties());
+    void publish(const QByteArray &message, const QString &key,
+                 const QString &mimeType, const QVariantHash &headers,
+                 const Exchange::MessageProperties &properties = Exchange::MessageProperties());
 
 Q_SIGNALS:
     void declared();

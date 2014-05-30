@@ -15,12 +15,6 @@ public:
     };
 
     ExchangePrivate(Exchange *q);
-    ~ExchangePrivate();
-
-    void publish(const QByteArray &message, const QString &key,
-                 const QString &mimeType = QLatin1String("text/plain"),
-                 const QVariantHash &headers = QVariantHash(),
-                 const Exchange::MessageProperties &properties = Exchange::MessageProperties());
 
     // method handler related
     virtual void _q_disconnected();

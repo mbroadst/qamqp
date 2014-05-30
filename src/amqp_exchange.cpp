@@ -119,25 +119,59 @@ void Exchange::bind(const QString &queueName, const QString &key)
     qWarning("Not implemented");
 }
 
-void Exchange::publish(const QString &message, const QString &key, const MessageProperties &prop)
+void Exchange::publish(const QString &message, const QString &key,
+                       const MessageProperties &properties)
 {
-    Q_D(Exchange);
-    d->publish(message.toUtf8(), key, QLatin1String("text.plain"), QVariantHash(), prop);
+    publish(message.toUtf8(), key, QLatin1String("text.plain"), QVariantHash(), properties);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &key,
-                       const QString &mimeType, const MessageProperties &prop)
+                       const QString &mimeType, const MessageProperties &properties)
 {
-    Q_D(Exchange);
-    d->publish(message, key, mimeType, QVariantHash(), prop);
+    publish(message, key, mimeType, QVariantHash(), properties);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &key,
-                       const QVariantHash &headers, const QString &mimeType,
-                       const MessageProperties &prop)
+                       const QString &mimeType, const QVariantHash &headers,
+                       const Exchange::MessageProperties &properties)
 {
     Q_D(Exchange);
-    d->publish(message, key, mimeType, headers, prop);
+    Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+    Frame::writeField('s', out, key);
+    out << qint8(0);
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+
+    Frame::Content content(Frame::fcBasic);
+    content.setChannel(d->number);
+    content.setProperty(Frame::Content::cpContentType, mimeType);
+    content.setProperty(Frame::Content::cpContentEncoding, "utf-8");
+    content.setProperty(Frame::Content::cpHeaders, headers);
+    content.setProperty(Frame::Content::cpMessageId, "0");
+
+    Exchange::MessageProperties::ConstIterator it;
+    Exchange::MessageProperties::ConstIterator itEnd = properties.constEnd();
+    for (it = properties.constBegin(); it != itEnd; ++it)
+        content.setProperty(it.key(), it.value());
+    content.setBody(message);
+    d->sendFrame(content);
+
+    int fullSize = message.size();
+    for (int sent = 0; sent < fullSize; sent += (FRAME_MAX - 7)) {
+        Frame::ContentBody body;
+        QByteArray partition = message.mid(sent, (FRAME_MAX - 7));
+        body.setChannel(d->number);
+        body.setBody(partition);
+        d->sendFrame(body);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -146,10 +180,6 @@ ExchangePrivate::ExchangePrivate(Exchange *q)
     : ChannelPrivate(q),
       delayedDeclare(false),
       declared(false)
-{
-}
-
-ExchangePrivate::~ExchangePrivate()
 {
 }
 
@@ -178,61 +208,21 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
 void ExchangePrivate::declareOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
+
     Q_Q(Exchange);
     qDebug() << "Declared exchange: " << name;
     declared = true;
-    QMetaObject::invokeMethod(q, "declared");
+    Q_EMIT q->declared();
 }
 
 void ExchangePrivate::deleteOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
+
     Q_Q(Exchange);
     qDebug() << "Deleted exchange: " << name;
     declared = false;
-    QMetaObject::invokeMethod(q, "removed");
-}
-
-void ExchangePrivate::publish(const QByteArray &message, const QString &key,
-                              const QString &mimeType, const QVariantHash &headers,
-                              const Exchange::MessageProperties &prop)
-{
-    Frame::Method frame(Frame::fcBasic, bmPublish);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    Frame::writeField('s', out, key);
-    out << qint8(0);
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-
-    Frame::Content content(Frame::fcBasic);
-    content.setChannel(number);
-    content.setProperty(Frame::Content::cpContentType, mimeType);
-    content.setProperty(Frame::Content::cpContentEncoding, "utf-8");
-    content.setProperty(Frame::Content::cpHeaders, headers);
-    content.setProperty(Frame::Content::cpMessageId, "0");
-
-    Exchange::MessageProperties::ConstIterator it;
-    Exchange::MessageProperties::ConstIterator itEnd = prop.constEnd();
-    for (it = prop.constBegin(); it != itEnd; ++it)
-        content.setProperty(it.key(), it.value());
-
-    content.setBody(message);
-    sendFrame(content);
-
-    int fullSize = message.size();
-    for (int sended_ = 0; sended_ < fullSize; sended_+= (FRAME_MAX - 7)) {
-        Frame::ContentBody body;
-        QByteArray partition_ = message.mid(sended_, (FRAME_MAX - 7));
-        body.setChannel(number);
-        body.setBody(partition_);
-        sendFrame(body);
-    }
+    Q_EMIT q->removed();
 }
 
 void ExchangePrivate::_q_disconnected()
