@@ -29,7 +29,7 @@
 namespace QAMQP
 {
 
-class QueuePrivate;
+class Queue;
 namespace Frame
 {
     typedef quint16 channel_t;
@@ -358,7 +358,7 @@ namespace Frame
         qlonglong bodySize_;
 
     private:
-        friend class QAMQP::QueuePrivate;
+        friend class QAMQP::Queue;
     };
 
     class QAMQP_EXPORT ContentBody : public Base

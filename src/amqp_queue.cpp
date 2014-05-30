@@ -130,13 +130,41 @@ void Queue::unbind(Exchange *exchange, const QString &key)
 void Queue::_q_content(const Frame::Content &frame)
 {
     Q_D(Queue);
-    d->_q_content(frame);
+    Q_ASSERT(frame.channel() == d->number);
+    if (frame.channel() != d->number)
+        return;
+
+    if (d->messages_.isEmpty()) {
+        qErrnoWarning("Received content-header without method frame before");
+        return;
+    }
+
+    MessagePtr &message = d->messages_.last();
+    message->leftSize = frame.bodySize();
+    QHash<int, QVariant>::ConstIterator it;
+    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
+    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
+        message->property[Message::MessageProperty(it.key())] = it.value();
 }
 
 void Queue::_q_body(const Frame::ContentBody &frame)
 {
     Q_D(Queue);
-    d->_q_body(frame);
+    Q_ASSERT(frame.channel() == d->number);
+    if (frame.channel() != d->number)
+        return;
+
+    if (d->messages_.isEmpty()) {
+        qErrnoWarning("Received content-body without method frame before");
+        return;
+    }
+
+    MessagePtr &message = d->messages_.last();
+    message->payload.append(frame.body());
+    message->leftSize -= frame.body().size();
+
+    if (message->leftSize == 0 && d->messages_.size() == 1)
+        Q_EMIT messageReceived(this);
 }
 
 MessagePtr Queue::getMessage()
@@ -492,43 +520,4 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     newMessage->exchangeName = exchangeName;
     newMessage->deliveryTag = deliveryTag;
     messages_.enqueue(newMessage);
-}
-
-void QueuePrivate::_q_content(const Frame::Content &frame)
-{
-    Q_ASSERT(frame.channel() == number);
-    if (frame.channel() != number)
-        return;
-
-    if (messages_.isEmpty()) {
-        qErrnoWarning("Received content-header without method frame before");
-        return;
-    }
-
-    MessagePtr &message = messages_.last();
-    message->leftSize = frame.bodySize();
-    QHash<int, QVariant>::ConstIterator it;
-    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
-    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
-        message->property[Message::MessageProperty(it.key())] = it.value();
-}
-
-void QueuePrivate::_q_body(const Frame::ContentBody &frame)
-{
-    Q_Q(Queue);
-    Q_ASSERT(frame.channel() == number);
-    if (frame.channel() != number)
-        return;
-
-    if (messages_.isEmpty()) {
-        qErrnoWarning("Received content-body without method frame before");
-        return;
-    }
-
-    MessagePtr &message = messages_.last();
-    message->payload.append(frame.body());
-    message->leftSize -= frame.body().size();
-
-    if (message->leftSize == 0 && messages_.size() == 1)
-        Q_EMIT q->messageReceived(q);
 }

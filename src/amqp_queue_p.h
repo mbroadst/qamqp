@@ -60,9 +60,6 @@ public:
 
     bool recievingMessage;
 
-    void _q_content(const Frame::Content &frame);
-    void _q_body(const Frame::ContentBody &frame);
-
     Q_DECLARE_PUBLIC(Queue)
 
 };

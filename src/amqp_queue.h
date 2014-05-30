@@ -57,6 +57,7 @@ public:
     void unbind(Exchange *exchange, const QString &key);
 
     MessagePtr getMessage();
+
     void get();
     void ack(const MessagePtr &message);
     bool hasMessage() const;
