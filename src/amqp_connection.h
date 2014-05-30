@@ -39,7 +39,7 @@ Q_SIGNALS:
     void connected();
 
 private:
-    explicit Connection(Client * parent = 0);
+    explicit Connection(Client *parent = 0);
 
     Q_DISABLE_COPY(Connection)
     Q_DECLARE_PRIVATE(Connection)

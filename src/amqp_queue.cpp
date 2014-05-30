@@ -172,7 +172,7 @@ void Queue::ack(const MessagePtr &message)
 //////////////////////////////////////////////////////////////////////////
 
 
-QueuePrivate::QueuePrivate(Queue * q)
+QueuePrivate::QueuePrivate(Queue *q)
     : ChannelPrivate(q),
       delayedDeclare(false),
       declared(false),
@@ -349,7 +349,7 @@ void QueuePrivate::purge()
     sendFrame(frame);
 }
 
-void QueuePrivate::bind(const QString & exchangeName, const QString &key)
+void QueuePrivate::bind(const QString &exchangeName, const QString &key)
 {
     if (!opened) {
         delayedBindings.append(QPair<QString,QString>(exchangeName, key));
@@ -507,9 +507,10 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
 
     MessagePtr &message = messages_.last();
     message->leftSize = frame.bodySize();
-    QHash<int, QVariant>::ConstIterator i;
-    for (i = frame.properties_.begin(); i != frame.properties_.end(); ++i)
-        message->property[Message::MessageProperty(i.key())]= i.value();
+    QHash<int, QVariant>::ConstIterator it;
+    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
+    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
+        message->property[Message::MessageProperty(it.key())] = it.value();
 }
 
 void QueuePrivate::_q_body(const Frame::ContentBody &frame)

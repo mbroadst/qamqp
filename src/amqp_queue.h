@@ -50,15 +50,15 @@ public:
 
     void purge();
 
-    void bind(const QString & exchangeName, const QString & key);
-    void bind(Exchange * exchange, const QString & key);
+    void bind(const QString &exchangeName, const QString &key);
+    void bind(Exchange *exchange, const QString &key);
 
-    void unbind(const QString & exchangeName, const QString & key);
-    void unbind(Exchange * exchange, const QString & key);
+    void unbind(const QString &exchangeName, const QString &key);
+    void unbind(Exchange *exchange, const QString &key);
 
     MessagePtr getMessage();
     void get();
-    void ack(const MessagePtr & message);
+    void ack(const MessagePtr &message);
     bool hasMessage() const;
     void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
     void setConsumerTag(const QString &consumerTag);
@@ -79,10 +79,10 @@ protected:
     void onClose();
 
 private:
-    Queue(int channelNumber = -1, Client * parent = 0);
+    Queue(int channelNumber = -1, Client *parent = 0);
 
-    void _q_content(const Frame::Content & frame);
-    void _q_body(const Frame::ContentBody & frame);
+    void _q_content(const Frame::Content &frame);
+    void _q_body(const Frame::ContentBody &frame);
 
     Q_DISABLE_COPY(Queue)
     Q_DECLARE_PRIVATE(Queue)

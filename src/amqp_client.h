@@ -32,9 +32,6 @@ public:
     Client(const QUrl &connectionString, QObject *parent = 0);
     ~Client();
 
-    void printConnect() const;
-    void closeChannel();
-
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 

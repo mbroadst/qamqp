@@ -102,7 +102,7 @@ void Exchange::publish(const QByteArray &message, const QString &key,
 
 //////////////////////////////////////////////////////////////////////////
 
-ExchangePrivate::ExchangePrivate(Exchange * q)
+ExchangePrivate::ExchangePrivate(Exchange *q)
     : ChannelPrivate(q),
       delayedDeclare(false),
       declared(false)
@@ -201,7 +201,7 @@ void ExchangePrivate::remove(bool ifUnused, bool noWait)
 }
 
 void ExchangePrivate::publish(const QByteArray &message, const QString &key,
-                              const QString &mimeType, const QVariantHash & headers,
+                              const QString &mimeType, const QVariantHash &headers,
                               const Exchange::MessageProperties &prop)
 {
     Frame::Method frame(Frame::fcBasic, bmPublish);
@@ -224,10 +224,10 @@ void ExchangePrivate::publish(const QByteArray &message, const QString &key,
     content.setProperty(Frame::Content::cpHeaders, headers);
     content.setProperty(Frame::Content::cpMessageId, "0");
 
-    Exchange::MessageProperties::ConstIterator i;
-
-    for (i = prop.begin(); i != prop.end(); ++i)
-        content.setProperty(i.key(), i.value());
+    Exchange::MessageProperties::ConstIterator it;
+    Exchange::MessageProperties::ConstIterator itEnd = prop.constEnd();
+    for (it = prop.constBegin(); it != itEnd; ++it)
+        content.setProperty(it.key(), it.value());
 
     content.setBody(message);
     sendFrame(content);

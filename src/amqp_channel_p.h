@@ -40,7 +40,7 @@ public:
         METHOD_ID_ENUM(bmRecover, 110)
     };
 
-    ChannelPrivate(Channel * q);
+    ChannelPrivate(Channel *q);
     virtual ~ChannelPrivate();
 
     void init(int channelNumber, Client *parent);

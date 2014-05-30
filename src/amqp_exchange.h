@@ -60,7 +60,7 @@ protected:
     void onClose();
 
 private:
-    explicit Exchange(int channelNumber = -1, Client * parent = 0);
+    explicit Exchange(int channelNumber = -1, Client *parent = 0);
 
     Q_DISABLE_COPY(Exchange)
     Q_DECLARE_PRIVATE(Exchange)

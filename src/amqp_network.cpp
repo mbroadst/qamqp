@@ -5,7 +5,7 @@
 
 using namespace QAMQP;
 
-Network::Network( QObject * parent)
+Network::Network(QObject *parent)
     : QObject(parent)
 {
     qRegisterMetaType<Frame::Method>("QAMQP::Frame::Method");
@@ -22,7 +22,7 @@ Network::~Network()
     disconnect();
 }
 
-void Network::connectTo(const QString & host, quint16 port)
+void Network::connectTo(const QString &host, quint16 port)
 {
     if(!socket_) {
         qWarning("AMQP: Socket didn't create.");
@@ -96,7 +96,7 @@ void Network::readyRead()
         if (socket_->bytesAvailable() >= readSize) {
             buffer_.resize(readSize);
             socket_->read(buffer_.data(), readSize);
-            const char* bufferData = buffer_.constData();
+            const char *bufferData = buffer_.constData();
             const quint8 type = *(quint8*)&bufferData[0];
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE+payloadSize];
             if (magic != Frame::FRAME_END)
@@ -110,7 +110,7 @@ void Network::readyRead()
                 if (frame.methodClass() == Frame::fcConnection) {
                     m_pMethodHandlerConnection->_q_method(frame);
                 } else {
-                    foreach(Frame::MethodHandler* pMethodHandler, m_methodHandlersByChannel[frame.channel()])
+                    foreach(Frame::MethodHandler *pMethodHandler, m_methodHandlersByChannel[frame.channel()])
                         pMethodHandler->_q_method(frame);
                 }
             }
@@ -118,14 +118,14 @@ void Network::readyRead()
             case Frame::ftHeader:
             {
                 Frame::Content frame(streamB);
-                foreach(Frame::ContentHandler* pMethodHandler, m_contentHandlerByChannel[frame.channel()])
+                foreach(Frame::ContentHandler *pMethodHandler, m_contentHandlerByChannel[frame.channel()])
                     pMethodHandler->_q_content(frame);
             }
                 break;
             case Frame::ftBody:
             {
                 Frame::ContentBody frame(streamB);
-                foreach(Frame::ContentBodyHandler* pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
+                foreach(Frame::ContentBodyHandler *pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
                     pMethodHandler->_q_body(frame);
             }
                 break;
@@ -171,7 +171,7 @@ void Network::initSocket(bool ssl)
     if (ssl) {
 #ifndef QT_NO_SSL
         socket_ = new QSslSocket(this);
-        QSslSocket * ssl_= static_cast<QSslSocket*> (socket_.data());
+        QSslSocket *ssl_= static_cast<QSslSocket*> (socket_.data());
         ssl_->setProtocol(QSsl::AnyProtocol);
         connect(socket_, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sslErrors()));
         connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));

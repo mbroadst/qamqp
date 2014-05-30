@@ -285,7 +285,7 @@ QVariant Frame::readField(qint8 valueType, QDataStream &s)
     return value;
 }
 
-QDataStream & Frame::deserialize(QDataStream &stream, Frame::TableField &f)
+QDataStream &Frame::deserialize(QDataStream &stream, Frame::TableField &f)
 {
     QByteArray data;
     stream >> data;
@@ -301,14 +301,15 @@ QDataStream & Frame::deserialize(QDataStream &stream, Frame::TableField &f)
     return stream;
 }
 
-QDataStream & Frame::serialize(QDataStream &stream, const TableField &f)
+QDataStream &Frame::serialize(QDataStream &stream, const TableField &f)
 {
     QByteArray data;
     QDataStream s(&data, QIODevice::WriteOnly);
-    TableField::ConstIterator i;
-    for (i = f.begin(); i != f.end(); ++i) {
-        writeField('s', s, i.key());
-        writeField(s, i.value());
+    TableField::ConstIterator it;
+    TableField::ConstIterator itEnd = f.constEnd();
+    for (it = f.constBegin(); it != itEnd; ++it) {
+        writeField('s', s, it.key());
+        writeField(s, it.value());
     }
 
     if (data.isEmpty()) {
@@ -322,17 +323,18 @@ QDataStream & Frame::serialize(QDataStream &stream, const TableField &f)
 
 void Frame::print(const TableField &f)
 {
-    TableField::ConstIterator i;
-    for (i = f.begin(); i != f.end(); ++i) {
-        switch(i.value().type()) {
+    TableField::ConstIterator it;
+    TableField::ConstIterator itEnd = f.constEnd();
+    for (it = f.constBegin(); it != itEnd; ++it) {
+        switch(it.value().type()) {
         case  QVariant::Hash:
-            qDebug() << "\t" << qPrintable(i.key()) << ": FIELD_TABLE";
+            qDebug() << "\t" << qPrintable(it.key()) << ": FIELD_TABLE";
             break;
         case QVariant::List:
-            qDebug() << "\t" << qPrintable(i.key()) << ": ARRAY";
+            qDebug() << "\t" << qPrintable(it.key()) << ": ARRAY";
             break;
         default:
-            qDebug() << "\t" << qPrintable(i.key()) << ": " << i.value();
+            qDebug() << "\t" << qPrintable(it.key()) << ": " << it.value();
         }
     }
 }

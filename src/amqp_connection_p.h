@@ -31,7 +31,7 @@ public:
     void secureOk();
     void tuneOk();
     void open();
-    void close(int code, const QString & text, int classId = 0, int methodId = 0);
+    void close(int code, const QString &text, int classId = 0, int methodId = 0);
     void closeOk();
 
     void start(const Frame::Method &frame);

@@ -109,7 +109,7 @@ void Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 //////////////////////////////////////////////////////////////////////////
 
 int ChannelPrivate::nextChannelNumber_ = 0;
-ChannelPrivate::ChannelPrivate(Channel * q)
+ChannelPrivate::ChannelPrivate(Channel *q)
     : number(0),
       opened(false),
       needOpen(true),

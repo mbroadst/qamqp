@@ -16,7 +16,7 @@ public:
         METHOD_ID_ENUM(miDelete, 20)
     };
 
-    ExchangePrivate(Exchange * q);
+    ExchangePrivate(Exchange *q);
     ~ExchangePrivate();
 
     void declare();

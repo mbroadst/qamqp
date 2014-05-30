@@ -18,16 +18,11 @@ public:
     ClientPrivate(Client *q);
     ~ClientPrivate();
 
-    void init(QObject *parent);
-    void init(QObject *parent, const QUrl &connectionString);
-
-    void printConnect() const;
+    void init(const QUrl &connectionString = QUrl());
     void connect();
     void disconnect();
-    void parseConnectionString( const QUrl &connectionString);
+    void parseConnectionString(const QUrl &connectionString);
     void sockConnect();
-    void login();
-    void setAuth(Authenticator* auth);
 
     quint32 port;
     QString host;

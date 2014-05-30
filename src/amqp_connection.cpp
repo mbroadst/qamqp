@@ -11,7 +11,7 @@
 
 using namespace QAMQP;
 
-ConnectionPrivate::ConnectionPrivate(Connection * q)
+ConnectionPrivate::ConnectionPrivate(Connection *q)
     : closed_(false),
       connected(false),
       q_ptr(q)
@@ -22,7 +22,7 @@ ConnectionPrivate::~ConnectionPrivate()
 {
 }
 
-void ConnectionPrivate::init(Client * parent)
+void ConnectionPrivate::init(Client *parent)
 {
     Q_Q(Connection);
     q->setParent(parent);

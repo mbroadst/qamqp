@@ -87,12 +87,12 @@ namespace Frame
      */
     typedef QHash<QString, QVariant> TableField;
 
-    QDataStream & serialize( QDataStream & stream, const Frame::TableField & f );
-    QDataStream & deserialize( QDataStream & stream, Frame::TableField & f );
-    QVariant readField( qint8 valueType, QDataStream &s );
-    void writeField( QDataStream &s, const QVariant & value );
-    void writeField( qint8 valueType, QDataStream &s, const QVariant & value, bool withType = false );
-    void print( const Frame::TableField & f );
+    QDataStream &serialize(QDataStream &stream, const Frame::TableField &f);
+    QDataStream &deserialize(QDataStream &stream, Frame::TableField &f);
+    QVariant readField(qint8 valueType, QDataStream &s);
+    void writeField(QDataStream &s, const QVariant &value);
+    void writeField(qint8 valueType, QDataStream &s, const QVariant &value, bool withType = false);
+    void print(const Frame::TableField &f);
 
     /*
      * @brief Base class for any frames.
@@ -122,7 +122,7 @@ namespace Frame
          * @detailed Construct frame class from received raw data.
          * @param raw Data stream for reading source data.
          */
-        Base(QDataStream& raw);
+        Base(QDataStream &raw);
 
         /*
          * Base class virtual destructor
@@ -238,8 +238,8 @@ namespace Frame
         QByteArray arguments() const;
 
     protected:
-        void writePayload(QDataStream & stream) const;
-        void readPayload(QDataStream & stream);
+        void writePayload(QDataStream &stream) const;
+        void readPayload(QDataStream &stream);
         short methodClass_;
         qint16 id_;
         QByteArray arguments_;
@@ -406,13 +406,13 @@ namespace Frame
     class QAMQP_EXPORT ContentHandler
     {
     public:
-        virtual void _q_content(const Frame::Content & frame) = 0;
+        virtual void _q_content(const Frame::Content &frame) = 0;
     };
 
     class QAMQP_EXPORT ContentBodyHandler
     {
     public:
-        virtual void _q_body(const Frame::ContentBody & frame) = 0;
+        virtual void _q_body(const Frame::ContentBody &frame) = 0;
     };
 
 } // namespace Frame

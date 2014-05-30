@@ -12,7 +12,7 @@
 
 using namespace QAMQP;
 
-ClientPrivate::ClientPrivate(Client * q)
+ClientPrivate::ClientPrivate(Client *q)
     : port(AMQPPORT),
       host(QString::fromLatin1(AMQPHOST)),
       virtualHost(QString::fromLatin1(AMQPVHOST)),
@@ -24,10 +24,9 @@ ClientPrivate::~ClientPrivate()
 {
 }
 
-void ClientPrivate::init(QObject *parent)
+void ClientPrivate::init(const QUrl &connectionString)
 {
     Q_Q(Client);
-    q->setParent(parent);
     if (!network_) {
         network_ = new Network(q);
         QObject::connect(network_.data(), SIGNAL(connected()), q, SIGNAL(connected()));
@@ -38,42 +37,21 @@ void ClientPrivate::init(QObject *parent)
         connection_ = new Connection(q);
     network_->setMethodHandlerConnection(connection_);
 
-    setAuth(new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
+    auth_ = QSharedPointer<Authenticator>(
+                new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
 
     QObject::connect(connection_, SIGNAL(connected()), q, SIGNAL(connected()));
     QObject::connect(connection_, SIGNAL(disconnected()), q, SIGNAL(disconnected()));
-}
 
-void ClientPrivate::init(QObject *parent, const QUrl &connectionString)
-{
-    init(parent);
-    parseConnectionString(connectionString);
-    connect();
-}
-
-void ClientPrivate::setAuth(Authenticator *auth)
-{
-    auth_ = QSharedPointer<Authenticator>(auth);
-}
-
-void ClientPrivate::printConnect() const
-{
-    QTextStream stream(stdout);
-    stream <<  "port  = " << port << endl;
-    stream <<  "host  = " << host << endl;
-    stream <<  "vhost = " << virtualHost << endl;
-
-    if (auth_ && auth_->type() == QLatin1String("AMQPLAIN")) {
-        QSharedPointer<AMQPlainAuthenticator> a = auth_.staticCast<AMQPlainAuthenticator>();
-        stream <<  "user  = " << a->login() << endl;
-        stream <<  "passw = " << a->password() << endl;
+    if (connectionString.isValid()) {
+        parseConnectionString(connectionString);
+        connect();
     }
 }
 
 void ClientPrivate::connect()
 {
     sockConnect();
-    login();
 }
 
 void ClientPrivate::parseConnectionString(const QUrl &connectionString)
@@ -100,10 +78,6 @@ void ClientPrivate::sockConnect()
     network_->connectTo(host, port);
 }
 
-void ClientPrivate::login()
-{
-}
-
 void ClientPrivate::disconnect()
 {
     if (network_->state() == QAbstractSocket::UnconnectedState) {
@@ -121,13 +95,16 @@ Client::Client(QObject *parent)
     : QObject(parent),
       d_ptr(new ClientPrivate(this))
 {
-    d_ptr->init(parent);
+    Q_D(Client);
+    d->init();
 }
 
-Client::Client(const QUrl & connectionString, QObject * parent)
-    : d_ptr(new ClientPrivate(this))
+Client::Client(const QUrl &connectionString, QObject *parent)
+    : QObject(parent),
+      d_ptr(new ClientPrivate(this))
 {
-    d_ptr->init(parent, connectionString);
+    Q_D(Client);
+    d->init(connectionString);
 }
 
 Client::~Client()
@@ -152,7 +129,7 @@ QString Client::host() const
     return d->host;
 }
 
-void Client::setHost( const QString & host )
+void Client::setHost(const QString &host)
 {
     Q_D(Client);
     d->host = host;
@@ -173,9 +150,9 @@ void Client::setVirtualHost(const QString &virtualHost)
 QString Client::user() const
 {
     Q_D(const Client);
-    const Authenticator * auth = d->auth_.data();
+    const Authenticator *auth = d->auth_.data();
     if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
-        const AMQPlainAuthenticator * a = static_cast<const AMQPlainAuthenticator *>(auth);
+        const AMQPlainAuthenticator *a = static_cast<const AMQPlainAuthenticator*>(auth);
         return a->login();
     }
 
@@ -185,9 +162,9 @@ QString Client::user() const
 void Client::setUser(const QString &user)
 {
     Q_D(const Client);
-    Authenticator * auth = d->auth_.data();
+    Authenticator *auth = d->auth_.data();
     if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
-        AMQPlainAuthenticator * a = static_cast<AMQPlainAuthenticator *>(auth);
+        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
         a->setLogin(user);
     }
 }
@@ -195,9 +172,9 @@ void Client::setUser(const QString &user)
 QString Client::password() const
 {
     Q_D(const Client);
-    const Authenticator * auth = d->auth_.data();
+    const Authenticator *auth = d->auth_.data();
     if (auth && auth->type() == "AMQPLAIN") {
-        const AMQPlainAuthenticator * a = static_cast<const AMQPlainAuthenticator *>(auth);
+        const AMQPlainAuthenticator *a = static_cast<const AMQPlainAuthenticator*>(auth);
         return a->password();
     }
 
@@ -209,21 +186,9 @@ void Client::setPassword(const QString &password)
     Q_D(Client);
     Authenticator *auth = d->auth_.data();
     if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
-        AMQPlainAuthenticator * a = static_cast<AMQPlainAuthenticator *>(auth);
+        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
         a->setPassword(password);
     }
-}
-
-void Client::printConnect() const
-{
-#ifdef _DEBUG
-    Q_D(const Client);
-    d->printConnect();
-#endif // _DEBUG
-}
-
-void Client::closeChannel()
-{
 }
 
 Exchange *Client::createExchange(int channelNumber)
@@ -269,7 +234,7 @@ Queue *Client::createQueue(const QString &name, int channelNumber)
 void Client::setAuth(Authenticator *auth)
 {
     Q_D(Client);
-    d->setAuth(auth);
+    d->auth_ = QSharedPointer<Authenticator>(auth);
 }
 
 Authenticator *Client::auth() const
