@@ -23,8 +23,6 @@ public:
     ~Network();
 
     void disconnect();
-    void sendFrame();
-
     void sendFrame(const Frame::Base &frame);
 
     bool isSsl() const;
@@ -41,7 +39,7 @@ public:
     void addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler);
     void addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler);
 
-public slots:
+public Q_SLOTS:
     void connectTo(const QString &host = QString(), quint16 port = 0);
     void error(QAbstractSocket::SocketError socketError);
 

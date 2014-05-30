@@ -24,7 +24,7 @@ Network::~Network()
 
 void Network::connectTo(const QString &host, quint16 port)
 {
-    if(!socket_) {
+    if (!socket_) {
         qWarning("AMQP: Socket didn't create.");
         return;
     }
@@ -39,7 +39,7 @@ void Network::connectTo(const QString &host, quint16 port)
 
     if (isSsl()) {
 #ifndef QT_NO_SSL
-        static_cast<QSslSocket *>(socket_.data())->connectToHostEncrypted(h, p);
+        static_cast<QSslSocket*>(socket_.data())->connectToHostEncrypted(h, p);
 #else
         qWarning("AMQP: You library has builded with QT_NO_SSL option.");
 #endif
@@ -110,7 +110,7 @@ void Network::readyRead()
                 if (frame.methodClass() == Frame::fcConnection) {
                     m_pMethodHandlerConnection->_q_method(frame);
                 } else {
-                    foreach(Frame::MethodHandler *pMethodHandler, m_methodHandlersByChannel[frame.channel()])
+                    foreach (Frame::MethodHandler *pMethodHandler, m_methodHandlersByChannel[frame.channel()])
                         pMethodHandler->_q_method(frame);
                 }
             }
@@ -118,14 +118,14 @@ void Network::readyRead()
             case Frame::ftHeader:
             {
                 Frame::Content frame(streamB);
-                foreach(Frame::ContentHandler *pMethodHandler, m_contentHandlerByChannel[frame.channel()])
+                foreach (Frame::ContentHandler *pMethodHandler, m_contentHandlerByChannel[frame.channel()])
                     pMethodHandler->_q_content(frame);
             }
                 break;
             case Frame::ftBody:
             {
                 Frame::ContentBody frame(streamB);
-                foreach(Frame::ContentBodyHandler *pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
+                foreach (Frame::ContentBodyHandler *pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
                     pMethodHandler->_q_body(frame);
             }
                 break;
@@ -143,10 +143,13 @@ void Network::readyRead()
 
 void Network::sendFrame(const Frame::Base &frame)
 {
-    if (socket_->state() == QAbstractSocket::ConnectedState) {
-        QDataStream stream(socket_);
-        frame.toStream(stream);
+    if (socket_->state() != QAbstractSocket::ConnectedState) {
+        qDebug() << Q_FUNC_INFO << "socket not connected: " << socket_->state();
+        return;
     }
+
+    QDataStream stream(socket_);
+    frame.toStream(stream);
 }
 
 bool Network::isSsl() const

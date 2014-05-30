@@ -12,9 +12,8 @@ namespace QAMQP
 
 class Exchange;
 class Queue;
-class ClientPrivate;
 class Authenticator;
-class ConnectionPrivate;
+class ClientPrivate;
 class QAMQP_EXPORT Client : public QObject
 {
     Q_OBJECT

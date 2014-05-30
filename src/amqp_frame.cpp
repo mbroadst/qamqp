@@ -27,7 +27,8 @@ Type Base::type() const
 }
 
 Base::~Base()
-{}
+{
+}
 
 void Base::setChannel(qint16 channel)
 {
@@ -291,7 +292,7 @@ QDataStream &Frame::deserialize(QDataStream &stream, Frame::TableField &f)
     stream >> data;
     QDataStream s(&data, QIODevice::ReadOnly);
 
-    while(!s.atEnd()) {
+    while (!s.atEnd()) {
         qint8 valueType = 0;
         QString name = readField('s', s).toString();
         s >> valueType;
