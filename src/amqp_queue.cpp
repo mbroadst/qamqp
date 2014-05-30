@@ -82,7 +82,23 @@ void Queue::remove(bool ifUnused, bool ifEmpty, bool noWait)
 void Queue::purge()
 {
     Q_D(Queue);
-    d->purge();
+
+    if (!d->opened)
+        return;
+
+    Frame::Method frame(Frame::fcQueue, QueuePrivate::miPurge);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+
+    out << qint8(0);    // no-wait
+    frame.setArguments(arguments);
+
+    d->sendFrame(frame);
 }
 
 void Queue::bind(const QString &exchangeName, const QString &key)
@@ -329,22 +345,6 @@ void QueuePrivate::remove(bool ifUnused, bool ifEmpty, bool noWait)
 
     out << flag;
 
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-}
-
-void QueuePrivate::purge()
-{
-    if (!opened)
-        return;
-
-    Frame::Method frame(Frame::fcQueue, miPurge);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    out << qint8(0); // no-wait
     frame.setArguments(arguments_);
     sendFrame(frame);
 }

@@ -25,7 +25,6 @@ public:
 
     void declare();
     void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-    void purge();
     void bind(const QString &exchangeName, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
 
