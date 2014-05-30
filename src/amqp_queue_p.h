@@ -37,18 +37,16 @@ public:
     /* CLASS BASIC METHODS                                                  */
     /************************************************************************/
 
-    void consume(Queue::ConsumeOptions options);
     void consumeOk(const Frame::Method &frame);
     void deliver(const Frame::Method &frame);
 
     void get();
     void getOk(const Frame::Method &frame);
-    void ack(const MessagePtr &Message);
 
     QString type;
     Queue::QueueOptions options;
 
-    bool _q_method(const Frame::Method &frame);
+    virtual bool _q_method(const Frame::Method &frame);
 
     bool delayedDeclare;
     bool declared;

@@ -186,7 +186,26 @@ bool Queue::hasMessage() const
 void Queue::consume(ConsumeOptions options)
 {
     Q_D(Queue);
-    d->consume(options);
+    if (!d->opened) {
+        qDebug() << Q_FUNC_INFO << "queue is not open";
+        return;
+    }
+
+    Frame::Method frame(Frame::fcBasic, QueuePrivate::bmConsume);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+    Frame::writeField('s', out, d->consumerTag);
+
+    out << qint8(options);  // no-wait
+    Frame::writeField('F', out, Frame::TableField());
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
 void Queue::setConsumerTag(const QString &consumerTag)
@@ -204,17 +223,48 @@ QString Queue::consumerTag() const
 void Queue::get()
 {
     Q_D(Queue);
-    d->get();
+    if (!d->opened) {
+        qDebug() << Q_FUNC_INFO << "queue is not open";
+        return;
+    }
+
+    Frame::Method frame(Frame::fcBasic, QueuePrivate::bmGet);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+
+    out << qint8(d->noAck ? 1 : 0);    // noAck
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
 void Queue::ack(const MessagePtr &message)
 {
     Q_D(Queue);
-    d->ack(message);
+    if (!d->opened) {
+        qDebug() << Q_FUNC_INFO << "queue is not open";
+        return;
+    }
+
+    Frame::Method frame(Frame::fcBasic, QueuePrivate::bmAck);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << message->deliveryTag;    //reserver 1
+    out << qint8(0);    // noAck
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
 //////////////////////////////////////////////////////////////////////////
-
 
 QueuePrivate::QueuePrivate(Queue *q)
     : ChannelPrivate(q),
@@ -418,23 +468,6 @@ void QueuePrivate::unbind(const QString &exchangeName, const QString &key)
     sendFrame(frame);
 }
 
-void QueuePrivate::get()
-{
-    if (!opened)
-        return;
-
-    Frame::Method frame(Frame::fcBasic, bmGet);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    out << qint8(noAck ? 1 : 0); // noAck
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-}
-
 void QueuePrivate::getOk(const Frame::Method &frame)
 {
     QByteArray data = frame.arguments();
@@ -452,41 +485,6 @@ void QueuePrivate::getOk(const Frame::Method &frame)
     newMessage->exchangeName = exchangeName;
     newMessage->deliveryTag = deliveryTag;
     messages_.enqueue(newMessage);
-}
-
-void QueuePrivate::ack(const MessagePtr &Message)
-{
-    if (!opened)
-        return;
-
-    Frame::Method frame(Frame::fcBasic, bmAck);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << Message->deliveryTag; //reserver 1
-    out << qint8(0); // noAck
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-}
-
-void QueuePrivate::consume(Queue::ConsumeOptions options)
-{
-    if (!opened)
-        return;
-
-    Frame::Method frame(Frame::fcBasic, bmConsume);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    Frame::writeField('s', out, consumerTag);
-    out << qint8(options); // no-wait
-    Frame::writeField('F', out, Frame::TableField());
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
 }
 
 void QueuePrivate::consumeOk(const Frame::Method &frame)
