@@ -44,8 +44,8 @@ public:
     ~Queue();
     QueueOptions option() const;
 
-    void declare();
-    void declare(const QString &name, QueueOptions options);
+    void declare(const QString &name = QString(),
+                 QueueOptions options = QueueOptions(Durable | AutoDelete));
     void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
 
     void purge();

@@ -23,9 +23,6 @@ public:
     QueuePrivate(Queue *q);
     ~QueuePrivate();
 
-    void declare();
-    void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-
     // method handler related
     virtual bool _q_method(const Frame::Method &frame);
     void declareOk(const Frame::Method &frame);
@@ -36,17 +33,14 @@ public:
     void consumeOk(const Frame::Method &frame);
     void deliver(const Frame::Method &frame);
 
-
     QString type;
     Queue::QueueOptions options;
     bool delayedDeclare;
     bool declared;
     bool noAck;
     QString consumerTag;
-
     QQueue<QPair<QString, QString> > delayedBindings;
-    QQueue<MessagePtr> messages_;
-
+    QQueue<MessagePtr> messages;
     bool recievingMessage;
 
     Q_DECLARE_PUBLIC(Queue)
