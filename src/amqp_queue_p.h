@@ -25,29 +25,20 @@ public:
 
     void declare();
     void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-    void bind(const QString &exchangeName, const QString &key);
-    void unbind(const QString &exchangeName, const QString &key);
 
+    // method handler related
+    virtual bool _q_method(const Frame::Method &frame);
     void declareOk(const Frame::Method &frame);
     void deleteOk(const Frame::Method &frame);
     void bindOk(const Frame::Method &frame);
     void unbindOk(const Frame::Method &frame);
-
-    /************************************************************************/
-    /* CLASS BASIC METHODS                                                  */
-    /************************************************************************/
-
+    void getOk(const Frame::Method &frame);
     void consumeOk(const Frame::Method &frame);
     void deliver(const Frame::Method &frame);
 
-    void get();
-    void getOk(const Frame::Method &frame);
 
     QString type;
     Queue::QueueOptions options;
-
-    virtual bool _q_method(const Frame::Method &frame);
-
     bool delayedDeclare;
     bool declared;
     bool noAck;

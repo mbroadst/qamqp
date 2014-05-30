@@ -30,7 +30,7 @@ void Queue::onOpen()
     if (!d->delayedBindings.isEmpty()) {
         typedef QPair<QString, QString> BindingPair;
         foreach(BindingPair binding, d->delayedBindings)
-            d->bind(binding.first, binding.second);
+            bind(binding.first, binding.second);
         d->delayedBindings.clear();
     }
 }
@@ -101,30 +101,73 @@ void Queue::purge()
     d->sendFrame(frame);
 }
 
+void Queue::bind(Exchange *exchange, const QString &key)
+{
+    if (!exchange) {
+        qDebug() << Q_FUNC_INFO << "invalid exchange provided";
+        return;
+    }
+
+    bind(exchange->name(), key);
+}
+
 void Queue::bind(const QString &exchangeName, const QString &key)
 {
     Q_D(Queue);
-    d->bind(exchangeName, key);
+    if (!d->opened) {
+        d->delayedBindings.append(QPair<QString,QString>(exchangeName, key));
+        return;
+    }
+
+    Frame::Method frame(Frame::fcQueue, QueuePrivate::miBind);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+    Frame::writeField('s', out, exchangeName);
+    Frame::writeField('s', out, key);
+
+    out << qint8(0);    // no-wait
+    Frame::writeField('F', out, Frame::TableField());
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
-void Queue::bind(Exchange *exchange, const QString &key)
+void Queue::unbind(Exchange *exchange, const QString &key)
 {
-    Q_D(Queue);
-    if (exchange)
-        d->bind(exchange->name(), key);
+    if (!exchange) {
+        qDebug() << Q_FUNC_INFO << "invalid exchange provided";
+        return;
+    }
+
+    unbind(exchange->name(), key);
 }
 
 void Queue::unbind(const QString &exchangeName, const QString &key)
 {
     Q_D(Queue);
-    d->unbind(exchangeName, key);
-}
+    if (!d->opened) {
+        qDebug() << Q_FUNC_INFO << "queue is not open";
+        return;
+    }
 
-void Queue::unbind(Exchange *exchange, const QString &key)
-{
-    Q_D(Queue);
-    if (exchange)
-        d->unbind(exchange->name(), key);
+    Frame::Method frame(Frame::fcQueue, QueuePrivate::miUnbind);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+    out << qint16(0);   //reserver 1
+    Frame::writeField('s', out, d->name);
+    Frame::writeField('s', out, exchangeName);
+    Frame::writeField('s', out, key);
+    Frame::writeField('F', out, Frame::TableField());
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
 void Queue::_q_content(const Frame::Content &frame)
@@ -368,7 +411,7 @@ void QueuePrivate::bindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
     Q_Q(Queue);
 
-    qDebug() << "Binded to queue: " << name;
+    qDebug() << "bound to queue: " << name;
     QMetaObject::invokeMethod(q, "binded", Q_ARG(bool, true));
 }
 
@@ -377,7 +420,7 @@ void QueuePrivate::unbindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
     Q_Q(Queue);
 
-    qDebug() << "Unbinded queue: " << name;
+    qDebug() << "unbound queue: " << name;
     QMetaObject::invokeMethod(q, "binded", Q_ARG(bool, false));
 }
 
@@ -422,47 +465,6 @@ void QueuePrivate::remove(bool ifUnused, bool ifEmpty, bool noWait)
     flag |= (noWait ? 0x4 : 0);
 
     out << flag;
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-}
-
-void QueuePrivate::bind(const QString &exchangeName, const QString &key)
-{
-    if (!opened) {
-        delayedBindings.append(QPair<QString,QString>(exchangeName, key));
-        return;
-    }
-
-    Frame::Method frame(Frame::fcQueue, miBind);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    Frame::writeField('s', out, exchangeName);
-    Frame::writeField('s', out, key);
-    out << qint8(0); // no-wait
-    Frame::writeField('F', out, Frame::TableField());
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-}
-
-void QueuePrivate::unbind(const QString &exchangeName, const QString &key)
-{
-    if (!opened)
-        return;
-
-    Frame::Method frame(Frame::fcQueue, miUnbind);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
-    out << qint16(0); //reserver 1
-    Frame::writeField('s', out, name);
-    Frame::writeField('s', out, exchangeName);
-    Frame::writeField('s', out, key);
-    Frame::writeField('F', out, Frame::TableField());
 
     frame.setArguments(arguments_);
     sendFrame(frame);
