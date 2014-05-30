@@ -24,13 +24,12 @@ void Exchange::onOpen()
 {
     Q_D(Exchange);
     if (d->delayedDeclare)
-        d->declare();
+        declare();
 }
 
 void Exchange::onClose()
 {
-    Q_D(Exchange);
-    d->remove(true, true);
+    remove(true, true);
 }
 
 Exchange::ExchangeOptions Exchange::option() const
@@ -45,19 +44,60 @@ QString Exchange::type() const
     return d->type;
 }
 
-void Exchange::declare(const QString &type, ExchangeOptions option , const Frame::TableField &arg)
+void Exchange::declare(const QString &type, ExchangeOptions options , const Frame::TableField &args)
 {
     Q_D(Exchange);
-    d->options = option;
     d->type = type;
-    d->arguments = arg;
-    d->declare();
+    d->options = options;
+    d->arguments = args;
+
+    if (!d->opened) {
+        d->delayedDeclare = true;
+        return;
+    }
+
+    if (d->name.isEmpty()) {
+        qDebug() << Q_FUNC_INFO << "attempting to declare an unnamed exchange, aborting...";
+        return;
+    }
+
+    Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDeclare);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    stream << qint16(0);    //reserver 1
+    Frame::writeField('s', stream, d->name);
+    Frame::writeField('s', stream, d->type);
+
+    stream << qint8(d->options);
+    Frame::writeField('F', stream, d->arguments);
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+    d->delayedDeclare = false;
 }
 
 void Exchange::remove(bool ifUnused, bool noWait)
 {
     Q_D(Exchange);
-    d->remove(ifUnused, noWait);
+    Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDelete);
+    frame.setChannel(d->number);
+
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    stream << qint16(0);    //reserver 1
+    Frame::writeField('s', stream, d->name);
+
+    qint8 flag = 0;
+    flag |= (ifUnused ? 0x1 : 0);
+    flag |= (noWait ? 0x2 : 0);
+    stream << flag;    //reserver 1
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
 }
 
 void Exchange::bind(Queue *queue)
@@ -151,53 +191,6 @@ void ExchangePrivate::deleteOk(const Frame::Method &frame)
     qDebug() << "Deleted exchange: " << name;
     declared = false;
     QMetaObject::invokeMethod(q, "removed");
-}
-
-void ExchangePrivate::declare()
-{
-    if (!opened) {
-        delayedDeclare = true;
-        return;
-    }
-
-    if (name.isEmpty())
-        return;
-
-    Frame::Method frame(Frame::fcExchange, miDeclare);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
-
-    stream << qint16(0); //reserver 1
-    Frame::writeField('s', stream, name);
-    Frame::writeField('s', stream, type);
-    stream << qint8(options);
-    Frame::writeField('F', stream, ExchangePrivate::arguments);
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
-    delayedDeclare = false;
-}
-
-void ExchangePrivate::remove(bool ifUnused, bool noWait)
-{
-    Frame::Method frame(Frame::fcExchange, miDelete);
-    frame.setChannel(number);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
-
-    stream << qint16(0); //reserver 1
-    Frame::writeField('s', stream, name);
-
-    qint8 flag = 0;
-
-    flag |= (ifUnused ? 0x1 : 0);
-    flag |= (noWait ? 0x2 : 0);
-
-    stream << flag; //reserver 1
-
-    frame.setArguments(arguments_);
-    sendFrame(frame);
 }
 
 void ExchangePrivate::publish(const QByteArray &message, const QString &key,

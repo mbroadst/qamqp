@@ -36,8 +36,8 @@ public:
     ExchangeOptions option() const;
 
     void declare(const QString &type = QLatin1String("direct"),
-                 ExchangeOptions option = NoOptions,
-                 const Frame::TableField &arg = Frame::TableField());
+                 ExchangeOptions options = NoOptions,
+                 const Frame::TableField &args = Frame::TableField());
     void remove(bool ifUnused = true, bool noWait = true);
 
     void bind(Queue *queue);

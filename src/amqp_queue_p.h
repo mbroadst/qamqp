@@ -4,8 +4,6 @@
 #include <QQueue>
 #include "amqp_channel_p.h"
 
-#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
-
 namespace QAMQP
 {
 
