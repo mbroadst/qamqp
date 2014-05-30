@@ -399,7 +399,7 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
             getOk(frame);
             break;
         case bmGetEmpty:
-            QMetaObject::invokeMethod(q, "empty");
+            Q_EMIT q->empty();
             break;
         default:
             break;
@@ -424,7 +424,7 @@ void QueuePrivate::declareOk(const Frame::Method &frame)
     stream >> messageCount >> consumerCount;
     qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
 
-    QMetaObject::invokeMethod(q, "declared");
+    Q_EMIT q->declared();
 }
 
 void QueuePrivate::deleteOk(const Frame::Method &frame)
@@ -438,25 +438,26 @@ void QueuePrivate::deleteOk(const Frame::Method &frame)
     qint32 messageCount = 0;
     stream >> messageCount;
     qDebug("Message count %d", messageCount);
-    QMetaObject::invokeMethod(q, "removed");
+
+    Q_EMIT q->removed();
 }
 
 void QueuePrivate::bindOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    Q_Q(Queue);
 
-    qDebug() << "bound to queue: " << name;
-    QMetaObject::invokeMethod(q, "binded", Q_ARG(bool, true));
+    Q_Q(Queue);
+    qDebug() << Q_FUNC_INFO << "bound to queue: " << name;
+    Q_EMIT q->bound();
 }
 
 void QueuePrivate::unbindOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    Q_Q(Queue);
 
-    qDebug() << "unbound queue: " << name;
-    QMetaObject::invokeMethod(q, "binded", Q_ARG(bool, false));
+    Q_Q(Queue);
+    qDebug() << Q_FUNC_INFO << "unbound queue: " << name;
+    Q_EMIT q->unbound();
 }
 
 void QueuePrivate::getOk(const Frame::Method &frame)

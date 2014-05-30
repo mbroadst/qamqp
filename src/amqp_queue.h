@@ -47,7 +47,6 @@ public:
     void declare(const QString &name = QString(),
                  QueueOptions options = QueueOptions(Durable | AutoDelete));
     void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-
     void purge();
 
     void bind(const QString &exchangeName, const QString &key);
@@ -70,7 +69,8 @@ public:
 
 Q_SIGNALS:
     void declared();
-    void binded(bool);
+    void bound();
+    void unbound();
     void removed();
     void messageReceived(Queue *pQueue);
     void empty();
