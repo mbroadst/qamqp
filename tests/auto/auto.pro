@@ -1,6 +1,6 @@
 TEMPLATE = subdirs
 SUBDIRS = \
     basic \
-    exchanges \
+    qamqpexchange \
     queues \
     channels

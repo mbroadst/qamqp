@@ -24,7 +24,7 @@ void Exchange::onOpen()
 {
     Q_D(Exchange);
     if (d->delayedDeclare)
-        declare();
+        declare(Exchange::Direct);
 }
 
 void Exchange::onClose()
@@ -42,6 +42,11 @@ QString Exchange::type() const
 {
     Q_D(const Exchange);
     return d->type;
+}
+
+void Exchange::declare(ExchangeType type, ExchangeOptions options , const Frame::TableField &args)
+{
+    declare(ExchangePrivate::typeToString(type), options, args);
 }
 
 void Exchange::declare(const QString &type, ExchangeOptions options , const Frame::TableField &args)
@@ -176,6 +181,18 @@ void Exchange::publish(const QByteArray &message, const QString &key,
 
 //////////////////////////////////////////////////////////////////////////
 
+QString ExchangePrivate::typeToString(Exchange::ExchangeType type)
+{
+    switch (type) {
+    case Exchange::Direct: return QLatin1String("direct");
+    case Exchange::FanOut: return QLatin1String("fanout");
+    case Exchange::Topic: return QLatin1String("topic");
+    case Exchange::Headers: return QLatin1String("headers");
+    }
+
+    return QLatin1String("direct");
+}
+
 ExchangePrivate::ExchangePrivate(Exchange *q)
     : ChannelPrivate(q),
       delayedDeclare(false),
@@ -195,7 +212,7 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
     case miDeclareOk:
         declareOk(frame);
         break;
-    case miDelete:
+    case miDeleteOk:
         deleteOk(frame);
         break;
     default:

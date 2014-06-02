@@ -18,6 +18,14 @@ class QAMQP_EXPORT Exchange : public Channel
     Q_ENUMS(ExchangeOption)
 
 public:
+    enum ExchangeType {
+        Direct,
+        FanOut,
+        Topic,
+        Headers
+    };
+    QString type() const;
+
     enum ExchangeOption {
         NoOptions = 0x0,
         Passive = 0x01,
@@ -32,9 +40,11 @@ public:
 
     virtual ~Exchange();
 
-    QString type() const;
     ExchangeOptions option() const;
 
+    void declare(ExchangeType type = Direct,
+                 ExchangeOptions options = NoOptions,
+                 const Frame::TableField &args = Frame::TableField());
     void declare(const QString &type = QLatin1String("direct"),
                  ExchangeOptions options = NoOptions,
                  const Frame::TableField &args = Frame::TableField());
@@ -73,5 +83,6 @@ private:
 } // namespace QAMQP
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QAMQP::Exchange::ExchangeOptions)
+Q_DECLARE_METATYPE(QAMQP::Exchange::ExchangeType)
 
 #endif // amqp_exchange_h__

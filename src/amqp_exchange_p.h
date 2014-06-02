@@ -1,6 +1,7 @@
 #ifndef amqp_exchange_p_h__
 #define amqp_exchange_p_h__
 
+#include "amqp_exchange.h"
 #include "amqp_channel_p.h"
 
 namespace QAMQP
@@ -15,6 +16,7 @@ public:
     };
 
     ExchangePrivate(Exchange *q);
+    static QString typeToString(Exchange::ExchangeType type);
 
     // method handler related
     virtual void _q_disconnected();
