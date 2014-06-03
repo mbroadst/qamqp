@@ -2,6 +2,8 @@ language: cpp
 env:
   - QT_SELECT=qt4
   - QT_SELECT=qt5
+services:
+  - rabbitmq
 script:
   - mkdir build
   - cd build
