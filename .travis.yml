@@ -1,0 +1,11 @@
+language: cpp
+env:
+  - QT_SELECT=qt4
+  - QT_SELECT=qt5
+script:
+  - mkdir build
+  - cd build
+  - qmake ..
+  - make
+  - export LD_LIBRARY_PATH=$PWD/src
+  - make check
