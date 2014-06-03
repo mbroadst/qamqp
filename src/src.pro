@@ -21,7 +21,6 @@ INSTALL_HEADERS += \
     amqp_authenticator.h \
     amqp_channel.h \
     amqp_client.h \
-    amqp_connection.h \
     amqp_exchange.h \
     amqp_frame.h \
     amqp_global.h \

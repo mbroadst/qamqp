@@ -81,7 +81,10 @@ void ClientPrivate::disconnect()
     }
 
     network_->disconnect();
-    connection_->d_func()->connected = false;
+
+    // NOTE: this should be handled by signals, no need for dptr
+    //       access here.
+    // connection_->d_func()->connected = false;
 }
 
 //////////////////////////////////////////////////////////////////////////

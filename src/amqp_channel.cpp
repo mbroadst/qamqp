@@ -275,7 +275,10 @@ void ChannelPrivate::openOk(const Frame::Method &frame)
 
 void ChannelPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 {
-    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, number, false);
+    Q_UNUSED(prefetchSize)
+    Q_UNUSED(prefetchCount)
+    qDebug() << Q_FUNC_INFO << "temporarily disabled";
+//    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, number, false);
 }
 
 void ChannelPrivate::_q_disconnected()

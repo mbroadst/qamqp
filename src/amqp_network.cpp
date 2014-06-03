@@ -67,7 +67,7 @@ void Network::error(QAbstractSocket::SocketError socketError)
             timeOut_ *= 5;
     }
 
-    switch(socketError) {
+    switch (socketError) {
     case QAbstractSocket::ConnectionRefusedError:
     case QAbstractSocket::RemoteHostClosedError:
     case QAbstractSocket::SocketTimeoutError:
@@ -91,14 +91,14 @@ void Network::readyRead()
         char *headerData = buffer_.data();
         socket_->peek(headerData, Frame::HEADER_SIZE);
         const quint32 payloadSize = qFromBigEndian<quint32>(*(quint32*)&headerData[3]);
-        const qint64 readSize = Frame::HEADER_SIZE+payloadSize+Frame::FRAME_END_SIZE;
+        const qint64 readSize = Frame::HEADER_SIZE+payloadSize + Frame::FRAME_END_SIZE;
 
         if (socket_->bytesAvailable() >= readSize) {
             buffer_.resize(readSize);
             socket_->read(buffer_.data(), readSize);
             const char *bufferData = buffer_.constData();
             const quint8 type = *(quint8*)&bufferData[0];
-            const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE+payloadSize];
+            const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
             if (magic != Frame::FRAME_END)
                 qWarning() << "Wrong end frame";
 
@@ -203,11 +203,10 @@ void Network::sslErrors()
 
 void Network::conectionReady()
 {
-    Q_EMIT connected();
     timeOut_ = 0;
-
-    char header_[8] = {'A', 'M', 'Q', 'P', 0,0,9,1};
-    socket_->write(header_, 8);
+    char header[8] = {'A', 'M', 'Q', 'P', 0, 0, 9, 1};
+    socket_->write(header, 8);
+    Q_EMIT connected();
 }
 
 bool Network::autoReconnect() const

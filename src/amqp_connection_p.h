@@ -1,62 +1,67 @@
 #ifndef amqp_connection_p_h__
 #define amqp_connection_p_h__
 
-#include <QPointer>
+#include <QObject>
+#include "amqp_frame.h"
 
-#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
-
-class QTimer;
 namespace QAMQP
 {
 
 class Client;
+class Network;
 class ClientPrivate;
-class Connection;
-class ConnectionPrivate
+class ConnectionPrivate;
+class QAMQP_EXPORT Connection : public QObject, public Frame::MethodHandler
 {
+    Q_OBJECT
+    Q_PROPERTY(bool connected READ isConnected CONSTANT)
+
 public:
-    enum MethodId {
-        METHOD_ID_ENUM(miStart, 10),
-        METHOD_ID_ENUM(miSecure, 20),
-        METHOD_ID_ENUM(miTune, 30),
-        METHOD_ID_ENUM(miOpen, 40),
-        METHOD_ID_ENUM(miClose, 50)
-    };
+    virtual ~Connection();
 
-    ConnectionPrivate(Connection *q);
-    ~ConnectionPrivate();
+    void addCustomProperty(const QString &name, const QString &value);
+    QString customProperty(const QString &name) const;
 
-    void init(Client *parent);
-    void startOk();
-    void secureOk();
-    void tuneOk();
-    void open();
-    void close(int code, const QString &text, int classId = 0, int methodId = 0);
-    void closeOk();
+    bool isConnected() const;
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 
+    // method handlers, FROM server
     void start(const Frame::Method &frame);
     void secure(const Frame::Method &frame);
     void tune(const Frame::Method &frame);
     void openOk(const Frame::Method &frame);
-    void close(const Frame::Method &frame);
     void closeOk(const Frame::Method &frame);
 
-    bool _q_method(const Frame::Method &frame);
-    void _q_heartbeat();
+    // method handlers, TO server
+    void startOk();
+    void secureOk();
+    void tuneOk();
+    void open();
 
-    void setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global);
+    // method handlers, BOTH ways
+    void close(int code, const QString &text, int classId = 0, int methodId = 0);
+    void close(const Frame::Method &frame);
+    void closeOk();
 
-    QPointer<Client> client;
-    QPointer<Network> network;
-    bool closed;
-    bool connected;
-    QPointer<QTimer> heartbeatTimer;
-    Frame::TableField customProperty;
+Q_SIGNALS:
+    void disconnected();
+    void connected();
 
-    Q_DECLARE_PUBLIC(Connection)
-    Connection * const q_ptr;
+private:
+    explicit Connection(Network *network, Client *parent);
+
+    Q_DISABLE_COPY(Connection)
+    Q_DECLARE_PRIVATE(Connection)
+    QScopedPointer<ConnectionPrivate> d_ptr;
+
+    Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())
+    friend class ClientPrivate;
+
+    // should be moved to private
+    void openOk();
+    void _q_method(const Frame::Method &frame);
 };
 
 } // namespace QAMQP
 
-#endif // amqp_connection_p_h__
+#endif // amqp_connection_h__

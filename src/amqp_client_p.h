@@ -4,7 +4,6 @@
 #include <QSharedPointer>
 
 #include "amqp_network.h"
-#include "amqp_connection.h"
 #include "amqp_authenticator.h"
 
 namespace QAMQP
@@ -12,6 +11,7 @@ namespace QAMQP
 
 class Queue;
 class Exchange;
+class Connection;
 class ClientPrivate
 {
 public:

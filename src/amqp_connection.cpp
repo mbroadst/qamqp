@@ -1,4 +1,3 @@
-#include "amqp_connection.h"
 #include "amqp_connection_p.h"
 #include "amqp_client.h"
 #include "amqp_client_p.h"
@@ -9,7 +8,36 @@
 #include <QDataStream>
 #include <QTimer>
 
-using namespace QAMQP;
+#define METHOD_ID_ENUM(name, id) name = id, name ## Ok
+
+namespace QAMQP {
+
+class ConnectionPrivate
+{
+public:
+    enum MethodId {
+        METHOD_ID_ENUM(miStart, 10),
+        METHOD_ID_ENUM(miSecure, 20),
+        METHOD_ID_ENUM(miTune, 30),
+        METHOD_ID_ENUM(miOpen, 40),
+        METHOD_ID_ENUM(miClose, 50)
+    };
+
+    ConnectionPrivate(Connection *q);
+
+    // private slots
+    void _q_heartbeat();
+
+    QPointer<Client> client;
+    QPointer<Network> network;
+    bool closed;
+    bool connected;
+    QPointer<QTimer> heartbeatTimer;
+    Frame::TableField customProperty;
+
+    Q_DECLARE_PUBLIC(Connection)
+    Connection * const q_ptr;
+};
 
 ConnectionPrivate::ConnectionPrivate(Connection *q)
     : closed(false),
@@ -18,64 +46,33 @@ ConnectionPrivate::ConnectionPrivate(Connection *q)
 {
 }
 
-ConnectionPrivate::~ConnectionPrivate()
+void ConnectionPrivate::_q_heartbeat()
 {
-}
-
-void ConnectionPrivate::startOk()
-{
-    Frame::Method frame(Frame::fcConnection, miStartOk);
-    QByteArray arguments;
-    QDataStream stream(&arguments, QIODevice::WriteOnly);
-
-    Frame::TableField clientProperties;
-    clientProperties["version"] = QString(QAMQP_VERSION);
-    clientProperties["platform"] = QString("Qt %1").arg(qVersion());
-    clientProperties["product"] = QString("QAMQP");
-    clientProperties.unite(customProperty);
-    Frame::serialize(stream, clientProperties);
-
-    client->auth()->write(stream);
-    Frame::writeField('s', stream, "en_US");
-
-    frame.setArguments(arguments);
+    Frame::Heartbeat frame;
     network->sendFrame(frame);
 }
 
-void ConnectionPrivate::secureOk()
+}   // namespace QAMQP
+
+//////////////////////////////////////////////////////////////////////////
+
+using namespace QAMQP;
+Connection::Connection(Network *network, Client *client)
+    : QObject(client),
+      d_ptr(new ConnectionPrivate(this))
+{
+    Q_D(Connection);
+    d->client = client;
+    d->network = network;
+    d->heartbeatTimer = new QTimer(this);
+    connect(d->heartbeatTimer, SIGNAL(timeout()), this, SLOT(_q_heartbeat()));
+}
+
+Connection::~Connection()
 {
 }
 
-void ConnectionPrivate::tuneOk()
-{
-    Frame::Method frame(Frame::fcConnection, miTuneOk);
-    QByteArray arguments;
-    QDataStream stream(&arguments, QIODevice::WriteOnly);
-
-    stream << qint16(0); //channel_max
-    stream << qint32(FRAME_MAX); //frame_max
-    stream << qint16(heartbeatTimer->interval() / 1000); //heartbeat
-
-    frame.setArguments(arguments);
-    network->sendFrame(frame);
-}
-
-void ConnectionPrivate::open()
-{
-    Frame::Method frame(Frame::fcConnection, miOpen);
-    QByteArray arguments;
-    QDataStream stream(&arguments, QIODevice::WriteOnly);
-
-    Frame::writeField('s',stream, client->virtualHost());
-
-    stream << qint8(0);
-    stream << qint8(0);
-
-    frame.setArguments(arguments);
-    network->sendFrame(frame);
-}
-
-void ConnectionPrivate::start(const Frame::Method &frame)
+void Connection::start(const Frame::Method &frame)
 {
     qDebug(">> Start");
     QByteArray data = frame.arguments();
@@ -102,13 +99,15 @@ void ConnectionPrivate::start(const Frame::Method &frame)
     startOk();
 }
 
-void ConnectionPrivate::secure(const Frame::Method &frame)
+void Connection::secure(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
+    qDebug() << Q_FUNC_INFO << "called!";
 }
 
-void ConnectionPrivate::tune(const Frame::Method &frame)
+void Connection::tune(const Frame::Method &frame)
 {
+    Q_D(Connection);
     qDebug(">> Tune");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -125,32 +124,42 @@ void ConnectionPrivate::tune(const Frame::Method &frame)
     qDebug(">> frame_max: %d", frame_max);
     qDebug(">> heartbeat: %d", heartbeat);
 
-    if (heartbeatTimer) {
-        heartbeatTimer->setInterval(heartbeat * 1000);
-        if (heartbeatTimer->interval())
-            heartbeatTimer->start();
+    if (d->heartbeatTimer) {
+        d->heartbeatTimer->setInterval(heartbeat * 1000);
+        if (d->heartbeatTimer->interval())
+            d->heartbeatTimer->start();
         else
-            heartbeatTimer->stop();
+            d->heartbeatTimer->stop();
     }
 
     tuneOk();
     open();
 }
 
-void ConnectionPrivate::openOk(const Frame::Method &frame)
+void Connection::openOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    Q_Q(Connection);
-
+    Q_D(Connection);
     qDebug(">> OpenOK");
-    connected = true;
-    q->openOk();
+    d->connected = true;
+    Q_EMIT connected();
 }
 
-void ConnectionPrivate::close(const Frame::Method &frame)
+void Connection::closeOk(const Frame::Method &frame)
 {
-    Q_Q(Connection);
+    Q_UNUSED(frame)
+    Q_D(Connection);
 
+    d->connected = false;
+    Q_EMIT disconnected();
+    if (d->heartbeatTimer)
+        d->heartbeatTimer->stop();
+    Q_EMIT disconnected();
+}
+
+void Connection::close(const Frame::Method &frame)
+{
+    Q_D(Connection);
     qDebug(">> CLOSE");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -164,18 +173,76 @@ void ConnectionPrivate::close(const Frame::Method &frame)
     qDebug(">> text: %s", qPrintable(text));
     qDebug(">> class-id: %d", classId);
     qDebug(">> method-id: %d", methodId);
-    connected = false;
-    network->error(QAbstractSocket::RemoteHostClosedError);
-    Q_EMIT q->disconnected();
+    d->connected = false;
+    d->network->error(QAbstractSocket::RemoteHostClosedError);
+    Q_EMIT disconnected();
 }
 
-void ConnectionPrivate::close(int code, const QString &text, int classId, int methodId)
+void Connection::startOk()
 {
-    Frame::Method frame(Frame::fcConnection, miClose);
+    Q_D(Connection);
+    Frame::Method frame(Frame::fcConnection, ConnectionPrivate::miStartOk);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s',stream, client->virtualHost());
+    Frame::TableField clientProperties;
+    clientProperties["version"] = QString(QAMQP_VERSION);
+    clientProperties["platform"] = QString("Qt %1").arg(qVersion());
+    clientProperties["product"] = QString("QAMQP");
+    clientProperties.unite(d->customProperty);
+    Frame::serialize(stream, clientProperties);
+
+    d->client->auth()->write(stream);
+    Frame::writeField('s', stream, "en_US");
+
+    frame.setArguments(arguments);
+    d->network->sendFrame(frame);
+}
+
+void Connection::secureOk()
+{
+    qDebug() << Q_FUNC_INFO;
+}
+
+void Connection::tuneOk()
+{
+    Q_D(Connection);
+    Frame::Method frame(Frame::fcConnection, ConnectionPrivate::miTuneOk);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    stream << qint16(0); //channel_max
+    stream << qint32(FRAME_MAX); //frame_max
+    stream << qint16(d->heartbeatTimer->interval() / 1000); //heartbeat
+
+    frame.setArguments(arguments);
+    d->network->sendFrame(frame);
+}
+
+void Connection::open()
+{
+    Q_D(Connection);
+    Frame::Method frame(Frame::fcConnection, ConnectionPrivate::miOpen);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    Frame::writeField('s',stream, d->client->virtualHost());
+
+    stream << qint8(0);
+    stream << qint8(0);
+
+    frame.setArguments(arguments);
+    d->network->sendFrame(frame);
+}
+
+void Connection::close(int code, const QString &text, int classId, int methodId)
+{
+    Q_D(Connection);
+    Frame::Method frame(Frame::fcConnection, ConnectionPrivate::miClose);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    Frame::writeField('s',stream, d->client->virtualHost());
 
     stream << qint16(code);
     Frame::writeField('s', stream, text);
@@ -183,153 +250,54 @@ void ConnectionPrivate::close(int code, const QString &text, int classId, int me
     stream << qint16(methodId);
 
     frame.setArguments(arguments);
-    network->sendFrame(frame);
-}
-
-void ConnectionPrivate::closeOk()
-{
-    Frame::Method frame(Frame::fcConnection, miCloseOk);
-    connected = false;
-    network->sendFrame(frame);
-}
-
-void ConnectionPrivate::closeOk(const Frame::Method &frame)
-{
-    Q_UNUSED(frame)
-    Q_Q(Connection);
-
-    connected = false;
-    Q_EMIT q->disconnected();
-    if (heartbeatTimer)
-        heartbeatTimer->stop();
-}
-
-void ConnectionPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global)
-{
-    Frame::Method frame(Frame::fcBasic, 10);
-    frame.setChannel(channel);
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
-
-    out << prefetchSize;
-    out << prefetchCount;
-    out << qint8(global ? 1 : 0);
-
-    frame.setArguments(arguments);
-    network->sendFrame(frame);
-}
-
-bool ConnectionPrivate::_q_method(const Frame::Method &frame)
-{
-    Q_ASSERT(frame.methodClass() == Frame::fcConnection);
-    if (frame.methodClass() != Frame::fcConnection)
-        return true;
-
-    qDebug() << "Connection:";
-
-    if (closed) {
-        if (frame.id() == miCloseOk)
-            closeOk(frame);
-
-        return true;
-    }
-
-    switch (MethodId(frame.id())) {
-    case miStart:
-        start(frame);
-        break;
-    case miSecure:
-        secure(frame);
-        break;
-    case miTune:
-        tune(frame);
-        break;
-    case miOpenOk:
-        openOk(frame);
-        break;
-    case miClose:
-        close(frame);
-        break;
-    case miCloseOk:
-        closeOk(frame);
-        break;
-    default:
-        qWarning("Unknown method-id %d", frame.id());
-        return false;
-    }
-
-    return true;
-}
-
-void ConnectionPrivate::_q_heartbeat()
-{
-    Frame::Heartbeat frame;
-    network->sendFrame(frame);
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-Connection::Connection(Network *network, Client *client)
-    : QObject(client),
-      d_ptr(new ConnectionPrivate(this))
-{
-    Q_D(Connection);
-    d->client = client;
-    d->network = network;
-    d->heartbeatTimer = new QTimer(this);
-    connect(d->heartbeatTimer, SIGNAL(timeout()), this, SLOT(_q_heartbeat()));
-}
-
-Connection::~Connection()
-{
-}
-
-void Connection::startOk()
-{
-    Q_D(Connection);
-    d->startOk();
-}
-
-void Connection::secureOk()
-{
-    Q_D(Connection);
-    d->secureOk();
-}
-
-void Connection::tuneOk()
-{
-    Q_D(Connection);
-    d->tuneOk();
-}
-
-void Connection::open()
-{
-    Q_D(Connection);
-    d->open();
-}
-
-void Connection::close(int code, const QString &text, int classId , int methodId)
-{
-    Q_D(Connection);
-    d->close(code, text, classId, methodId);
+    d->network->sendFrame(frame);
 }
 
 void Connection::closeOk()
 {
     Q_D(Connection);
-    d->closeOk();
-    Q_EMIT disconnected();
-}
-
-void Connection::openOk()
-{
-    Q_EMIT connected();
+    Frame::Method frame(Frame::fcConnection, ConnectionPrivate::miCloseOk);
+    d->connected = false;
+    d->network->sendFrame(frame);
 }
 
 void Connection::_q_method(const Frame::Method &frame)
 {
     Q_D(Connection);
-    d->_q_method(frame);
+    Q_ASSERT(frame.methodClass() == Frame::fcConnection);
+    if (frame.methodClass() != Frame::fcConnection)
+        return;
+
+    qDebug() << "Connection:";
+
+    if (d->closed) {
+        if (frame.id() == ConnectionPrivate::miCloseOk)
+            closeOk(frame);
+        return;
+    }
+
+    switch (ConnectionPrivate::MethodId(frame.id())) {
+    case ConnectionPrivate::miStart:
+        start(frame);
+        break;
+    case ConnectionPrivate::miSecure:
+        secure(frame);
+        break;
+    case ConnectionPrivate::miTune:
+        tune(frame);
+        break;
+    case ConnectionPrivate::miOpenOk:
+        openOk(frame);
+        break;
+    case ConnectionPrivate::miClose:
+        close(frame);
+        break;
+    case ConnectionPrivate::miCloseOk:
+        closeOk(frame);
+        break;
+    default:
+        qWarning("Unknown method-id %d", frame.id());
+    }
 }
 
 bool Connection::isConnected() const
@@ -341,7 +309,22 @@ bool Connection::isConnected() const
 void Connection::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 {
     Q_D(Connection);
-    d->setQOS(prefetchSize, prefetchCount, 0, true);
+
+    // NOTE: these were hardcoded values, could be bad
+    int channel = 0;
+    bool global = true;
+
+    Frame::Method frame(Frame::fcBasic, 10);
+    frame.setChannel(channel);
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << prefetchSize;
+    out << prefetchCount;
+    out << qint8(global ? 1 : 0);
+
+    frame.setArguments(arguments);
+    d->network->sendFrame(frame);
 }
 
 void Connection::addCustomProperty(const QString &name, const QString &value)
@@ -358,4 +341,4 @@ QString Connection::customProperty(const QString &name) const
     return QString();
 }
 
-#include "moc_amqp_connection.cpp"
+#include "moc_amqp_connection_p.cpp"
