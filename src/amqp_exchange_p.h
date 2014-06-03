@@ -18,6 +18,8 @@ public:
     ExchangePrivate(Exchange *q);
     static QString typeToString(Exchange::ExchangeType type);
 
+    void declare();
+
     // method handler related
     virtual void _q_disconnected();
     virtual bool _q_method(const Frame::Method &frame);
