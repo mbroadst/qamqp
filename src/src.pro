@@ -13,9 +13,7 @@ win32:DESTDIR = $$OUT_PWD
 PRIVATE_HEADERS += \
     amqp_channel_p.h \
     amqp_client_p.h \
-    amqp_connection_p.h \
     amqp_exchange_p.h \
-    amqp_network_p.h \
     amqp_queue_p.h
 
 INSTALL_HEADERS += \
@@ -36,11 +34,9 @@ SOURCES += \
     amqp_authenticator.cpp \
     amqp_channel.cpp \
     amqp_client.cpp \
-    amqp_connection.cpp \
     amqp_exchange.cpp \
     amqp_frame.cpp \
     amqp_message.cpp \
-    amqp_network.cpp \
     amqp_queue.cpp
 
 # install

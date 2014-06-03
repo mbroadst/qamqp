@@ -22,9 +22,7 @@ class QAMQP_EXPORT Client : public QObject
     Q_PROPERTY(QString virtualHost READ virtualHost WRITE setVirtualHost)
     Q_PROPERTY(QString user READ user WRITE setUser)
     Q_PROPERTY(QString password READ password WRITE setPassword)
-    Q_PROPERTY(bool ssl READ isSsl WRITE setSsl)
     Q_PROPERTY(bool autoReconnect READ autoReconnect WRITE setAutoReconnect)
-    Q_PROPERTY(bool connected READ isConnected)
 
 public:
     Client(QObject *parent = 0);
@@ -58,16 +56,13 @@ public:
     void setAuth(Authenticator *auth);
     Authenticator *auth() const;
 
-    bool isSsl() const;
-    void setSsl(bool value);
-
     bool autoReconnect() const;
     void setAutoReconnect(bool value);
 
     bool isConnected() const;
 
     void connectToHost(const QString &connectionString = QString());
-    void connectToHost(const QHostAddress &address, quint16 port);
+    void connectToHost(const QHostAddress &address, quint16 port = AMQPPORT);
     void disconnectFromHost();
 
 Q_SIGNALS:
@@ -78,6 +73,11 @@ private:
     Q_DISABLE_COPY(Client)
     Q_DECLARE_PRIVATE(Client)
     QScopedPointer<ClientPrivate> d_ptr;
+
+    Q_PRIVATE_SLOT(d_func(), void _q_socketConnected())
+    Q_PRIVATE_SLOT(d_func(), void _q_readyRead())
+    Q_PRIVATE_SLOT(d_func(), void _q_socketError(QAbstractSocket::SocketError error))
+    Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())
 
     friend class ChannelPrivate;
 

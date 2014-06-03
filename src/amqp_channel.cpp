@@ -2,8 +2,6 @@
 #include "amqp_channel_p.h"
 #include "amqp_client.h"
 #include "amqp_client_p.h"
-#include "amqp_connection_p.h"
-#include "amqp_network_p.h"
 
 #include <QDebug>
 #include <QDataStream>
@@ -89,7 +87,7 @@ void ChannelPrivate::_q_open()
 void ChannelPrivate::sendFrame(const Frame::Base &frame)
 {
     if (client)
-        client->d_func()->network_->sendFrame(frame);
+        client->d_func()->sendFrame(frame);
 }
 
 void ChannelPrivate::open()
@@ -97,7 +95,7 @@ void ChannelPrivate::open()
     if (!needOpen || opened)
         return;
 
-    if (!client->d_func()->connection_->isConnected())
+    if (!client->isConnected())
         return;
 
     qDebug("Open channel #%d", number);
