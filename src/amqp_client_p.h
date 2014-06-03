@@ -2,16 +2,16 @@
 #define amqp_client_p_h__
 
 #include <QSharedPointer>
-
-#include "amqp_network.h"
-#include "amqp_authenticator.h"
+#include <QPointer>
 
 namespace QAMQP
 {
 
 class Queue;
 class Exchange;
+class Network;
 class Connection;
+class Authenticator;
 class ClientPrivate
 {
 public:

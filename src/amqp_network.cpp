@@ -1,20 +1,88 @@
-#include "amqp_network.h"
+#include "amqp_network_p.h"
+
 #include <QDebug>
 #include <QTimer>
 #include <QtEndian>
 
-using namespace QAMQP;
+namespace QAMQP {
 
-Network::Network(QObject *parent)
-    : QObject(parent)
+class NetworkPrivate {
+public:
+    NetworkPrivate(Network *qq);
+    void initSocket(bool ssl = false);
+
+    static int s_frameMethodMetaType;
+
+    QPointer<QTcpSocket> socket;
+    QByteArray buffer;
+    QString lastHost;
+    int lastPort;
+    bool autoReconnect;
+    int timeOut;
+    bool connect;
+
+    Frame::MethodHandler *connectionMethodHandler;
+    QHash<Network::Channel, QList<Frame::MethodHandler*> > methodHandlersByChannel;
+    QHash<Network::Channel, QList<Frame::ContentHandler*> > contentHandlerByChannel;
+    QHash<Network::Channel, QList<Frame::ContentBodyHandler*> > bodyHandlersByChannel;
+
+    Q_DECLARE_PUBLIC(Network)
+    Network * const q_ptr;
+};
+
+int NetworkPrivate::s_frameMethodMetaType = qRegisterMetaType<Frame::Method>("QAMQP::Frame::Method");
+NetworkPrivate::NetworkPrivate(Network *qq)
+    : lastPort(0),
+      autoReconnect(false),
+      timeOut(1000),
+      connect(false),
+      q_ptr(qq)
 {
-    qRegisterMetaType<Frame::Method>("QAMQP::Frame::Method");
+    buffer.reserve(Frame::HEADER_SIZE);
+}
 
-    buffer_.reserve(Frame::HEADER_SIZE);
-    timeOut_ = 1000;
-    connect_ = false;
+void NetworkPrivate::initSocket(bool ssl)
+{
+    Q_Q(Network);
+    if (socket) {
+        socket->deleteLater();
+        socket = 0;
+    }
 
-    initSocket(false);
+    if (ssl) {
+#ifndef QT_NO_SSL
+        socket = new QSslSocket(q);
+        QSslSocket *sslSocket = static_cast<QSslSocket*>(socket.data());
+        sslSocket->setProtocol(QSsl::AnyProtocol);
+        QObject::connect(socket, SIGNAL(sslErrors(const QList<QSslError> &)), q, SLOT(sslErrors()));
+        QObject::connect(socket, SIGNAL(connected()), q, SLOT(conectionReady()));
+#else
+        qWarning("AMQP: You library has builded with QT_NO_SSL option.");
+#endif
+    } else {
+        socket = new QTcpSocket(q);
+        QObject::connect(socket, SIGNAL(connected()), q, SLOT(conectionReady()));
+    }
+
+    if (socket) {
+        QObject::connect(socket, SIGNAL(disconnected()), q, SIGNAL(disconnected()));
+        QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(readyRead()));
+        QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+                              q, SLOT(error(QAbstractSocket::SocketError)));
+    }
+}
+
+}   // namespace QAMQP
+
+//////////////////////////////////////////////////////////////////////////
+
+using namespace QAMQP;
+Network::Network(QObject *parent)
+    : QObject(parent),
+      d_ptr(new NetworkPrivate(this))
+{
+    Q_D(Network);
+    d->initSocket(false);
 }
 
 Network::~Network()
@@ -24,47 +92,50 @@ Network::~Network()
 
 void Network::connectTo(const QString &host, quint16 port)
 {
-    if (!socket_) {
+    Q_D(Network);
+    if (!d->socket) {
         qWarning("AMQP: Socket didn't create.");
         return;
     }
 
     QString h(host);
     int p(port);
-    connect_ = true;
+    d->connect = true;
     if (host.isEmpty())
-        h = lastHost_ ;
+        h = d->lastHost;
     if (port == 0)
-        p = lastPort_;
+        p = d->lastPort;
 
     if (isSsl()) {
 #ifndef QT_NO_SSL
-        static_cast<QSslSocket*>(socket_.data())->connectToHostEncrypted(h, p);
+        static_cast<QSslSocket*>(d->socket.data())->connectToHostEncrypted(h, p);
 #else
         qWarning("AMQP: You library has builded with QT_NO_SSL option.");
 #endif
     } else {
-        socket_->connectToHost(h, p);
+        d->socket->connectToHost(h, p);
     }
 
-    lastHost_ = h;
-    lastPort_ = p;
+    d->lastHost = h;
+    d->lastPort = p;
 }
 
 void Network::disconnect()
 {
-    connect_ = false;
-    if (socket_)
-        socket_->close();
+    Q_D(Network);
+    d->connect = false;
+    if (d->socket)
+        d->socket->close();
 }
 
 void Network::error(QAbstractSocket::SocketError socketError)
 {
-    if (timeOut_ == 0) {
-        timeOut_ = 1000;
+    Q_D(Network);
+    if (d->timeOut == 0) {
+        d->timeOut = 1000;
     } else {
-        if (timeOut_ < 120000)
-            timeOut_ *= 5;
+        if (d->timeOut < 120000)
+            d->timeOut *= 5;
     }
 
     switch (socketError) {
@@ -77,56 +148,57 @@ void Network::error(QAbstractSocket::SocketError socketError)
     case QAbstractSocket::ProxyConnectionTimeoutError:
 
     default:
-        qWarning() << "AMQP: Socket Error: " << socket_->errorString();
+        qWarning() << "AMQP: Socket Error: " << d->socket->errorString();
         break;
     }
 
-    if (autoReconnect_ && connect_)
-        QTimer::singleShot(timeOut_, this, SLOT(connectTo()));
+    if (d->autoReconnect && d->connect)
+        QTimer::singleShot(d->timeOut, this, SLOT(connectTo()));
 }
 
 void Network::readyRead()
 {
-    while (socket_->bytesAvailable() >= Frame::HEADER_SIZE) {
-        char *headerData = buffer_.data();
-        socket_->peek(headerData, Frame::HEADER_SIZE);
+    Q_D(Network);
+    while (d->socket->bytesAvailable() >= Frame::HEADER_SIZE) {
+        char *headerData = d->buffer.data();
+        d->socket->peek(headerData, Frame::HEADER_SIZE);
         const quint32 payloadSize = qFromBigEndian<quint32>(*(quint32*)&headerData[3]);
-        const qint64 readSize = Frame::HEADER_SIZE+payloadSize + Frame::FRAME_END_SIZE;
+        const qint64 readSize = Frame::HEADER_SIZE + payloadSize + Frame::FRAME_END_SIZE;
 
-        if (socket_->bytesAvailable() >= readSize) {
-            buffer_.resize(readSize);
-            socket_->read(buffer_.data(), readSize);
-            const char *bufferData = buffer_.constData();
+        if (d->socket->bytesAvailable() >= readSize) {
+            d->buffer.resize(readSize);
+            d->socket->read(d->buffer.data(), readSize);
+            const char *bufferData = d->buffer.constData();
             const quint8 type = *(quint8*)&bufferData[0];
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
             if (magic != Frame::FRAME_END)
                 qWarning() << "Wrong end frame";
 
-            QDataStream streamB(&buffer_, QIODevice::ReadOnly);
+            QDataStream streamB(&d->buffer, QIODevice::ReadOnly);
             switch(Frame::Type(type)) {
             case Frame::ftMethod:
             {
                 Frame::Method frame(streamB);
                 if (frame.methodClass() == Frame::fcConnection) {
-                    m_pMethodHandlerConnection->_q_method(frame);
+                    d->connectionMethodHandler->_q_method(frame);
                 } else {
-                    foreach (Frame::MethodHandler *pMethodHandler, m_methodHandlersByChannel[frame.channel()])
-                        pMethodHandler->_q_method(frame);
+                    foreach (Frame::MethodHandler *methodHandler, d->methodHandlersByChannel[frame.channel()])
+                        methodHandler->_q_method(frame);
                 }
             }
                 break;
             case Frame::ftHeader:
             {
                 Frame::Content frame(streamB);
-                foreach (Frame::ContentHandler *pMethodHandler, m_contentHandlerByChannel[frame.channel()])
-                    pMethodHandler->_q_content(frame);
+                foreach (Frame::ContentHandler *methodHandler, d->contentHandlerByChannel[frame.channel()])
+                    methodHandler->_q_content(frame);
             }
                 break;
             case Frame::ftBody:
             {
                 Frame::ContentBody frame(streamB);
-                foreach (Frame::ContentBodyHandler *pMethodHandler, m_bodyHandlersByChannel[frame.channel()])
-                    pMethodHandler->_q_body(frame);
+                foreach (Frame::ContentBodyHandler *methodHandler, d->bodyHandlersByChannel[frame.channel()])
+                    methodHandler->_q_body(frame);
             }
                 break;
             case Frame::ftHeartbeat:
@@ -143,105 +215,87 @@ void Network::readyRead()
 
 void Network::sendFrame(const Frame::Base &frame)
 {
-    if (socket_->state() != QAbstractSocket::ConnectedState) {
-        qDebug() << Q_FUNC_INFO << "socket not connected: " << socket_->state();
+    Q_D(Network);
+    if (d->socket->state() != QAbstractSocket::ConnectedState) {
+        qDebug() << Q_FUNC_INFO << "socket not connected: " << d->socket->state();
         return;
     }
 
-    QDataStream stream(socket_);
+    QDataStream stream(d->socket);
     frame.toStream(stream);
 }
 
 bool Network::isSsl() const
 {
-    if (socket_)
-        return QString(socket_->metaObject()->className()).compare("QSslSocket", Qt::CaseInsensitive) == 0;
+    Q_D(const Network);
+    if (d->socket)
+        return QString(d->socket->metaObject()->className()).compare("QSslSocket", Qt::CaseInsensitive) == 0;
     return false;
 }
 
 void Network::setSsl(bool value)
 {
-    initSocket(value);
-}
-
-void Network::initSocket(bool ssl)
-{
-    if (socket_) {
-        socket_->deleteLater();
-        socket_ = 0;
-    }
-
-    if (ssl) {
-#ifndef QT_NO_SSL
-        socket_ = new QSslSocket(this);
-        QSslSocket *ssl_= static_cast<QSslSocket*> (socket_.data());
-        ssl_->setProtocol(QSsl::AnyProtocol);
-        connect(socket_, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(sslErrors()));
-        connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
-#else
-        qWarning("AMQP: You library has builded with QT_NO_SSL option.");
-#endif
-    } else {
-        socket_ = new QTcpSocket(this);
-        connect(socket_, SIGNAL(connected()), this, SLOT(conectionReady()));
-    }
-
-    if (socket_) {
-        connect(socket_, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
-        connect(socket_, SIGNAL(readyRead()), this, SLOT(readyRead()));
-        connect(socket_, SIGNAL(error(QAbstractSocket::SocketError)),
-                   this, SLOT(error(QAbstractSocket::SocketError)));
-    }
+    Q_D(Network);
+    d->initSocket(value);
 }
 
 void Network::sslErrors()
 {
 #ifndef QT_NO_SSL
-    static_cast<QSslSocket*>(socket_.data())->ignoreSslErrors();
+    Q_D(Network);
+    static_cast<QSslSocket*>(d->socket.data())->ignoreSslErrors();
 #endif
 }
 
 void Network::conectionReady()
 {
-    timeOut_ = 0;
+    Q_D(Network);
+    d->timeOut = 0;
     char header[8] = {'A', 'M', 'Q', 'P', 0, 0, 9, 1};
-    socket_->write(header, 8);
+    d->socket->write(header, 8);
     Q_EMIT connected();
 }
 
 bool Network::autoReconnect() const
 {
-    return autoReconnect_;
+    Q_D(const Network);
+    return d->autoReconnect;
 }
 
 void Network::setAutoReconnect(bool value)
 {
-    autoReconnect_ = value;
+    Q_D(Network);
+    d->autoReconnect = value;
 }
 
 QAbstractSocket::SocketState Network::state() const
 {
-    if (socket_)
-        return socket_->state();
+    Q_D(const Network);
+    if (d->socket)
+        return d->socket->state();
     return QAbstractSocket::UnconnectedState;
 }
 
-void Network::setMethodHandlerConnection(Frame::MethodHandler *pMethodHandlerConnection)
+void Network::setMethodHandlerConnection(Frame::MethodHandler *connectionMethodHandler)
 {
-    m_pMethodHandlerConnection = pMethodHandlerConnection;
+    Q_D(Network);
+    d->connectionMethodHandler = connectionMethodHandler;
 }
 
-void Network::addMethodHandlerForChannel(Channel channel, Frame::MethodHandler *pHandler)
+void Network::addMethodHandlerForChannel(Channel channel, Frame::MethodHandler *methodHandler)
 {
-    m_methodHandlersByChannel[channel].append(pHandler);
+    Q_D(Network);
+    d->methodHandlersByChannel[channel].append(methodHandler);
 }
 
-void Network::addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler)
+void Network::addContentHandlerForChannel(Channel channel, Frame::ContentHandler *methodHandler)
 {
-    m_contentHandlerByChannel[channel].append(pHandler);
+    Q_D(Network);
+    d->contentHandlerByChannel[channel].append(methodHandler);
 }
 
-void Network::addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler)
+void Network::addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *methodHandler)
 {
-    m_bodyHandlersByChannel[channel].append(pHandler);
+    Q_D(Network);
+    d->bodyHandlersByChannel[channel].append(methodHandler);
 }

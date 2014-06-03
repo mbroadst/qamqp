@@ -15,6 +15,7 @@
 namespace QAMQP
 {
 
+class NetworkPrivate;
 class QAMQP_EXPORT Network : public QObject
 {
     Q_OBJECT
@@ -39,13 +40,13 @@ public:
     void addContentHandlerForChannel(Channel channel, Frame::ContentHandler *pHandler);
     void addContentBodyHandlerForChannel(Channel channel, Frame::ContentBodyHandler *pHandler);
 
-public Q_SLOTS:
-    void connectTo(const QString &host = QString(), quint16 port = 0);
-    void error(QAbstractSocket::SocketError socketError);
-
 Q_SIGNALS:
     void connected();
     void disconnected();
+
+public Q_SLOTS:
+    void connectTo(const QString &host = QString(), quint16 port = 0);
+    void error(QAbstractSocket::SocketError socketError);
 
 private Q_SLOTS:
     void readyRead();
@@ -54,21 +55,9 @@ private Q_SLOTS:
 
 private:
     Q_DISABLE_COPY(Network)
+    Q_DECLARE_PRIVATE(Network)
+    QScopedPointer<NetworkPrivate> d_ptr;
 
-    void initSocket(bool ssl = false);
-    QPointer<QTcpSocket> socket_;
-    QByteArray buffer_;
-    QString lastHost_;
-    int lastPort_;
-    bool autoReconnect_;
-    int timeOut_;
-    bool connect_;
-
-    Frame::MethodHandler *m_pMethodHandlerConnection;
-
-    QHash<Channel, QList<Frame::MethodHandler*> > m_methodHandlersByChannel;
-    QHash<Channel, QList<Frame::ContentHandler*> > m_contentHandlerByChannel;
-    QHash<Channel, QList<Frame::ContentBodyHandler*> > m_bodyHandlersByChannel;
 };
 
 } // namespace QAMQP

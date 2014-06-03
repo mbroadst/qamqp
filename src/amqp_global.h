@@ -1,7 +1,6 @@
 #ifndef qamqp_global_h__
 #define qamqp_global_h__
 
-#define QAMQP_P_INCLUDE
 #define AMQPSCHEME "amqp"
 #define AMQPSSCHEME "amqps"
 #define AMQPPORT 5672

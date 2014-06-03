@@ -3,6 +3,7 @@
 #include "amqp_client.h"
 #include "amqp_client_p.h"
 #include "amqp_connection_p.h"
+#include "amqp_network_p.h"
 
 #include <QDebug>
 #include <QDataStream>

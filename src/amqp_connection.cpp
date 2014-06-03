@@ -3,6 +3,8 @@
 #include "amqp_client_p.h"
 #include "amqp_frame.h"
 #include "amqp_global.h"
+#include "amqp_network_p.h"
+#include "amqp_authenticator.h"
 
 #include <QDebug>
 #include <QDataStream>

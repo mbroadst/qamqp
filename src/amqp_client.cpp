@@ -3,6 +3,7 @@
 #include "amqp_global.h"
 #include "amqp_exchange.h"
 #include "amqp_exchange_p.h"
+#include "amqp_network_p.h"
 #include "amqp_queue.h"
 #include "amqp_queue_p.h"
 #include "amqp_connection_p.h"
