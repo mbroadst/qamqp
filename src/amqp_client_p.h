@@ -88,7 +88,7 @@ public:
     bool closed;
     bool connected;
     QPointer<QTimer> heartbeatTimer;
-    Frame::TableField customProperty;
+    Frame::TableField customProperties;
 
     Client * const q_ptr;
     Q_DECLARE_PUBLIC(Client)

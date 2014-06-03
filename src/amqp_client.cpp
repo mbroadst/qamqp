@@ -348,7 +348,7 @@ void ClientPrivate::startOk()
     clientProperties["version"] = QString(QAMQP_VERSION);
     clientProperties["platform"] = QString("Qt %1").arg(qVersion());
     clientProperties["product"] = QString("QAMQP");
-    clientProperties.unite(customProperty);
+    clientProperties.unite(customProperties);
     Frame::serialize(stream, clientProperties);
 
     authenticator->write(stream);
@@ -591,13 +591,13 @@ void Client::setAutoReconnect(bool value)
 void Client::addCustomProperty(const QString &name, const QString &value)
 {
     Q_D(Client);
-    d->customProperty.insert(name, value);
+    d->customProperties.insert(name, value);
 }
 
 QString Client::customProperty(const QString &name) const
 {
     Q_D(const Client);
-    return d->customProperty.value(name).toString();
+    return d->customProperties.value(name).toString();
 }
 
 void Client::connectToHost(const QString &connectionString)
