@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 SUBDIRS = \
-    basic \
+    qamqpclient \
+    qamqpconnection \
     qamqpexchange \
     queues \
     channels

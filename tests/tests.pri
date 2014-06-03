@@ -5,4 +5,7 @@ QT -= gui
 CONFIG -= app_bundle
 CONFIG += testcase
 
-HEADERS += $${PWD}/common/signalspy.h
+HEADERS += \
+    $${PWD}/common/signalspy.h \
+    $${PWD}/common/amqp_testcase.h
+

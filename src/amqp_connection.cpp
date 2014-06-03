@@ -152,8 +152,9 @@ void Connection::closeOk(const Frame::Method &frame)
     Q_UNUSED(frame)
     Q_D(Connection);
 
+    qDebug() << Q_FUNC_INFO << "received";
+
     d->connected = false;
-    Q_EMIT disconnected();
     if (d->heartbeatTimer)
         d->heartbeatTimer->stop();
     Q_EMIT disconnected();

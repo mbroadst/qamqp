@@ -81,6 +81,7 @@ void ClientPrivate::disconnect()
         return;
     }
 
+    connection_->close();
     network_->disconnect();
 
     // NOTE: this should be handled by signals, no need for dptr
