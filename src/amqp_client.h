@@ -79,7 +79,6 @@ private:
     Q_DECLARE_PRIVATE(Client)
     QScopedPointer<ClientPrivate> d_ptr;
 
-    friend class ConnectionPrivate;
     friend class ChannelPrivate;
 
 };

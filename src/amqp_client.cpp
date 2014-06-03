@@ -34,7 +34,7 @@ void ClientPrivate::init(const QUrl &connectionString)
     }
 
     if (!connection_)
-        connection_ = new Connection(q);
+        connection_ = new Connection(network_, q);
     network_->setMethodHandlerConnection(connection_);
 
     auth_ = QSharedPointer<Authenticator>(
@@ -51,7 +51,9 @@ void ClientPrivate::init(const QUrl &connectionString)
 
 void ClientPrivate::connect()
 {
-    sockConnect();
+    if (network_->state() != QAbstractSocket::UnconnectedState)
+        disconnect();
+    network_->connectTo(host, port);
 }
 
 void ClientPrivate::parseConnectionString(const QUrl &connectionString)
@@ -69,13 +71,6 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
     q->setPort(connectionString.port(AMQPPORT));
     q->setHost(connectionString.host());
     q->setVirtualHost(connectionString.path());
-}
-
-void ClientPrivate::sockConnect()
-{
-    if (network_->state() != QAbstractSocket::UnconnectedState)
-        disconnect();
-    network_->connectTo(host, port);
 }
 
 void ClientPrivate::disconnect()

@@ -22,7 +22,6 @@ public:
     void connect();
     void disconnect();
     void parseConnectionString(const QUrl &connectionString);
-    void sockConnect();
 
     quint32 port;
     QString host;

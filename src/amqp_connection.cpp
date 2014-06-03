@@ -12,7 +12,7 @@
 using namespace QAMQP;
 
 ConnectionPrivate::ConnectionPrivate(Connection *q)
-    : closed_(false),
+    : closed(false),
       connected(false),
       q_ptr(q)
 {
@@ -22,20 +22,11 @@ ConnectionPrivate::~ConnectionPrivate()
 {
 }
 
-void ConnectionPrivate::init(Client *parent)
-{
-    Q_Q(Connection);
-    q->setParent(parent);
-    client_ = parent;
-    heartbeatTimer_ = new QTimer(parent);
-    QObject::connect(heartbeatTimer_, SIGNAL(timeout()), q, SLOT(_q_heartbeat()));
-}
-
 void ConnectionPrivate::startOk()
 {
     Frame::Method frame(Frame::fcConnection, miStartOk);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     Frame::TableField clientProperties;
     clientProperties["version"] = QString(QAMQP_VERSION);
@@ -44,10 +35,11 @@ void ConnectionPrivate::startOk()
     clientProperties.unite(customProperty);
     Frame::serialize(stream, clientProperties);
 
-    client_->d_func()->auth_->write(stream);
+    client->auth()->write(stream);
     Frame::writeField('s', stream, "en_US");
-    frame.setArguments(arguments_);
-    client_->d_func()->network_->sendFrame(frame);
+
+    frame.setArguments(arguments);
+    network->sendFrame(frame);
 }
 
 void ConnectionPrivate::secureOk()
@@ -57,30 +49,30 @@ void ConnectionPrivate::secureOk()
 void ConnectionPrivate::tuneOk()
 {
     Frame::Method frame(Frame::fcConnection, miTuneOk);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     stream << qint16(0); //channel_max
     stream << qint32(FRAME_MAX); //frame_max
-    stream << qint16(heartbeatTimer_->interval() / 1000); //heartbeat
+    stream << qint16(heartbeatTimer->interval() / 1000); //heartbeat
 
-    frame.setArguments(arguments_);
-    client_->d_func()->network_->sendFrame(frame);
+    frame.setArguments(arguments);
+    network->sendFrame(frame);
 }
 
 void ConnectionPrivate::open()
 {
     Frame::Method frame(Frame::fcConnection, miOpen);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s',stream, client_->virtualHost());
+    Frame::writeField('s',stream, client->virtualHost());
 
     stream << qint8(0);
     stream << qint8(0);
 
-    frame.setArguments(arguments_);
-    client_->d_func()->network_->sendFrame(frame);
+    frame.setArguments(arguments);
+    network->sendFrame(frame);
 }
 
 void ConnectionPrivate::start(const Frame::Method &frame)
@@ -133,12 +125,12 @@ void ConnectionPrivate::tune(const Frame::Method &frame)
     qDebug(">> frame_max: %d", frame_max);
     qDebug(">> heartbeat: %d", heartbeat);
 
-    if (heartbeatTimer_) {
-        heartbeatTimer_->setInterval(heartbeat * 1000);
-        if (heartbeatTimer_->interval())
-            heartbeatTimer_->start();
+    if (heartbeatTimer) {
+        heartbeatTimer->setInterval(heartbeat * 1000);
+        if (heartbeatTimer->interval())
+            heartbeatTimer->start();
         else
-            heartbeatTimer_->stop();
+            heartbeatTimer->stop();
     }
 
     tuneOk();
@@ -173,32 +165,32 @@ void ConnectionPrivate::close(const Frame::Method &frame)
     qDebug(">> class-id: %d", classId);
     qDebug(">> method-id: %d", methodId);
     connected = false;
-    client_->d_func()->network_->error(QAbstractSocket::RemoteHostClosedError);
-    QMetaObject::invokeMethod(q, "disconnected");
+    network->error(QAbstractSocket::RemoteHostClosedError);
+    Q_EMIT q->disconnected();
 }
 
 void ConnectionPrivate::close(int code, const QString &text, int classId, int methodId)
 {
     Frame::Method frame(Frame::fcConnection, miClose);
-    QByteArray arguments_;
-    QDataStream stream(&arguments_, QIODevice::WriteOnly);
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s',stream, client_->virtualHost());
+    Frame::writeField('s',stream, client->virtualHost());
 
     stream << qint16(code);
     Frame::writeField('s', stream, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 
-    frame.setArguments(arguments_);
-    client_->d_func()->network_->sendFrame(frame);
+    frame.setArguments(arguments);
+    network->sendFrame(frame);
 }
 
 void ConnectionPrivate::closeOk()
 {
     Frame::Method frame(Frame::fcConnection, miCloseOk);
     connected = false;
-    client_->d_func()->network_->sendFrame(frame);
+    network->sendFrame(frame);
 }
 
 void ConnectionPrivate::closeOk(const Frame::Method &frame)
@@ -207,24 +199,24 @@ void ConnectionPrivate::closeOk(const Frame::Method &frame)
     Q_Q(Connection);
 
     connected = false;
-    QMetaObject::invokeMethod(q, "disconnected");
-    if (heartbeatTimer_)
-        heartbeatTimer_->stop();
+    Q_EMIT q->disconnected();
+    if (heartbeatTimer)
+        heartbeatTimer->stop();
 }
 
 void ConnectionPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global)
 {
     Frame::Method frame(Frame::fcBasic, 10);
     frame.setChannel(channel);
-    QByteArray arguments_;
-    QDataStream out(&arguments_, QIODevice::WriteOnly);
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << prefetchSize;
     out << prefetchCount;
     out << qint8(global ? 1 : 0);
 
-    frame.setArguments(arguments_);
-    client_->d_func()->network_->sendFrame(frame);
+    frame.setArguments(arguments);
+    network->sendFrame(frame);
 }
 
 bool ConnectionPrivate::_q_method(const Frame::Method &frame)
@@ -235,7 +227,7 @@ bool ConnectionPrivate::_q_method(const Frame::Method &frame)
 
     qDebug() << "Connection:";
 
-    if (closed_) {
+    if (closed) {
         if (frame.id() == miCloseOk)
             closeOk(frame);
 
@@ -272,17 +264,20 @@ bool ConnectionPrivate::_q_method(const Frame::Method &frame)
 void ConnectionPrivate::_q_heartbeat()
 {
     Frame::Heartbeat frame;
-    client_->d_func()->network_->sendFrame(frame);
+    network->sendFrame(frame);
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-Connection::Connection(Client *parent)
-    : QObject(parent),
+Connection::Connection(Network *network, Client *client)
+    : QObject(client),
       d_ptr(new ConnectionPrivate(this))
 {
     Q_D(Connection);
-    d->init(parent);
+    d->client = client;
+    d->network = network;
+    d->heartbeatTimer = new QTimer(this);
+    connect(d->heartbeatTimer, SIGNAL(timeout()), this, SLOT(_q_heartbeat()));
 }
 
 Connection::~Connection()
@@ -323,7 +318,7 @@ void Connection::closeOk()
 {
     Q_D(Connection);
     d->closeOk();
-    Q_EMIT disconnect();
+    Q_EMIT disconnected();
 }
 
 void Connection::openOk()

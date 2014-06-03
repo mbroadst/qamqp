@@ -8,6 +8,7 @@ namespace QAMQP
 {
 
 class Client;
+class Network;
 class ClientPrivate;
 class ChannelPrivate;
 class ConnectionPrivate;
@@ -39,7 +40,7 @@ Q_SIGNALS:
     void connected();
 
 private:
-    explicit Connection(Client *parent = 0);
+    explicit Connection(Network *network, Client *parent);
 
     Q_DISABLE_COPY(Connection)
     Q_DECLARE_PRIVATE(Connection)

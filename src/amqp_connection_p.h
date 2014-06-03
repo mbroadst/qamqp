@@ -46,11 +46,11 @@ public:
 
     void setQOS(qint32 prefetchSize, quint16 prefetchCount, int channel, bool global);
 
-    QPointer<Client> client_;
-    bool closed_;
+    QPointer<Client> client;
+    QPointer<Network> network;
+    bool closed;
     bool connected;
-    QPointer<QTimer> heartbeatTimer_;
-
+    QPointer<QTimer> heartbeatTimer;
     Frame::TableField customProperty;
 
     Q_DECLARE_PUBLIC(Connection)
