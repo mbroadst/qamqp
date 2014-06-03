@@ -67,8 +67,8 @@ Q_SIGNALS:
     void removed();
 
 protected:
-    void onOpen();
-    void onClose();
+    virtual void channelOpened();
+    virtual void channelClosed();
 
 private:
     explicit Exchange(int channelNumber = -1, Client *parent = 0);

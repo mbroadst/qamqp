@@ -35,8 +35,12 @@ Q_SIGNALS:
     void flowChanged(bool enabled);
 
 protected:
-    Channel(int channelNumber = -1, Client *parent = 0);
-    Channel(ChannelPrivate *dd, Client *parent = 0);
+    virtual void channelOpened() = 0;
+    virtual void channelClosed() = 0;
+
+protected:
+    explicit Channel(int channelNumber = -1, Client *client = 0);
+    explicit Channel(ChannelPrivate *dd, Client *client);
 
     Q_DISABLE_COPY(Channel)
     Q_DECLARE_PRIVATE(Channel)
@@ -45,10 +49,7 @@ protected:
     Q_PRIVATE_SLOT(d_func(), void _q_open())
     Q_PRIVATE_SLOT(d_func(), void _q_disconnected())
 
-    // should move to private classes
-    virtual void onOpen();
-    virtual void onClose();
-    void stateChanged(int state);
+    // method handling
     void _q_method(const Frame::Method &frame);
 
     friend class ClientPrivate;

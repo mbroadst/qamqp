@@ -21,7 +21,7 @@ Queue::~Queue()
     remove();
 }
 
-void Queue::onOpen()
+void Queue::channelOpened()
 {
     Q_D(Queue);
     if (d->delayedDeclare)
@@ -35,7 +35,7 @@ void Queue::onOpen()
     }
 }
 
-void Queue::onClose()
+void Queue::channelClosed()
 {
     remove(true, true);
 }

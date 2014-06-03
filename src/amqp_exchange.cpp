@@ -20,14 +20,14 @@ Exchange::~Exchange()
     remove();
 }
 
-void Exchange::onOpen()
+void Exchange::channelOpened()
 {
     Q_D(Exchange);
     if (d->delayedDeclare)
         declare(Exchange::Direct);
 }
 
-void Exchange::onClose()
+void Exchange::channelClosed()
 {
     remove(true, true);
 }

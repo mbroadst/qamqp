@@ -76,8 +76,9 @@ Q_SIGNALS:
     void empty();
 
 protected:
-    void onOpen();
-    void onClose();
+    // reimp Channel
+    virtual void channelOpened();
+    virtual void channelClosed();
 
 private:
     Queue(int channelNumber = -1, Client *parent = 0);

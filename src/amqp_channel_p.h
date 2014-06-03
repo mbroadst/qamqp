@@ -8,6 +8,7 @@
 namespace QAMQP
 {
 class Client;
+class Network;
 class ClientPrivate;
 class ChannelPrivate
 {
@@ -43,7 +44,8 @@ public:
     ChannelPrivate(Channel *q);
     virtual ~ChannelPrivate();
 
-    void init(int channelNumber, Client *parent);
+    void init(int channelNumber, Client *client);
+    void stateChanged(State state);
 
     void open();
     void flow();
@@ -66,12 +68,10 @@ public:
     void setQOS(qint32 prefetchSize, quint16 prefetchCount);
     void sendFrame(const Frame::Base &frame);
 
-    QPointer<Client> client_;
-
+    QPointer<Client> client;
     QString name;
     int number;
-
-    static int nextChannelNumber_;
+    static int nextChannelNumber;
     bool opened;
     bool needOpen;
 
