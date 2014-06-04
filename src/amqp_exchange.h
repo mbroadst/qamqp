@@ -52,11 +52,11 @@ public:
     void bind(const QString &queueName);
     void bind(const QString &queueName, const QString &key);
 
-    void publish(const QString &message, const QString &key,
+    void publish(const QString &key, const QString &message,
                  const MessageProperties &properties = MessageProperties());
-    void publish(const QByteArray &message, const QString &key,
+    void publish(const QString &key, const QByteArray &message,
                  const QString &mimeType, const MessageProperties &properties = MessageProperties());
-    void publish(const QByteArray &message, const QString &key,
+    void publish(const QString &key, const QByteArray &message,
                  const QString &mimeType, const QVariantHash &headers,
                  const Exchange::MessageProperties &properties = Exchange::MessageProperties());
 

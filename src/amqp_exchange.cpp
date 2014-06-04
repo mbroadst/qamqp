@@ -200,19 +200,19 @@ void Exchange::bind(const QString &queueName, const QString &key)
     qWarning("Not implemented");
 }
 
-void Exchange::publish(const QString &message, const QString &key,
+void Exchange::publish(const QString &key, const QString &message,
                        const MessageProperties &properties)
 {
-    publish(message.toUtf8(), key, QLatin1String("text.plain"), QVariantHash(), properties);
+    publish(key, message.toUtf8(), QLatin1String("text.plain"), QVariantHash(), properties);
 }
 
-void Exchange::publish(const QByteArray &message, const QString &key,
+void Exchange::publish(const QString &key, const QByteArray &message,
                        const QString &mimeType, const MessageProperties &properties)
 {
-    publish(message, key, mimeType, QVariantHash(), properties);
+    publish(key, message, mimeType, QVariantHash(), properties);
 }
 
-void Exchange::publish(const QByteArray &message, const QString &key,
+void Exchange::publish(const QString &key, const QByteArray &message,
                        const QString &mimeType, const QVariantHash &headers,
                        const Exchange::MessageProperties &properties)
 {
