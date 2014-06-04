@@ -41,7 +41,7 @@ void ExchangePrivate::declare()
     }
 
     Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDeclare);
-    frame.setChannel(number);
+    frame.setChannel(channelNumber);
 
     QByteArray args;
     QDataStream stream(&args, QIODevice::WriteOnly);
@@ -164,7 +164,7 @@ void Exchange::remove(bool ifUnused, bool noWait)
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDelete);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
@@ -218,7 +218,7 @@ void Exchange::publish(const QByteArray &message, const QString &key,
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -232,7 +232,7 @@ void Exchange::publish(const QByteArray &message, const QString &key,
     d->sendFrame(frame);
 
     Frame::Content content(Frame::fcBasic);
-    content.setChannel(d->number);
+    content.setChannel(d->channelNumber);
     content.setProperty(Frame::Content::cpContentType, mimeType);
     content.setProperty(Frame::Content::cpContentEncoding, "utf-8");
     content.setProperty(Frame::Content::cpHeaders, headers);
@@ -249,7 +249,7 @@ void Exchange::publish(const QByteArray &message, const QString &key,
     for (int sent = 0; sent < fullSize; sent += (FRAME_MAX - 7)) {
         Frame::ContentBody body;
         QByteArray partition = message.mid(sent, (FRAME_MAX - 7));
-        body.setChannel(d->number);
+        body.setChannel(d->channelNumber);
         body.setBody(partition);
         d->sendFrame(body);
     }

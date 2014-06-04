@@ -46,7 +46,7 @@ public:
     ChannelPrivate(Channel *q);
     virtual ~ChannelPrivate();
 
-    void init(int channelNumber, Client *client);
+    void init(int channel, Client *client);
     void stateChanged(State state);
 
     void setQOS(qint32 prefetchSize, quint16 prefetchCount);
@@ -72,7 +72,7 @@ public:
 
     QPointer<Client> client;
     QString name;
-    int number;
+    int channelNumber;
     static int nextChannelNumber;
     bool opened;
     bool needOpen;

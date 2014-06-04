@@ -77,8 +77,8 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
 
 void QueuePrivate::_q_content(const Frame::Content &frame)
 {
-    Q_ASSERT(frame.channel() == number);
-    if (frame.channel() != number)
+    Q_ASSERT(frame.channel() == channelNumber);
+    if (frame.channel() != channelNumber)
         return;
 
     if (messages.isEmpty()) {
@@ -97,8 +97,8 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
 void QueuePrivate::_q_body(const Frame::ContentBody &frame)
 {
     Q_Q(Queue);
-    Q_ASSERT(frame.channel() == number);
-    if (frame.channel() != number)
+    Q_ASSERT(frame.channel() == channelNumber);
+    if (frame.channel() != channelNumber)
         return;
 
     if (messages.isEmpty()) {
@@ -280,7 +280,7 @@ void Queue::declare(const QString &name, QueueOptions options)
     }
 
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miDeclare);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -305,7 +305,7 @@ void Queue::remove(bool ifUnused, bool ifEmpty, bool noWait)
     }
 
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miDelete);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -331,7 +331,7 @@ void Queue::purge()
         return;
 
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miPurge);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -364,7 +364,7 @@ void Queue::bind(const QString &exchangeName, const QString &key)
     }
 
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miBind);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -400,7 +400,7 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
     }
 
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miUnbind);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -439,7 +439,7 @@ void Queue::consume(ConsumeOptions options)
     }
 
     Frame::Method frame(Frame::fcBasic, QueuePrivate::bmConsume);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -476,7 +476,7 @@ void Queue::get()
     }
 
     Frame::Method frame(Frame::fcBasic, QueuePrivate::bmGet);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
@@ -499,7 +499,7 @@ void Queue::ack(const MessagePtr &message)
     }
 
     Frame::Method frame(Frame::fcBasic, QueuePrivate::bmAck);
-    frame.setChannel(d->number);
+    frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);

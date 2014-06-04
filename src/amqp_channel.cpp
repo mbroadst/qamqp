@@ -10,7 +10,7 @@ using namespace QAMQP;
 
 int ChannelPrivate::nextChannelNumber = 0;
 ChannelPrivate::ChannelPrivate(Channel *q)
-    : number(0),
+    : channelNumber(0),
       opened(false),
       needOpen(true),
       q_ptr(q)
@@ -21,11 +21,11 @@ ChannelPrivate::~ChannelPrivate()
 {
 }
 
-void ChannelPrivate::init(int channelNumber, Client *c)
+void ChannelPrivate::init(int channel, Client *c)
 {
     client = c;
-    needOpen = channelNumber == -1 ? true : false;
-    number = channelNumber == -1 ? ++nextChannelNumber : channelNumber;
+    needOpen = channel == -1 ? true : false;
+    channelNumber = channel == -1 ? ++nextChannelNumber : channel;
     nextChannelNumber = qMax(channelNumber, (nextChannelNumber + 1));
 }
 
@@ -50,14 +50,14 @@ void ChannelPrivate::stateChanged(State state)
 
 bool ChannelPrivate::_q_method(const Frame::Method &frame)
 {
-    Q_ASSERT(frame.channel() == number);
-    if (frame.channel() != number)
+    Q_ASSERT(frame.channel() == channelNumber);
+    if (frame.channel() != channelNumber)
         return true;
 
     if (frame.methodClass() != Frame::fcChannel)
         return false;
 
-    qDebug("Channel#%d:", number);
+    qDebug("Channel#%d:", channelNumber);
 
     switch (frame.id()) {
     case miOpenOk:
@@ -99,9 +99,9 @@ void ChannelPrivate::open()
     if (!client->isConnected())
         return;
 
-    qDebug("Open channel #%d", number);
+    qDebug("Open channel #%d", channelNumber);
     Frame::Method frame(Frame::fcChannel, miOpen);
-    frame.setChannel(number);
+    frame.setChannel(channelNumber);
 
     QByteArray arguments;
     arguments.resize(1);
@@ -196,7 +196,7 @@ void ChannelPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount)
     Q_UNUSED(prefetchSize)
     Q_UNUSED(prefetchCount)
     qDebug() << Q_FUNC_INFO << "temporarily disabled";
-//    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, number, false);
+//    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, channelNumber, false);
 }
 
 void ChannelPrivate::_q_disconnected()
@@ -249,7 +249,7 @@ QString Channel::name() const
 int Channel::channelNumber() const
 {
     Q_D(const Channel);
-    return d->number;
+    return d->channelNumber;
 }
 
 void Channel::setName(const QString &name)
