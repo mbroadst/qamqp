@@ -76,6 +76,7 @@ bool ChannelPrivate::_q_method(const Frame::Method &frame)
         closeOk(frame);
         break;
     }
+
     return true;
 }
 
@@ -255,12 +256,6 @@ void Channel::setName(const QString &name)
 {
     Q_D(Channel);
     d->name = name;
-}
-
-void Channel::_q_method(const Frame::Method &frame)
-{
-    Q_D(Channel);
-    d->_q_method(frame);
 }
 
 bool Channel::isOpened() const

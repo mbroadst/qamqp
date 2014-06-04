@@ -198,17 +198,17 @@ void ClientPrivate::sendFrame(const Frame::Base &frame)
     frame.toStream(stream);
 }
 
-void ClientPrivate::_q_method(const Frame::Method &frame)
+bool ClientPrivate::_q_method(const Frame::Method &frame)
 {
     Q_ASSERT(frame.methodClass() == Frame::fcConnection);
     if (frame.methodClass() != Frame::fcConnection)
-        return;
+        return false;
 
     qDebug() << "Connection:";
     if (closed) {
         if (frame.id() == ClientPrivate::miCloseOk)
             closeOk(frame);
-        return;
+        return false;
     }
 
     switch (ClientPrivate::MethodId(frame.id())) {
@@ -233,6 +233,8 @@ void ClientPrivate::_q_method(const Frame::Method &frame)
     default:
         qWarning("Unknown method-id %d", frame.id());
     }
+
+    return true;
 }
 
 void ClientPrivate::start(const Frame::Method &frame)
@@ -534,7 +536,7 @@ Exchange *Client::createExchange(const QString &name, int channelNumber)
 {
     Q_D(Client);
     Exchange *exchange = new Exchange(channelNumber, this);
-    d->methodHandlersByChannel[exchange->channelNumber()].append(exchange);
+    d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
     exchange->d_func()->open();
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
@@ -552,9 +554,9 @@ Queue *Client::createQueue(const QString &name, int channelNumber)
 {
     Q_D(Client);
     Queue *queue = new Queue(channelNumber, this);
-    d->methodHandlersByChannel[queue->channelNumber()].append(queue);
-    d->contentHandlerByChannel[queue->channelNumber()].append(queue);
-    d->bodyHandlersByChannel[queue->channelNumber()].append(queue);
+    d->methodHandlersByChannel[queue->channelNumber()].append(queue->d_func());
+    d->contentHandlerByChannel[queue->channelNumber()].append(queue->d_func());
+    d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     connect(this, SIGNAL(connected()), queue, SLOT(_q_open()));
     queue->d_func()->open();
     connect(this, SIGNAL(disconnected()), queue, SLOT(_q_disconnected()));

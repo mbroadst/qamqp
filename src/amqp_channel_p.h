@@ -2,15 +2,17 @@
 #define amqp_channel_p_h__
 
 #include <QPointer>
+#include "amqp_frame.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
 namespace QAMQP
 {
+
 class Client;
 class Network;
 class ClientPrivate;
-class ChannelPrivate
+class ChannelPrivate : public Frame::MethodHandler
 {
 public:
     enum MethodId {
@@ -47,26 +49,26 @@ public:
     void init(int channelNumber, Client *client);
     void stateChanged(State state);
 
+    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
+    void sendFrame(const Frame::Base &frame);
+
     void open();
     void flow();
     void flowOk();
     void close(int code, const QString &text, int classId, int methodId);
     void closeOk();
 
-    //////////////////////////////////////////////////////////////////////////
-
+    // reimp MethodHandler
+    virtual bool _q_method(const Frame::Method &frame);
     void openOk(const Frame::Method &frame);
     void flow(const Frame::Method &frame);
     void flowOk(const Frame::Method &frame);
     void close(const Frame::Method &frame);
     void closeOk(const Frame::Method &frame);
 
-    virtual bool _q_method(const Frame::Method &frame);
+    // private slots
     virtual void _q_disconnected();
     void _q_open();
-
-    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
-    void sendFrame(const Frame::Base &frame);
 
     QPointer<Client> client;
     QString name;

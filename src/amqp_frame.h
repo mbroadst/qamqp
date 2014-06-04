@@ -29,7 +29,7 @@
 namespace QAMQP
 {
 
-class Queue;
+class QueuePrivate;
 namespace Frame
 {
     typedef quint16 channel_t;
@@ -358,7 +358,8 @@ namespace Frame
         qlonglong bodySize_;
 
     private:
-        friend class QAMQP::Queue;
+        friend class QAMQP::QueuePrivate;
+
     };
 
     class QAMQP_EXPORT ContentBody : public Base
@@ -400,7 +401,7 @@ namespace Frame
     class QAMQP_EXPORT MethodHandler
     {
     public:
-        virtual void _q_method(const Frame::Method &frame) = 0;
+        virtual bool _q_method(const Frame::Method &frame) = 0;
     };
 
     class QAMQP_EXPORT ContentHandler

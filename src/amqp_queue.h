@@ -12,9 +12,7 @@ class Client;
 class ClientPrivate;
 class Exchange;
 class QueuePrivate;
-class QAMQP_EXPORT Queue : public Channel,
-                           public Frame::ContentHandler,
-                           public Frame::ContentBodyHandler
+class QAMQP_EXPORT Queue : public Channel
 {
     Q_OBJECT
     Q_ENUMS(QueueOptions)
@@ -82,9 +80,6 @@ protected:
 
 private:
     Queue(int channelNumber = -1, Client *parent = 0);
-
-    void _q_content(const Frame::Content &frame);
-    void _q_body(const Frame::ContentBody &frame);
 
     Q_DISABLE_COPY(Queue)
     Q_DECLARE_PRIVATE(Queue)

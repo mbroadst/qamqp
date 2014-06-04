@@ -37,11 +37,9 @@ public:
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
 
     typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
-
-    virtual ~Exchange();
-
     ExchangeOptions option() const;
 
+    virtual ~Exchange();
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
                  const Frame::TableField &args = Frame::TableField());

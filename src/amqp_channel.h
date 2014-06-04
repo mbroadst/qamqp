@@ -9,7 +9,7 @@ namespace QAMQP
 
 class Client;
 class ChannelPrivate;
-class QAMQP_EXPORT Channel : public QObject, public Frame::MethodHandler
+class QAMQP_EXPORT Channel : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int number READ channelNumber CONSTANT)
@@ -48,9 +48,6 @@ protected:
 
     Q_PRIVATE_SLOT(d_func(), void _q_open())
     Q_PRIVATE_SLOT(d_func(), void _q_disconnected())
-
-    // method handling
-    void _q_method(const Frame::Method &frame);
 
     friend class ClientPrivate;
 };

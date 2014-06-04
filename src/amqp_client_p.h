@@ -47,7 +47,7 @@ public:
     void _q_socketError(QAbstractSocket::SocketError error);
     void _q_heartbeat();
 
-    virtual void _q_method(const Frame::Method &frame);
+    virtual bool _q_method(const Frame::Method &frame);
 
     // method handlers, FROM server
     void start(const Frame::Method &frame);

@@ -9,6 +9,215 @@ using namespace QAMQP;
 #include <QDataStream>
 #include <QFile>
 
+QueuePrivate::QueuePrivate(Queue *q)
+    : ChannelPrivate(q),
+      delayedDeclare(false),
+      declared(false),
+      noAck(true),
+      recievingMessage(false)
+{
+}
+
+QueuePrivate::~QueuePrivate()
+{
+}
+
+bool QueuePrivate::_q_method(const Frame::Method &frame)
+{
+    Q_Q(Queue);
+    if (ChannelPrivate::_q_method(frame))
+        return true;
+
+    if (frame.methodClass() == Frame::fcQueue) {
+        switch (frame.id()) {
+        case miDeclareOk:
+            declareOk(frame);
+            break;
+        case miDelete:
+            deleteOk(frame);
+            break;
+        case miBindOk:
+            bindOk(frame);
+            break;
+        case miUnbindOk:
+            unbindOk(frame);
+            break;
+        case miPurgeOk:
+            deleteOk(frame);
+            break;
+        default:
+            break;
+        }
+
+        return true;
+    }
+
+    if (frame.methodClass() == Frame::fcBasic) {
+        switch(frame.id()) {
+        case bmConsumeOk:
+            consumeOk(frame);
+            break;
+        case bmDeliver:
+            deliver(frame);
+            break;
+        case bmGetOk:
+            getOk(frame);
+            break;
+        case bmGetEmpty:
+            Q_EMIT q->empty();
+            break;
+        default:
+            break;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void QueuePrivate::_q_content(const Frame::Content &frame)
+{
+    Q_ASSERT(frame.channel() == number);
+    if (frame.channel() != number)
+        return;
+
+    if (messages.isEmpty()) {
+        qErrnoWarning("Received content-header without method frame before");
+        return;
+    }
+
+    MessagePtr &message = messages.last();
+    message->leftSize = frame.bodySize();
+    QHash<int, QVariant>::ConstIterator it;
+    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
+    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
+        message->property[Message::MessageProperty(it.key())] = it.value();
+}
+
+void QueuePrivate::_q_body(const Frame::ContentBody &frame)
+{
+    Q_Q(Queue);
+    Q_ASSERT(frame.channel() == number);
+    if (frame.channel() != number)
+        return;
+
+    if (messages.isEmpty()) {
+        qErrnoWarning("Received content-body without method frame before");
+        return;
+    }
+
+    MessagePtr &message = messages.last();
+    message->payload.append(frame.body());
+    message->leftSize -= frame.body().size();
+
+    if (message->leftSize == 0 && messages.size() == 1)
+        Q_EMIT q->messageReceived(q);
+}
+
+void QueuePrivate::declareOk(const Frame::Method &frame)
+{
+    Q_Q(Queue);
+    qDebug() << "Declared queue: " << name;
+    declared = true;
+
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+
+    name = Frame::readField('s', stream).toString();
+    qint32 messageCount = 0, consumerCount = 0;
+    stream >> messageCount >> consumerCount;
+    qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
+
+    Q_EMIT q->declared();
+}
+
+void QueuePrivate::deleteOk(const Frame::Method &frame)
+{
+    Q_Q(Queue);
+    qDebug() << "Deleted or purged queue: " << name;
+    declared = false;
+
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+    qint32 messageCount = 0;
+    stream >> messageCount;
+    qDebug("Message count %d", messageCount);
+
+    Q_EMIT q->removed();
+}
+
+void QueuePrivate::bindOk(const Frame::Method &frame)
+{
+    Q_UNUSED(frame)
+
+    Q_Q(Queue);
+    qDebug() << Q_FUNC_INFO << "bound to queue: " << name;
+    Q_EMIT q->bound();
+}
+
+void QueuePrivate::unbindOk(const Frame::Method &frame)
+{
+    Q_UNUSED(frame)
+
+    Q_Q(Queue);
+    qDebug() << Q_FUNC_INFO << "unbound queue: " << name;
+    Q_EMIT q->unbound();
+}
+
+void QueuePrivate::getOk(const Frame::Method &frame)
+{
+    QByteArray data = frame.arguments();
+    QDataStream in(&data, QIODevice::ReadOnly);
+
+    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
+    bool redelivered = Frame::readField('t',in).toBool();
+    QString exchangeName = Frame::readField('s',in).toString();
+    QString routingKey = Frame::readField('s',in).toString();
+
+    Q_UNUSED(redelivered)
+
+    MessagePtr newMessage = MessagePtr(new Message);
+    newMessage->routeKey = routingKey;
+    newMessage->exchangeName = exchangeName;
+    newMessage->deliveryTag = deliveryTag;
+    messages.enqueue(newMessage);
+}
+
+void QueuePrivate::consumeOk(const Frame::Method &frame)
+{
+    qDebug() << "Consume ok: " << name;
+    declared = false;
+
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+    consumerTag = Frame::readField('s',stream).toString();
+    qDebug("Consumer tag = %s", qPrintable(consumerTag));
+}
+
+void QueuePrivate::deliver(const Frame::Method &frame)
+{
+    QByteArray data = frame.arguments();
+    QDataStream in(&data, QIODevice::ReadOnly);
+    QString consumer_ = Frame::readField('s',in).toString();
+    if (consumer_ != consumerTag)
+        return;
+
+    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
+    bool redelivered = Frame::readField('t',in).toBool();
+    QString exchangeName = Frame::readField('s',in).toString();
+    QString routingKey = Frame::readField('s',in).toString();
+
+    Q_UNUSED(redelivered)
+
+    MessagePtr newMessage = MessagePtr(new Message);
+    newMessage->routeKey = routingKey;
+    newMessage->exchangeName = exchangeName;
+    newMessage->deliveryTag = deliveryTag;
+    messages.enqueue(newMessage);
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 Queue::Queue(int channelNumber, Client *parent)
     : Channel(new QueuePrivate(this), parent)
 {
@@ -205,46 +414,6 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
     d->sendFrame(frame);
 }
 
-void Queue::_q_content(const Frame::Content &frame)
-{
-    Q_D(Queue);
-    Q_ASSERT(frame.channel() == d->number);
-    if (frame.channel() != d->number)
-        return;
-
-    if (d->messages.isEmpty()) {
-        qErrnoWarning("Received content-header without method frame before");
-        return;
-    }
-
-    MessagePtr &message = d->messages.last();
-    message->leftSize = frame.bodySize();
-    QHash<int, QVariant>::ConstIterator it;
-    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
-    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
-        message->property[Message::MessageProperty(it.key())] = it.value();
-}
-
-void Queue::_q_body(const Frame::ContentBody &frame)
-{
-    Q_D(Queue);
-    Q_ASSERT(frame.channel() == d->number);
-    if (frame.channel() != d->number)
-        return;
-
-    if (d->messages.isEmpty()) {
-        qErrnoWarning("Received content-body without method frame before");
-        return;
-    }
-
-    MessagePtr &message = d->messages.last();
-    message->payload.append(frame.body());
-    message->leftSize -= frame.body().size();
-
-    if (message->leftSize == 0 && d->messages.size() == 1)
-        Q_EMIT messageReceived(this);
-}
-
 MessagePtr Queue::getMessage()
 {
     Q_D(Queue);
@@ -340,174 +509,4 @@ void Queue::ack(const MessagePtr &message)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-QueuePrivate::QueuePrivate(Queue *q)
-    : ChannelPrivate(q),
-      delayedDeclare(false),
-      declared(false),
-      noAck(true),
-      recievingMessage(false)
-{
-}
-
-QueuePrivate::~QueuePrivate()
-{
-}
-
-bool QueuePrivate::_q_method(const Frame::Method &frame)
-{
-    Q_Q(Queue);
-    if (ChannelPrivate::_q_method(frame))
-        return true;
-
-    if (frame.methodClass() == Frame::fcQueue) {
-        switch (frame.id()) {
-        case miDeclareOk:
-            declareOk(frame);
-            break;
-        case miDelete:
-            deleteOk(frame);
-            break;
-        case miBindOk:
-            bindOk(frame);
-            break;
-        case miUnbindOk:
-            unbindOk(frame);
-            break;
-        case miPurgeOk:
-            deleteOk(frame);
-            break;
-        default:
-            break;
-        }
-
-        return true;
-    }
-
-    if (frame.methodClass() == Frame::fcBasic) {
-        switch(frame.id()) {
-        case bmConsumeOk:
-            consumeOk(frame);
-            break;
-        case bmDeliver:
-            deliver(frame);
-            break;
-        case bmGetOk:
-            getOk(frame);
-            break;
-        case bmGetEmpty:
-            Q_EMIT q->empty();
-            break;
-        default:
-            break;
-        }
-        return true;
-    }
-
-    return false;
-}
-
-void QueuePrivate::declareOk(const Frame::Method &frame)
-{
-    Q_Q(Queue);
-    qDebug() << "Declared queue: " << name;
-    declared = true;
-
-    QByteArray data = frame.arguments();
-    QDataStream stream(&data, QIODevice::ReadOnly);
-
-    name = Frame::readField('s', stream).toString();
-    qint32 messageCount = 0, consumerCount = 0;
-    stream >> messageCount >> consumerCount;
-    qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
-
-    Q_EMIT q->declared();
-}
-
-void QueuePrivate::deleteOk(const Frame::Method &frame)
-{
-    Q_Q(Queue);
-    qDebug() << "Deleted or purged queue: " << name;
-    declared = false;
-
-    QByteArray data = frame.arguments();
-    QDataStream stream(&data, QIODevice::ReadOnly);
-    qint32 messageCount = 0;
-    stream >> messageCount;
-    qDebug("Message count %d", messageCount);
-
-    Q_EMIT q->removed();
-}
-
-void QueuePrivate::bindOk(const Frame::Method &frame)
-{
-    Q_UNUSED(frame)
-
-    Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "bound to queue: " << name;
-    Q_EMIT q->bound();
-}
-
-void QueuePrivate::unbindOk(const Frame::Method &frame)
-{
-    Q_UNUSED(frame)
-
-    Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "unbound queue: " << name;
-    Q_EMIT q->unbound();
-}
-
-void QueuePrivate::getOk(const Frame::Method &frame)
-{
-    QByteArray data = frame.arguments();
-    QDataStream in(&data, QIODevice::ReadOnly);
-
-    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
-    bool redelivered = Frame::readField('t',in).toBool();
-    QString exchangeName = Frame::readField('s',in).toString();
-    QString routingKey = Frame::readField('s',in).toString();
-
-    Q_UNUSED(redelivered)
-
-    MessagePtr newMessage = MessagePtr(new Message);
-    newMessage->routeKey = routingKey;
-    newMessage->exchangeName = exchangeName;
-    newMessage->deliveryTag = deliveryTag;
-    messages.enqueue(newMessage);
-}
-
-void QueuePrivate::consumeOk(const Frame::Method &frame)
-{
-    qDebug() << "Consume ok: " << name;
-    declared = false;
-
-    QByteArray data = frame.arguments();
-    QDataStream stream(&data, QIODevice::ReadOnly);
-    consumerTag = Frame::readField('s',stream).toString();
-    qDebug("Consumer tag = %s", qPrintable(consumerTag));
-}
-
-void QueuePrivate::deliver(const Frame::Method &frame)
-{
-    QByteArray data = frame.arguments();
-    QDataStream in(&data, QIODevice::ReadOnly);
-    QString consumer_ = Frame::readField('s',in).toString();
-    if (consumer_ != consumerTag)
-        return;
-
-    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
-    bool redelivered = Frame::readField('t',in).toBool();
-    QString exchangeName = Frame::readField('s',in).toString();
-    QString routingKey = Frame::readField('s',in).toString();
-
-    Q_UNUSED(redelivered)
-
-    MessagePtr newMessage = MessagePtr(new Message);
-    newMessage->routeKey = routingKey;
-    newMessage->exchangeName = exchangeName;
-    newMessage->deliveryTag = deliveryTag;
-    messages.enqueue(newMessage);
 }
