@@ -4,6 +4,8 @@ env:
   - QT_SELECT=qt5
 services:
   - rabbitmq
+install:
+  - tests/test-deps.sh
 script:
   - mkdir build
   - cd build

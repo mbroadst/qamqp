@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mbroadst/qamqp-ng.svg?branch=master)](https://travis-ci.org/mbroadst/qamqp-ng)
+
 QAMQP
 =============
 Qt4/Qt5 implementation of AMQP 0.9.1.
