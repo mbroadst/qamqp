@@ -181,25 +181,6 @@ void Exchange::remove(bool ifUnused, bool noWait)
     d->sendFrame(frame);
 }
 
-void Exchange::bind(Queue *queue)
-{
-    Q_D(Exchange);
-    queue->bind(this, d->name);
-}
-
-void Exchange::bind(const QString &queueName)
-{
-    Q_UNUSED(queueName);
-    qWarning("Not implemented");
-}
-
-void Exchange::bind(const QString &queueName, const QString &key)
-{
-    Q_UNUSED(queueName);
-    Q_UNUSED(key);
-    qWarning("Not implemented");
-}
-
 void Exchange::publish(const QString &key, const QString &message,
                        const MessageProperties &properties)
 {
@@ -223,7 +204,7 @@ void Exchange::publish(const QString &key, const QByteArray &message,
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, key);
     out << qint8(0);

@@ -40,6 +40,8 @@ public:
     ExchangeOptions option() const;
 
     virtual ~Exchange();
+
+    // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
                  const Frame::TableField &args = Frame::TableField());
@@ -48,10 +50,7 @@ public:
                  const Frame::TableField &args = Frame::TableField());
     void remove(bool ifUnused = true, bool noWait = true);
 
-    void bind(Queue *queue);
-    void bind(const QString &queueName);
-    void bind(const QString &queueName, const QString &key);
-
+    // AMQP Basic
     void publish(const QString &key, const QString &message,
                  const MessageProperties &properties = MessageProperties());
     void publish(const QString &key, const QByteArray &message,
