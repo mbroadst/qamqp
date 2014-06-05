@@ -14,6 +14,7 @@ PRIVATE_HEADERS += \
     amqp_channel_p.h \
     amqp_client_p.h \
     amqp_exchange_p.h \
+    amqp_message_p.h \
     amqp_queue_p.h
 
 INSTALL_HEADERS += \

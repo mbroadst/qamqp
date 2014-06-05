@@ -1,6 +1,7 @@
 #include "amqp_queue.h"
 #include "amqp_queue_p.h"
 #include "amqp_exchange.h"
+#include "amqp_message_p.h"
 
 using namespace QAMQP;
 
@@ -86,12 +87,12 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
         return;
     }
 
-    MessagePtr &message = messages.last();
-    message->leftSize = frame.bodySize();
+    Message message = messages.last();
+    message.d->leftSize = frame.bodySize();
     QHash<int, QVariant>::ConstIterator it;
     QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
     for (it = frame.properties_.constBegin(); it != itEnd; ++it)
-        message->property[Message::MessageProperty(it.key())] = it.value();
+        message.d->properties[Message::MessageProperty(it.key())] = it.value();
 }
 
 void QueuePrivate::_q_body(const Frame::ContentBody &frame)
@@ -106,11 +107,10 @@ void QueuePrivate::_q_body(const Frame::ContentBody &frame)
         return;
     }
 
-    MessagePtr &message = messages.last();
-    message->payload.append(frame.body());
-    message->leftSize -= frame.body().size();
-
-    if (message->leftSize == 0 && messages.size() == 1)
+    Message message = messages.last();
+    message.d->payload.append(frame.body());
+    message.d->leftSize -= frame.body().size();
+    if (message.d->leftSize == 0 && messages.size() == 1)
         Q_EMIT q->messageReceived(q);
 }
 
@@ -169,18 +169,12 @@ void QueuePrivate::getOk(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
 
-    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
-    bool redelivered = Frame::readField('t',in).toBool();
-    QString exchangeName = Frame::readField('s',in).toString();
-    QString routingKey = Frame::readField('s',in).toString();
-
-    Q_UNUSED(redelivered)
-
-    MessagePtr newMessage = MessagePtr(new Message);
-    newMessage->routeKey = routingKey;
-    newMessage->exchangeName = exchangeName;
-    newMessage->deliveryTag = deliveryTag;
-    messages.enqueue(newMessage);
+    Message message;
+    message.d->deliveryTag = Frame::readField('L',in).toLongLong();
+    message.d->redelivered = Frame::readField('t',in).toBool();
+    message.d->exchangeName = Frame::readField('s',in).toString();
+    message.d->routingKey = Frame::readField('s',in).toString();
+    messages.enqueue(message);
 }
 
 void QueuePrivate::consumeOk(const Frame::Method &frame)
@@ -199,21 +193,17 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
     QString consumer_ = Frame::readField('s',in).toString();
-    if (consumer_ != consumerTag)
+    if (consumer_ != consumerTag) {
+        qDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer_;
         return;
+    }
 
-    qlonglong deliveryTag = Frame::readField('L',in).toLongLong();
-    bool redelivered = Frame::readField('t',in).toBool();
-    QString exchangeName = Frame::readField('s',in).toString();
-    QString routingKey = Frame::readField('s',in).toString();
-
-    Q_UNUSED(redelivered)
-
-    MessagePtr newMessage = MessagePtr(new Message);
-    newMessage->routeKey = routingKey;
-    newMessage->exchangeName = exchangeName;
-    newMessage->deliveryTag = deliveryTag;
-    messages.enqueue(newMessage);
+    Message message;
+    message.d->deliveryTag = Frame::readField('L',in).toLongLong();
+    message.d->redelivered = Frame::readField('t',in).toBool();
+    message.d->exchangeName = Frame::readField('s',in).toString();
+    message.d->routingKey = Frame::readField('s',in).toString();
+    messages.enqueue(message);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -285,7 +275,7 @@ void Queue::declare(const QString &name, QueueOptions options)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
 
     out << qint8(options);
@@ -310,7 +300,7 @@ void Queue::remove(bool ifUnused, bool ifEmpty, bool noWait)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
 
     qint8 flag = 0;
@@ -336,7 +326,7 @@ void Queue::purge()
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
 
     out << qint8(0);    // no-wait
@@ -369,7 +359,7 @@ void Queue::bind(const QString &exchangeName, const QString &key)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, exchangeName);
     Frame::writeField('s', out, key);
@@ -404,7 +394,7 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, exchangeName);
     Frame::writeField('s', out, key);
@@ -414,7 +404,7 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
     d->sendFrame(frame);
 }
 
-MessagePtr Queue::getMessage()
+Message Queue::getMessage()
 {
     Q_D(Queue);
     return d->messages.dequeue();
@@ -426,8 +416,8 @@ bool Queue::hasMessage() const
     if (d->messages.isEmpty())
         return false;
 
-    const MessagePtr &q = d->messages.head();
-    return q->leftSize == 0;
+    const Message &message = d->messages.head();
+    return message.d->leftSize == 0;
 }
 
 void Queue::consume(ConsumeOptions options)
@@ -444,7 +434,7 @@ void Queue::consume(ConsumeOptions options)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, d->consumerTag);
 
@@ -481,16 +471,16 @@ void Queue::get()
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserver 1
+    out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
 
-    out << qint8(d->noAck ? 1 : 0);    // noAck
+    out << qint8(d->noAck ? 1 : 0); // noAck
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
 
-void Queue::ack(const MessagePtr &message)
+void Queue::ack(const Message &message)
 {
     Q_D(Queue);
     if (!d->opened) {
@@ -504,8 +494,8 @@ void Queue::ack(const MessagePtr &message)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << message->deliveryTag;    //reserver 1
-    out << qint8(0);    // noAck
+    out << message.deliveryTag();   // reserved 1
+    out << qint8(0);                // noAck
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

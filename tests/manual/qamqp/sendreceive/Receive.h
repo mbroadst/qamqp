@@ -52,8 +52,8 @@ protected slots:
     {
         while (queue_->hasMessage())
         {
-            QAMQP::MessagePtr message = queue_->getMessage();
-            qDebug() << "Receive::newMessage " << message->payload;
+            QAMQP::Message message = queue_->getMessage();
+            qDebug() << "Receive::newMessage " << message.payload();
             if(!queue_->noAck())
             {
                 queue_->ack(message);

@@ -60,8 +60,8 @@ protected slots:
     void newMessage()
     {
         // Retrieve message
-        QAMQP::MessagePtr message = queue_->getMessage();
-        qDebug() << "ReceiveLogDirect::newMessage " << message->payload;
+        QAMQP::Message message = queue_->getMessage();
+        qDebug() << "ReceiveLogDirect::newMessage " << message.payload();
     }
 
 private:

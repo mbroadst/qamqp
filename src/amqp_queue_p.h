@@ -42,7 +42,7 @@ public:
     bool noAck;
     QString consumerTag;
     QQueue<QPair<QString, QString> > delayedBindings;
-    QQueue<MessagePtr> messages;
+    QQueue<Message> messages;
     bool recievingMessage;
 
     Q_DECLARE_PUBLIC(Queue)

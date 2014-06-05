@@ -28,8 +28,8 @@ void tst_QAMQPQueue::defaultExchange()
     Exchange *defaultExchange = client.createExchange();
     defaultExchange->publish("test-default-exchange", "first message");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived(Queue*))));
-    MessagePtr message = queue->getMessage();
-    QCOMPARE(message->payload, QByteArray("first message"));
+    Message message = queue->getMessage();
+    QCOMPARE(message.payload(), QByteArray("first message"));
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));

@@ -49,11 +49,11 @@ protected slots:
     void newMessage()
     {
         // Retrieve message
-        QAMQP::MessagePtr message = queue_->getMessage();
-        qDebug() << "Worker::newMessage " << message->payload;
+        QAMQP::Message message = queue_->getMessage();
+        qDebug() << "Worker::newMessage " << message.payload();
 
         // Simulate long processing
-        int wait = message->payload.count('.');
+        int wait = message.payload().count('.');
         QTime dieTime = QTime::currentTime().addMSecs(400 * wait);
         while( QTime::currentTime() < dieTime );
 

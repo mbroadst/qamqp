@@ -43,7 +43,7 @@ public:
     QueueOptions option() const;
 
     bool hasMessage() const;
-    MessagePtr getMessage();
+    Message getMessage();
 
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
@@ -64,7 +64,7 @@ public:
     // AMQP Basic
     void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
     void get();
-    void ack(const MessagePtr &message);
+    void ack(const Message &message);
 
 Q_SIGNALS:
     void declared();

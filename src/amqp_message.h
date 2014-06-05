@@ -3,7 +3,7 @@
 
 #include <QByteArray>
 #include <QHash>
-#include <QSharedPointer>
+#include <QExplicitlySharedDataPointer>
 
 #include "amqp_frame.h"
 #include "amqp_global.h"
@@ -11,24 +11,32 @@
 namespace QAMQP
 {
 
-struct QAMQP_EXPORT Message
+class MessagePrivate;
+class QAMQP_EXPORT Message
 {
+public:
     Message();
-    virtual ~Message();
+    Message(const Message &other);
+    Message &operator=(const Message &other);
+    ~Message();
 
     typedef Frame::Content::Property MessageProperty;
     Q_DECLARE_FLAGS(MessageProperties, MessageProperty)
 
-    qlonglong deliveryTag;
-    QByteArray payload;
-    QHash<MessageProperty, QVariant> property;
-    Frame::TableField headers;
-    QString routeKey;
-    QString exchangeName;
-    int leftSize;
-};
+    qlonglong deliveryTag() const;
+    bool redelivered() const;
+    QString exchangeName() const;
+    QString routingKey() const;
+    QByteArray payload() const;
+    QHash<MessageProperty, QVariant> properties() const;
+    Frame::TableField headers() const;
 
-typedef QSharedPointer<Message> MessagePtr;
+private:
+    QExplicitlySharedDataPointer<MessagePrivate> d;
+    friend class QueuePrivate;
+    friend class Queue;
+
+};
 
 } // namespace QAMQP
 
