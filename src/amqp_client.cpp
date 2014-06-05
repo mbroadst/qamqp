@@ -538,8 +538,9 @@ Exchange *Client::createExchange(const QString &name, int channelNumber)
     Exchange *exchange = new Exchange(channelNumber, this);
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
-    exchange->d_func()->open();
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
+    exchange->d_func()->open();
+
     if (!name.isEmpty())
         exchange->setName(name);
     return exchange;
@@ -558,8 +559,8 @@ Queue *Client::createQueue(const QString &name, int channelNumber)
     d->contentHandlerByChannel[queue->channelNumber()].append(queue->d_func());
     d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     connect(this, SIGNAL(connected()), queue, SLOT(_q_open()));
-    queue->d_func()->open();
     connect(this, SIGNAL(disconnected()), queue, SLOT(_q_disconnected()));
+    queue->d_func()->open();
 
     if (!name.isEmpty())
         queue->setName(name);

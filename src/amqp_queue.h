@@ -42,28 +42,29 @@ public:
     ~Queue();
     QueueOptions option() const;
 
-    void declare(const QString &name = QString(),
-                 QueueOptions options = QueueOptions(Durable | AutoDelete));
-    void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
-    void purge();
-
-    void bind(const QString &exchangeName, const QString &key);
-    void bind(Exchange *exchange, const QString &key);
-
-    void unbind(const QString &exchangeName, const QString &key);
-    void unbind(Exchange *exchange, const QString &key);
-
+    bool hasMessage() const;
     MessagePtr getMessage();
 
-    void get();
-    void ack(const MessagePtr &message);
-    bool hasMessage() const;
-    void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
 
     void setNoAck(bool noAck);
     bool noAck() const;
+
+    // AMQP Queue
+    void declare(const QString &name = QString(),
+                 QueueOptions options = QueueOptions(Durable | AutoDelete));
+    void bind(const QString &exchangeName, const QString &key);
+    void bind(Exchange *exchange, const QString &key);
+    void unbind(const QString &exchangeName, const QString &key);
+    void unbind(Exchange *exchange, const QString &key);
+    void purge();
+    void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
+
+    // AMQP Basic
+    void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
+    void get();
+    void ack(const MessagePtr &message);
 
 Q_SIGNALS:
     void declared();
