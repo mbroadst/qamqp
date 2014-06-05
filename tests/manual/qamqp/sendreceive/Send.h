@@ -63,7 +63,7 @@ protected slots:
           .arg(sendMsg_));
         qDebug() << "Send::sendMessage " << message;
 
-        exchange_->publish(message, "hello");
+        exchange_->publish("hello", message);
     }
 
 private:

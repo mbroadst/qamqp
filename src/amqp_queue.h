@@ -71,7 +71,7 @@ Q_SIGNALS:
     void bound();
     void unbound();
     void removed();
-    void messageReceived(Queue *pQueue);
+    void messageReceived();
     void empty();
 
 protected:

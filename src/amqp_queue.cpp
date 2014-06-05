@@ -111,7 +111,7 @@ void QueuePrivate::_q_body(const Frame::ContentBody &frame)
     message.d->payload.append(frame.body());
     message.d->leftSize -= frame.body().size();
     if (message.d->leftSize == 0 && messages.size() == 1)
-        Q_EMIT q->messageReceived(q);
+        Q_EMIT q->messageReceived();
 }
 
 void QueuePrivate::declareOk(const Frame::Method &frame)

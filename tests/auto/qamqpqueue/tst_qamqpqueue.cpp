@@ -27,7 +27,7 @@ void tst_QAMQPQueue::defaultExchange()
 
     Exchange *defaultExchange = client.createExchange();
     defaultExchange->publish("test-default-exchange", "first message");
-    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived(Queue*))));
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     Message message = queue->getMessage();
     QCOMPARE(message.payload(), QByteArray("first message"));
 
