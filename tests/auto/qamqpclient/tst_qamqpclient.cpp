@@ -11,6 +11,8 @@ class tst_QAMQPClient : public TestCase
 private Q_SLOTS:
     void connect();
     void connectDisconnect();
+
+private:
     void autoReconnect();
 
 };
