@@ -78,6 +78,8 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_readyRead())
     Q_PRIVATE_SLOT(d_func(), void _q_socketError(QAbstractSocket::SocketError error))
     Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())
+    Q_PRIVATE_SLOT(d_func(), void _q_connect())
+    Q_PRIVATE_SLOT(d_func(), void _q_disconnect())
 
     friend class ChannelPrivate;
 

@@ -36,8 +36,6 @@ public:
     virtual ~ClientPrivate();
 
     void init(const QUrl &connectionString = QUrl());
-    void connect();
-    void disconnect();
     void parseConnectionString(const QUrl &connectionString);
     void sendFrame(const Frame::Base &frame);
 
@@ -46,6 +44,8 @@ public:
     void _q_readyRead();
     void _q_socketError(QAbstractSocket::SocketError error);
     void _q_heartbeat();
+    void _q_connect();
+    void _q_disconnect();
 
     virtual bool _q_method(const Frame::Method &frame);
 

@@ -46,7 +46,7 @@ void ClientPrivate::init(const QUrl &connectionString)
 
     if (connectionString.isValid()) {
         parseConnectionString(connectionString);
-        connect();
+        _q_connect();
     }
 }
 
@@ -66,28 +66,24 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
     q->setVirtualHost(connectionString.path());
 }
 
-void ClientPrivate::connect()
+void ClientPrivate::_q_connect()
 {
     if (socket->state() != QAbstractSocket::UnconnectedState) {
         qDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
-        disconnect();
+        _q_disconnect();
     }
 
     socket->connectToHost(host, port);
 }
 
-void ClientPrivate::disconnect()
+void ClientPrivate::_q_disconnect()
 {
     if (socket->state() == QAbstractSocket::UnconnectedState) {
         qDebug() << Q_FUNC_INFO << "already disconnected";
         return;
     }
 
-    close(200, "client.disconnect");
-
-    // NOTE: this should be handled by signals, no need for dptr
-    //       access here.
-    // connection_->d_func()->connected = false;
+    close(200, "client disconnect");
 }
 
 // private slots
@@ -106,6 +102,7 @@ void ClientPrivate::_q_heartbeat()
 
 void ClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 {
+    Q_Q(Client);
     if (timeout == 0) {
         timeout = 1000;
     } else {
@@ -127,8 +124,9 @@ void ClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
         break;
     }
 
-//    if (autoReconnect && connect)
-//        QTimer::singleShot(timeout, this, SLOT(connectTo()));
+    if (autoReconnect) {
+        QTimer::singleShot(timeout, q, SLOT(_q_connect()));
+    }
 }
 
 void ClientPrivate::_q_readyRead()
@@ -438,7 +436,7 @@ Client::~Client()
 {
     Q_D(Client);
     if (d->connected)
-        d->disconnect();
+        d->_q_disconnect();
 }
 
 bool Client::isConnected() const
@@ -607,12 +605,12 @@ void Client::connectToHost(const QString &connectionString)
 {
     Q_D(Client);
     if (connectionString.isEmpty()) {
-        d->connect();
+        d->_q_connect();
         return;
     }
 
     d->parseConnectionString(QUrl::fromUserInput(connectionString));
-    d->connect();
+    d->_q_connect();
 }
 
 void Client::connectToHost(const QHostAddress &address, quint16 port)
@@ -620,13 +618,13 @@ void Client::connectToHost(const QHostAddress &address, quint16 port)
     Q_D(Client);
     d->host = address.toString();
     d->port = port;
-    d->connect();
+    d->_q_connect();
 }
 
 void Client::disconnectFromHost()
 {
     Q_D(Client);
-    d->disconnect();
+    d->_q_disconnect();
 }
 
 #include "moc_amqp_client.cpp"
