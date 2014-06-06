@@ -62,7 +62,7 @@ protected slots:
         qDebug() << "EmitLogDirect::emitLogMessage " << message;
 
         // Publish
-        exchange_->publish(message, key);
+        exchange_->publish(key, message);
     }
 
 private:

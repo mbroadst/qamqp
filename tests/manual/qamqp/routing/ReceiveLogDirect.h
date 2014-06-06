@@ -34,7 +34,7 @@ public:
         client->connectToHost(address);
 
         // Create an exclusive queue
-        queue_ = client->createQueue("");
+        queue_ = client->createQueue("receive-log-direct");
         queue_->declare(Queue::Exclusive);
 
         connect(queue_, SIGNAL(declared()), this, SLOT(declared()));

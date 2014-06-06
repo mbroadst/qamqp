@@ -61,7 +61,7 @@ protected slots:
           .arg(QString('.').repeated(qrand() % 10)));
         qDebug() << "NewTask::newtaskMessage " << message;
 
-        exchange_->publish(message, queue_->name(), properties);
+        exchange_->publish(queue_->name(), message, properties);
     }
 
 private:

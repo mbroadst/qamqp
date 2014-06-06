@@ -31,7 +31,7 @@ public:
         client->connectToHost(address);
 
         // Create an exclusive queue
-        queue_ = client->createQueue("");
+        queue_ = client->createQueue("receive-log");
         queue_->declare(Queue::Exclusive);
 
         connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
@@ -46,7 +46,7 @@ protected slots:
     void declared()
     {
         // Bind the queue to the "logs" exchange (declared by publisher)
-        queue_->bind("logs", "");
+        queue_->bind("logs", "receive-log");
         queue_->consume(QAMQP::Queue::coNoAck);
     }
 

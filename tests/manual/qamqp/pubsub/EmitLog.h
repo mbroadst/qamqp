@@ -54,7 +54,7 @@ protected slots:
           );
         qDebug() << "EmitLog::emitlogMessage " << message;
 
-        exchange_->publish(message, "");
+        exchange_->publish("receive-log", message);
     }
 
 private:
