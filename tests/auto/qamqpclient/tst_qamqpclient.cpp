@@ -3,6 +3,7 @@
 
 #include <QProcess>
 #include "amqp_client.h"
+#include "amqp_authenticator.h"
 
 using namespace QAMQP;
 class tst_QAMQPClient : public TestCase
@@ -11,6 +12,7 @@ class tst_QAMQPClient : public TestCase
 private Q_SLOTS:
     void connect();
     void connectDisconnect();
+    void invalidAuthenticationMechanism();
 
 private:
     void autoReconnect();
@@ -33,6 +35,23 @@ void tst_QAMQPClient::connectDisconnect()
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
+class InvalidAuthenticator : public Authenticator
+{
+public:
+    virtual QString type() const { return "CRAZYAUTH"; }
+    virtual void write(QDataStream &out) {
+        Q_UNUSED(out);
+    }
+};
+
+void tst_QAMQPClient::invalidAuthenticationMechanism()
+{
+    Client client;
+    client.setAuth(new InvalidAuthenticator);
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
 void tst_QAMQPClient::autoReconnect()
 {
     // TODO: this is a fairly crude way of testing this, research
@@ -46,7 +65,6 @@ void tst_QAMQPClient::autoReconnect()
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
     QProcess::execute("rabbitmqctl", QStringList() << "start_app");
     QVERIFY(waitForSignal(&client, SIGNAL(connected()), 2));
-
 }
 
 QTEST_MAIN(tst_QAMQPClient)

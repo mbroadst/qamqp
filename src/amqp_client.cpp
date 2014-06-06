@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QTcpSocket>
 #include <QTextStream>
+#include <QStringList>
 #include <QtEndian>
 
 using namespace QAMQP;
@@ -243,6 +244,7 @@ bool ClientPrivate::_q_method(const Frame::Method &frame)
 
 void ClientPrivate::start(const Frame::Method &frame)
 {
+    Q_Q(Client);
     qAmqpDebug(">> Start");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -254,7 +256,7 @@ void ClientPrivate::start(const Frame::Method &frame)
     Frame::TableField table;
     Frame::deserialize(stream, table);
 
-    QString mechanisms = Frame::readField('S', stream).toString();
+    QStringList mechanisms = Frame::readField('S', stream).toString().split(' ');
     QString locales = Frame::readField('S', stream).toString();
 
     qAmqpDebug(">> version_major: %d", version_major);
@@ -262,8 +264,14 @@ void ClientPrivate::start(const Frame::Method &frame)
 
     Frame::print(table);
 
-    qAmqpDebug(">> mechanisms: %s", qPrintable(mechanisms));
+    qAmqpDebug() << ">> mechanisms: " << mechanisms;
     qAmqpDebug(">> locales: %s", qPrintable(locales));
+
+    if (!mechanisms.contains(authenticator->type())) {
+        socket->disconnectFromHost();
+        Q_EMIT q->disconnected();
+        return;
+    }
 
     startOk();
 }
