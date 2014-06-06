@@ -13,6 +13,7 @@ ChannelPrivate::ChannelPrivate(Channel *q)
     : channelNumber(0),
       opened(false),
       needOpen(true),
+      error(Channel::NoError),
       q_ptr(q)
 {
 }
@@ -118,15 +119,18 @@ void ChannelPrivate::flow()
 void ChannelPrivate::flow(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
+    qDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::flowOk()
 {
+    qDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::flowOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
+    qDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
@@ -148,6 +152,7 @@ void ChannelPrivate::close(int code, const QString &text, int classId, int metho
 
 void ChannelPrivate::close(const Frame::Method &frame)
 {
+    Q_Q(Channel);
     qDebug(">> CLOSE");
     stateChanged(csClosed);
     QByteArray data = frame.arguments();
@@ -157,6 +162,13 @@ void ChannelPrivate::close(const Frame::Method &frame)
     QString text(Frame::readField('s', stream).toString());
     stream >> classId;
     stream >> methodId;
+
+    Channel::ChannelError checkError = static_cast<Channel::ChannelError>(code);
+    if (checkError != Channel::NoError) {
+        error = checkError;
+        errorString = qPrintable(text);
+        Q_EMIT q->error(error);
+    }
 
     qDebug(">> code: %d", code);
     qDebug(">> text: %s", qPrintable(text));
@@ -268,6 +280,18 @@ void Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 {
     Q_D(Channel);
     d->setQOS(prefetchSize, prefetchCount);
+}
+
+Channel::ChannelError Channel::error() const
+{
+    Q_D(const Channel);
+    return d->error;
+}
+
+QString Channel::errorString() const
+{
+    Q_D(const Channel);
+    return d->errorString;
 }
 
 #include "moc_amqp_channel.cpp"

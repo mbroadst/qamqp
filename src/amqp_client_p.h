@@ -91,6 +91,9 @@ public:
     QPointer<QTimer> heartbeatTimer;
     Frame::TableField customProperties;
 
+    Client::ConnectionError error;
+    QString errorString;
+
     Client * const q_ptr;
     Q_DECLARE_PUBLIC(Client)
 

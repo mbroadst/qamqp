@@ -61,6 +61,23 @@ public:
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 
+    enum ConnectionError {
+        NoError = 0,
+        ConnectionForced = 320,
+        InvalidPath = 402,
+        FrameError = 501,
+        SyntaxError = 502,
+        CommandInvalid = 503,
+        ChannelError = 504,
+        UnexpectedFrame = 505,
+        ResourceError = 506,
+        NotAllowed = 530,
+        NotImplemented = 540,
+        InternalError = 541
+    };
+    ConnectionError error() const;
+    QString errorString() const;
+
     // channels
     Exchange *createExchange(int channelNumber = -1);
     Exchange *createExchange(const QString &name, int channelNumber = -1);
@@ -76,6 +93,7 @@ public:
 Q_SIGNALS:
     void connected();
     void disconnected();
+    void error(ConnectionError error);
 
 protected:
     Client(ClientPrivate *dd, QObject *parent = 0);

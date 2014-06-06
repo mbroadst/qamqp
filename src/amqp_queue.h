@@ -16,9 +16,12 @@ class QAMQP_EXPORT Queue : public Channel
 {
     Q_OBJECT
     Q_ENUMS(QueueOptions)
-    Q_PROPERTY(QueueOptions option READ option)
+    Q_PROPERTY(int options READ options CONSTANT)
     Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
     Q_PROPERTY(bool noAck READ noAck WRITE setNoAck)
+    Q_ENUMS(QueueOption)
+    Q_ENUMS(ConsumeOption)
+    Q_ENUMS(RemoveOption)
 
 public:
     enum QueueOption {
@@ -30,6 +33,7 @@ public:
         NoWait = 0x10
     };
     Q_DECLARE_FLAGS(QueueOptions, QueueOption)
+    int options() const;
 
     enum ConsumeOption {
         coNoLocal = 0x1,
@@ -39,8 +43,14 @@ public:
     };
     Q_DECLARE_FLAGS(ConsumeOptions, ConsumeOption)
 
+    enum RemoveOption {
+        roIfUnused = 0x1,
+        roIfEmpty = 0x02,
+        roNoWait = 0x04
+    };
+    Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
+
     ~Queue();
-    QueueOptions option() const;
 
     bool hasMessage() const;
     Message getMessage();
@@ -52,17 +62,16 @@ public:
     bool noAck() const;
 
     // AMQP Queue
-    void declare(const QString &name = QString(),
-                 QueueOptions options = QueueOptions(Durable | AutoDelete));
+    void declare(const QString &name = QString(), int options = Durable|AutoDelete);
     void bind(const QString &exchangeName, const QString &key);
     void bind(Exchange *exchange, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
     void unbind(Exchange *exchange, const QString &key);
     void purge();
-    void remove(bool ifUnused = true, bool ifEmpty = true, bool noWait = true);
+    void remove(int options = roIfUnused|roIfEmpty|roNoWait);
 
     // AMQP Basic
-    void consume(ConsumeOptions options = ConsumeOptions(NoOptions));
+    void consume(int options = NoOptions);
     void get();
     void ack(const Message &message);
 
@@ -80,7 +89,7 @@ protected:
     virtual void channelClosed();
 
 private:
-    Queue(int channelNumber = -1, Client *parent = 0);
+    explicit Queue(int channelNumber = -1, Client *parent = 0);
 
     Q_DISABLE_COPY(Queue)
     Q_DECLARE_PRIVATE(Queue)

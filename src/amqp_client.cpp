@@ -21,6 +21,7 @@ ClientPrivate::ClientPrivate(Client *q)
       socket(0),
       closed(false),
       connected(false),
+      error(Client::NoError),
       q_ptr(q)
 {
 }
@@ -334,6 +335,13 @@ void ClientPrivate::close(const Frame::Method &frame)
     QString text(Frame::readField('s', stream).toString());
     stream >> classId;
     stream >> methodId;
+
+    Client::ConnectionError checkError = static_cast<Client::ConnectionError>(code);
+    if (checkError != Client::NoError) {
+        error = checkError;
+        errorString = qPrintable(text);
+        Q_EMIT q->error(error);
+    }
 
     qDebug(">> code: %d", code);
     qDebug(">> text: %s", qPrintable(text));

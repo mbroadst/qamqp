@@ -23,6 +23,8 @@ public:
     QueuePrivate(Queue *q);
     ~QueuePrivate();
 
+    void declare();
+
     // method handler related
     virtual bool _q_method(const Frame::Method &frame);
     virtual void _q_content(const Frame::Content &frame);
@@ -36,7 +38,7 @@ public:
     void deliver(const Frame::Method &frame);
 
     QString type;
-    Queue::QueueOptions options;
+    int options;
     bool delayedDeclare;
     bool declared;
     bool noAck;

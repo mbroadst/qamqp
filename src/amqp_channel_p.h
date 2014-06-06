@@ -77,6 +77,9 @@ public:
     bool opened;
     bool needOpen;
 
+    Channel::ChannelError error;
+    QString errorString;
+
     Q_DECLARE_PUBLIC(Channel)
     Channel * const q_ptr;
 };

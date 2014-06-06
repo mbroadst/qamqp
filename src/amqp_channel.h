@@ -24,6 +24,18 @@ public:
     QString name() const;
     void setName(const QString &name);
 
+    enum ChannelError {
+        NoError = 0,
+        ContentTooLarge = 311,
+        NoConsumers = 313,
+        AccessRefused = 403,
+        NotFound = 404,
+        ResourceLocked = 405,
+        PreconditionFailed = 406
+    };
+    ChannelError error() const;
+    QString errorString() const;
+
 public Q_SLOTS:
     void closeChannel();
     void reopen();
@@ -33,6 +45,7 @@ Q_SIGNALS:
     void opened();
     void closed();
     void flowChanged(bool enabled);
+    void error(ChannelError error);
 
 protected:
     virtual void channelOpened() = 0;

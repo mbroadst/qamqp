@@ -34,7 +34,7 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
         case miDeclareOk:
             declareOk(frame);
             break;
-        case miDelete:
+        case miDeleteOk:
             deleteOk(frame);
             break;
         case miBindOk:
@@ -180,8 +180,6 @@ void QueuePrivate::getOk(const Frame::Method &frame)
 void QueuePrivate::consumeOk(const Frame::Method &frame)
 {
     qDebug() << "Consume ok: " << name;
-    declared = false;
-
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = Frame::readField('s',stream).toString();
@@ -190,6 +188,7 @@ void QueuePrivate::consumeOk(const Frame::Method &frame)
 
 void QueuePrivate::deliver(const Frame::Method &frame)
 {
+    qDebug() << Q_FUNC_INFO;
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
     QString consumer_ = Frame::readField('s',in).toString();
@@ -206,6 +205,41 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     messages.enqueue(message);
 }
 
+void QueuePrivate::declare()
+{
+    if (name.isEmpty()) {
+        qDebug() << Q_FUNC_INFO << "can't declare queue with no name";
+        return;
+    }
+
+    Frame::Method frame(Frame::fcQueue, QueuePrivate::miDeclare);
+    frame.setChannel(channelNumber);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << qint16(0);   //reserved 1
+    Frame::writeField('s', out, name);
+
+    qDebug() << "DECLARE OPTIONS: ";
+    if (options & Queue::NoOptions) qDebug() << "NoOptions";
+    if (options & Queue::Passive) qDebug() << "Passive";
+    if (options & Queue::Durable) qDebug() << "Durable";
+    if (options & Queue::Exclusive) qDebug() << "Exclusive";
+    if (options & Queue::AutoDelete) qDebug() << "AutoDelete";
+    if (options & Queue::NoWait) qDebug() << "NoWait";
+
+    out << qint8(options);
+    Frame::writeField('F', out, Frame::TableField());
+
+    frame.setArguments(arguments);
+    sendFrame(frame);
+
+    if (delayedDeclare)
+        delayedDeclare = false;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 Queue::Queue(int channelNumber, Client *parent)
@@ -217,14 +251,13 @@ Queue::Queue(int channelNumber, Client *parent)
 
 Queue::~Queue()
 {
-    remove();
 }
 
 void Queue::channelOpened()
 {
     Q_D(Queue);
     if (d->delayedDeclare)
-        declare();
+        d->declare();
 
     if (!d->delayedBindings.isEmpty()) {
         typedef QPair<QString, QString> BindingPair;
@@ -236,10 +269,9 @@ void Queue::channelOpened()
 
 void Queue::channelClosed()
 {
-    remove(true, true);
 }
 
-Queue::QueueOptions Queue::option() const
+int Queue::options() const
 {
     Q_D(const Queue);
     return d->options;
@@ -257,7 +289,7 @@ bool Queue::noAck() const
     return d->noAck;
 }
 
-void Queue::declare(const QString &name, QueueOptions options)
+void Queue::declare(const QString &name, int options)
 {
     Q_D(Queue);
     if (!name.isEmpty())
@@ -269,24 +301,10 @@ void Queue::declare(const QString &name, QueueOptions options)
         return;
     }
 
-    Frame::Method frame(Frame::fcQueue, QueuePrivate::miDeclare);
-    frame.setChannel(d->channelNumber);
-
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
-
-    out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
-
-    out << qint8(options);
-    Frame::writeField('F', out, Frame::TableField());
-
-    frame.setArguments(arguments);
-    d->sendFrame(frame);
-    d->delayedDeclare = false;
+    d->declare();
 }
 
-void Queue::remove(bool ifUnused, bool ifEmpty, bool noWait)
+void Queue::remove(int options)
 {
     Q_D(Queue);
     if (!d->declared) {
@@ -302,12 +320,7 @@ void Queue::remove(bool ifUnused, bool ifEmpty, bool noWait)
 
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
-
-    qint8 flag = 0;
-    flag |= (ifUnused ? 0x1 : 0);
-    flag |= (ifEmpty ? 0x2 : 0);
-    flag |= (noWait ? 0x4 : 0);
-    out << flag;
+    out << qint8(options);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -420,7 +433,7 @@ bool Queue::hasMessage() const
     return message.d->leftSize == 0;
 }
 
-void Queue::consume(ConsumeOptions options)
+void Queue::consume(int options)
 {
     Q_D(Queue);
     if (!d->opened) {
