@@ -34,8 +34,8 @@ public:
         client->connectToHost(address);
 
         // Create an exclusive queue
-        queue_ = client->createQueue();
-        queue_->declare("", Queue::Exclusive);
+        queue_ = client->createQueue("");
+        queue_->declare(Queue::Exclusive);
 
         connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
         connect(queue_, SIGNAL(messageReceived()), this, SLOT(newMessage()));

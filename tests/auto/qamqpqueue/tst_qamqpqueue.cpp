@@ -16,6 +16,8 @@ private Q_SLOTS:
     void cleanup();
 
     void defaultExchange();
+    void standardExchanges_data();
+    void standardExchanges();
 
     void remove();
     void removeIfUnused();
@@ -55,6 +57,38 @@ void tst_QAMQPQueue::defaultExchange()
     QCOMPARE(message.payload(), QByteArray("first message"));
 }
 
+void tst_QAMQPQueue::standardExchanges_data()
+{
+    QTest::addColumn<QString>("exchange");
+    QTest::newRow("amq.direct") << "amq.direct";
+    QTest::newRow("amq.fanout") << "amq.fanout";
+    QTest::newRow("amq.headers") << "amq.headers";
+    QTest::newRow("amq.match") << "amq.match";
+    QTest::newRow("amq.topic") << "amq.topic";
+}
+
+void tst_QAMQPQueue::standardExchanges()
+{
+    QFETCH(QString, exchange);
+
+    QString queueName = QString("test-%1").arg(exchange);
+    QString routingKey = QString("testRoutingKey-%1").arg(exchange);
+
+    Queue *queue = client->createQueue(queueName);
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->consume();   // required because AutoDelete will not delete if
+                        // there was never a consumer
+
+    queue->bind(exchange, routingKey);
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+
+    Exchange *defaultExchange = client->createExchange(exchange);
+    defaultExchange->publish(routingKey, "test message");
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    QCOMPARE(queue->getMessage().payload(), QByteArray("test message"));
+}
+
 void tst_QAMQPQueue::remove()
 {
     Queue *queue = client->createQueue("test-remove");
@@ -74,6 +108,7 @@ void tst_QAMQPQueue::removeIfUnused()
     queue->remove(Queue::roIfUnused);
     QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
     QCOMPARE(queue->error(), Channel::PreconditionFailed);
+    QVERIFY(!queue->errorString().isEmpty());
 }
 
 void tst_QAMQPQueue::removeIfEmpty()
@@ -81,8 +116,8 @@ void tst_QAMQPQueue::removeIfEmpty()
     // NOTE: this will work once I refactor messages to easily
     //       add propertis for e.g. persistence
 
-    Queue *queue = client->createQueue();
-    queue->declare("test-remove-if-empty", Queue::Durable);
+    Queue *queue = client->createQueue("test-remove-if-empty");
+    queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     queue->consume();
 
@@ -93,6 +128,7 @@ void tst_QAMQPQueue::removeIfEmpty()
     queue->remove(Queue::roIfEmpty);
     QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
     QCOMPARE(queue->error(), Channel::PreconditionFailed);
+    QVERIFY(!queue->errorString().isEmpty());
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

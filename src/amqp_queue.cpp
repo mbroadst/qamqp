@@ -151,7 +151,7 @@ void QueuePrivate::bindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "bound to queue: " << name;
+    qDebug() << Q_FUNC_INFO << "bound to exchange";
     Q_EMIT q->bound();
 }
 
@@ -160,7 +160,7 @@ void QueuePrivate::unbindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "unbound queue: " << name;
+    qDebug() << Q_FUNC_INFO << "unbound exchange";
     Q_EMIT q->unbound();
 }
 
@@ -220,15 +220,6 @@ void QueuePrivate::declare()
 
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, name);
-
-    qDebug() << "DECLARE OPTIONS: ";
-    if (options & Queue::NoOptions) qDebug() << "NoOptions";
-    if (options & Queue::Passive) qDebug() << "Passive";
-    if (options & Queue::Durable) qDebug() << "Durable";
-    if (options & Queue::Exclusive) qDebug() << "Exclusive";
-    if (options & Queue::AutoDelete) qDebug() << "AutoDelete";
-    if (options & Queue::NoWait) qDebug() << "NoWait";
-
     out << qint8(options);
     Frame::writeField('F', out, Frame::TableField());
 
@@ -289,11 +280,9 @@ bool Queue::noAck() const
     return d->noAck;
 }
 
-void Queue::declare(const QString &name, int options)
+void Queue::declare(int options)
 {
     Q_D(Queue);
-    if (!name.isEmpty())
-        d->name = name;
     d->options = options;
 
     if (!d->opened) {
@@ -338,13 +327,11 @@ void Queue::purge()
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
-
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
-
     out << qint8(0);    // no-wait
-    frame.setArguments(arguments);
 
+    frame.setArguments(arguments);
     d->sendFrame(frame);
 }
 
@@ -372,12 +359,12 @@ void Queue::bind(const QString &exchangeName, const QString &key)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << qint16(0);   //reserved 1
+    out << qint16(0);   //  reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, exchangeName);
     Frame::writeField('s', out, key);
 
-    out << qint8(0);    // no-wait
+    out << qint8(0);    //  no-wait
     Frame::writeField('F', out, Frame::TableField());
 
     frame.setArguments(arguments);

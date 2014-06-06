@@ -35,8 +35,8 @@ public:
         exchange_ =  client->createExchange();
 
         // Create the "task_queue" queue, with the "durable" option set
-        queue_ = client->createQueue(exchange_->channelNumber());
-        queue_->declare("task_queue", Queue::Durable);
+        queue_ = client->createQueue("task_queue", exchange_->channelNumber());
+        queue_->declare(Queue::Durable);
     }
 
     void run()

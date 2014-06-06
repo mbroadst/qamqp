@@ -62,7 +62,7 @@ public:
     bool noAck() const;
 
     // AMQP Queue
-    void declare(const QString &name = QString(), int options = Durable|AutoDelete);
+    void declare(int options = Durable|AutoDelete);
     void bind(const QString &exchangeName, const QString &key);
     void bind(Exchange *exchange, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);

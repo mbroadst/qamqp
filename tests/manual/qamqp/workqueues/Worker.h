@@ -29,8 +29,8 @@ public:
         QAMQP::Client* client = new QAMQP::Client(this);
         client->connectToHost(address);
 
-        queue_ = client->createQueue();
-        queue_->declare("task_queue", Queue::Durable);
+        queue_ = client->createQueue("task_queue");
+        queue_->declare(Queue::Durable);
         connect(queue_, SIGNAL(declared()), this, SLOT(declared()));
         connect(queue_, SIGNAL(messageReceived()), this, SLOT(newMessage()));
     }
