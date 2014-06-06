@@ -35,7 +35,8 @@ public:
     ClientPrivate(Client *q);
     virtual ~ClientPrivate();
 
-    void init(const QUrl &connectionString = QUrl());
+    virtual void init(const QUrl &connectionString = QUrl());
+    virtual void initSocket();
     void parseConnectionString(const QUrl &connectionString);
     void sendFrame(const Frame::Base &frame);
 
@@ -44,7 +45,7 @@ public:
     void _q_readyRead();
     void _q_socketError(QAbstractSocket::SocketError error);
     void _q_heartbeat();
-    void _q_connect();
+    virtual void _q_connect();
     void _q_disconnect();
 
     virtual bool _q_method(const Frame::Method &frame);
@@ -94,6 +95,23 @@ public:
     Q_DECLARE_PUBLIC(Client)
 
 };
+
+#ifndef QT_NO_SSL
+class SslClientPrivate : public ClientPrivate
+{
+public:
+    SslClientPrivate(SslClient *q);
+
+    virtual void initSocket();
+    virtual void _q_connect();
+
+    // private slots
+    void _q_sslErrors(const QList<QSslError> &errors);
+
+    QSslConfiguration sslConfiguration;
+
+};
+#endif
 
 } // namespace QAMQP
 

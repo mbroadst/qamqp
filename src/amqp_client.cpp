@@ -32,12 +32,7 @@ ClientPrivate::~ClientPrivate()
 void ClientPrivate::init(const QUrl &connectionString)
 {
     Q_Q(Client);
-    socket = new QTcpSocket(q);
-    QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
-    QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
-    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
-                          q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
-
+    initSocket();
     heartbeatTimer = new QTimer(q);
     QObject::connect(heartbeatTimer, SIGNAL(timeout()), q, SLOT(_q_heartbeat()));
 
@@ -50,6 +45,16 @@ void ClientPrivate::init(const QUrl &connectionString)
     }
 }
 
+void ClientPrivate::initSocket()
+{
+    Q_Q(Client);
+    socket = new QTcpSocket(q);
+    QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
+    QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
+    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+                          q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
+}
+
 void ClientPrivate::parseConnectionString(const QUrl &connectionString)
 {
     Q_Q(Client);
@@ -60,7 +65,7 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
     }
 
     q->setPassword(connectionString.password());
-    q->setUser(connectionString.userName());
+    q->setUsername(connectionString.userName());
     q->setPort(connectionString.port(AMQPPORT));
     q->setHost(connectionString.host());
     q->setVirtualHost(connectionString.path());
@@ -432,6 +437,12 @@ Client::Client(const QUrl &connectionString, QObject *parent)
     d->init(connectionString);
 }
 
+Client::Client(ClientPrivate *dd, QObject *parent)
+    : QObject(parent),
+      d_ptr(dd)
+{
+}
+
 Client::~Client()
 {
     Q_D(Client);
@@ -481,7 +492,7 @@ void Client::setVirtualHost(const QString &virtualHost)
     d->virtualHost = virtualHost;
 }
 
-QString Client::user() const
+QString Client::username() const
 {
     Q_D(const Client);
     const Authenticator *auth = d->authenticator.data();
@@ -493,13 +504,13 @@ QString Client::user() const
     return QString();
 }
 
-void Client::setUser(const QString &user)
+void Client::setUsername(const QString &username)
 {
     Q_D(const Client);
     Authenticator *auth = d->authenticator.data();
     if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
         AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
-        a->setLogin(user);
+        a->setLogin(username);
     }
 }
 
@@ -507,7 +518,7 @@ QString Client::password() const
 {
     Q_D(const Client);
     const Authenticator *auth = d->authenticator.data();
-    if (auth && auth->type() == "AMQPLAIN") {
+    if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
         const AMQPlainAuthenticator *a = static_cast<const AMQPlainAuthenticator*>(auth);
         return a->password();
     }
@@ -626,5 +637,67 @@ void Client::disconnectFromHost()
     Q_D(Client);
     d->_q_disconnect();
 }
+
+//////////////////////////////////////////////////////////////////////////
+
+#ifndef QT_NO_SSL
+#include <QSslSocket>
+
+SslClientPrivate::SslClientPrivate(SslClient *q)
+    : ClientPrivate(q)
+{
+}
+
+void SslClientPrivate::initSocket()
+{
+    Q_Q(Client);
+    QSslSocket *sslSocket = new QSslSocket(q);
+    QObject::connect(sslSocket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
+    QObject::connect(sslSocket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
+    QObject::connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+                          q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
+    QObject::connect(sslSocket, SIGNAL(sslErrors(QList<QSslError>)),
+                             q, SLOT(_q_sslErrors(QList<QSslError>)));
+    socket = sslSocket;
+}
+
+void SslClientPrivate::_q_connect()
+{
+    if (socket->state() != QAbstractSocket::UnconnectedState) {
+        qDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
+        _q_disconnect();
+    }
+
+    QSslSocket *sslSocket = qobject_cast<QSslSocket*>(socket);
+    if (!sslConfiguration.isNull())
+        sslSocket->setSslConfiguration(sslConfiguration);
+    sslSocket->connectToHostEncrypted(host, port);
+}
+
+void SslClientPrivate::_q_sslErrors(const QList<QSslError> &errors)
+{
+    // TODO: these need to be passed on to the user potentially, this is
+    //       very unsafe
+    QSslSocket *sslSocket = qobject_cast<QSslSocket*>(socket);
+    sslSocket->ignoreSslErrors(errors);
+}
+
+SslClient::SslClient(QObject *parent)
+    : Client(new SslClientPrivate(this), parent)
+{
+}
+
+SslClient::SslClient(const QUrl &connectionString, QObject *parent)
+    : Client(new SslClientPrivate(this), parent)
+{
+    Q_D(SslClient);
+    d->init(connectionString);
+}
+
+SslClient::~SslClient()
+{
+}
+
+#endif
 
 #include "moc_amqp_client.cpp"
