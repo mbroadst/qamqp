@@ -117,7 +117,7 @@ void QueuePrivate::_q_body(const Frame::ContentBody &frame)
 void QueuePrivate::declareOk(const Frame::Method &frame)
 {
     Q_Q(Queue);
-    qDebug() << "Declared queue: " << name;
+    qAmqpDebug() << "Declared queue: " << name;
     declared = true;
 
     QByteArray data = frame.arguments();
@@ -126,7 +126,7 @@ void QueuePrivate::declareOk(const Frame::Method &frame)
     name = Frame::readField('s', stream).toString();
     qint32 messageCount = 0, consumerCount = 0;
     stream >> messageCount >> consumerCount;
-    qDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
+    qAmqpDebug("Message count %d\nConsumer count: %d", messageCount, consumerCount);
 
     Q_EMIT q->declared();
 }
@@ -134,14 +134,14 @@ void QueuePrivate::declareOk(const Frame::Method &frame)
 void QueuePrivate::deleteOk(const Frame::Method &frame)
 {
     Q_Q(Queue);
-    qDebug() << "Deleted or purged queue: " << name;
+    qAmqpDebug() << "Deleted or purged queue: " << name;
     declared = false;
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint32 messageCount = 0;
     stream >> messageCount;
-    qDebug("Message count %d", messageCount);
+    qAmqpDebug("Message count %d", messageCount);
 
     Q_EMIT q->removed();
 }
@@ -151,7 +151,7 @@ void QueuePrivate::bindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "bound to exchange";
+    qAmqpDebug() << Q_FUNC_INFO << "bound to exchange";
     Q_EMIT q->bound();
 }
 
@@ -160,7 +160,7 @@ void QueuePrivate::unbindOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Queue);
-    qDebug() << Q_FUNC_INFO << "unbound exchange";
+    qAmqpDebug() << Q_FUNC_INFO << "unbound exchange";
     Q_EMIT q->unbound();
 }
 
@@ -179,21 +179,21 @@ void QueuePrivate::getOk(const Frame::Method &frame)
 
 void QueuePrivate::consumeOk(const Frame::Method &frame)
 {
-    qDebug() << "Consume ok: " << name;
+    qAmqpDebug() << "Consume ok: " << name;
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = Frame::readField('s',stream).toString();
-    qDebug("Consumer tag = %s", qPrintable(consumerTag));
+    qAmqpDebug("Consumer tag = %s", qPrintable(consumerTag));
 }
 
 void QueuePrivate::deliver(const Frame::Method &frame)
 {
-    qDebug() << Q_FUNC_INFO;
+    qAmqpDebug() << Q_FUNC_INFO;
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
     QString consumer_ = Frame::readField('s',in).toString();
     if (consumer_ != consumerTag) {
-        qDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer_;
+        qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer_;
         return;
     }
 
@@ -208,7 +208,7 @@ void QueuePrivate::deliver(const Frame::Method &frame)
 void QueuePrivate::declare()
 {
     if (name.isEmpty()) {
-        qDebug() << Q_FUNC_INFO << "can't declare queue with no name";
+        qAmqpDebug() << Q_FUNC_INFO << "can't declare queue with no name";
         return;
     }
 
@@ -297,7 +297,7 @@ void Queue::remove(int options)
 {
     Q_D(Queue);
     if (!d->declared) {
-        qDebug() << Q_FUNC_INFO << "trying to remove undeclared queue, aborting...";
+        qAmqpDebug() << Q_FUNC_INFO << "trying to remove undeclared queue, aborting...";
         return;
     }
 
@@ -338,7 +338,7 @@ void Queue::purge()
 void Queue::bind(Exchange *exchange, const QString &key)
 {
     if (!exchange) {
-        qDebug() << Q_FUNC_INFO << "invalid exchange provided";
+        qAmqpDebug() << Q_FUNC_INFO << "invalid exchange provided";
         return;
     }
 
@@ -374,7 +374,7 @@ void Queue::bind(const QString &exchangeName, const QString &key)
 void Queue::unbind(Exchange *exchange, const QString &key)
 {
     if (!exchange) {
-        qDebug() << Q_FUNC_INFO << "invalid exchange provided";
+        qAmqpDebug() << Q_FUNC_INFO << "invalid exchange provided";
         return;
     }
 
@@ -385,7 +385,7 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
 {
     Q_D(Queue);
     if (!d->opened) {
-        qDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return;
     }
 
@@ -424,7 +424,7 @@ void Queue::consume(int options)
 {
     Q_D(Queue);
     if (!d->opened) {
-        qDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return;
     }
 
@@ -461,7 +461,7 @@ void Queue::get()
 {
     Q_D(Queue);
     if (!d->opened) {
-        qDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return;
     }
 
@@ -484,7 +484,7 @@ void Queue::ack(const Message &message)
 {
     Q_D(Queue);
     if (!d->opened) {
-        qDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return;
     }
 

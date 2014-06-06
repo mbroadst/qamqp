@@ -36,7 +36,7 @@ void ExchangePrivate::declare()
     }
 
     if (name.isEmpty()) {
-        qDebug() << Q_FUNC_INFO << "attempting to declare an unnamed exchange, aborting...";
+        qAmqpDebug() << Q_FUNC_INFO << "attempting to declare an unnamed exchange, aborting...";
         return;
     }
 
@@ -85,7 +85,7 @@ void ExchangePrivate::declareOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Exchange);
-    qDebug() << "Declared exchange: " << name;
+    qAmqpDebug() << "Declared exchange: " << name;
     declared = true;
     Q_EMIT q->declared();
 }
@@ -95,7 +95,7 @@ void ExchangePrivate::deleteOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Exchange);
-    qDebug() << "Deleted exchange: " << name;
+    qAmqpDebug() << "Deleted exchange: " << name;
     declared = false;
     Q_EMIT q->removed();
 }
@@ -103,7 +103,7 @@ void ExchangePrivate::deleteOk(const Frame::Method &frame)
 void ExchangePrivate::_q_disconnected()
 {
     ChannelPrivate::_q_disconnected();
-    qDebug() << "Exchange " << name << " disconnected";
+    qAmqpDebug() << "Exchange " << name << " disconnected";
     delayedDeclare = false;
     declared = false;
 }

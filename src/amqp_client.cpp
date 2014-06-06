@@ -61,7 +61,7 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
     Q_Q(Client);
     if (connectionString.scheme() != AMQPSCHEME &&
         connectionString.scheme() != AMQPSSCHEME) {
-        qDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
+        qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
         return;
     }
 
@@ -75,7 +75,7 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
 void ClientPrivate::_q_connect()
 {
     if (socket->state() != QAbstractSocket::UnconnectedState) {
-        qDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
+        qAmqpDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
         _q_disconnect();
     }
 
@@ -85,7 +85,7 @@ void ClientPrivate::_q_connect()
 void ClientPrivate::_q_disconnect()
 {
     if (socket->state() == QAbstractSocket::UnconnectedState) {
-        qDebug() << Q_FUNC_INFO << "already disconnected";
+        qAmqpDebug() << Q_FUNC_INFO << "already disconnected";
         return;
     }
 
@@ -180,10 +180,10 @@ void ClientPrivate::_q_readyRead()
             }
                 break;
             case Frame::ftHeartbeat:
-                qDebug("AMQP: Heartbeat");
+                qAmqpDebug("AMQP: Heartbeat");
                 break;
             default:
-                qWarning() << "AMQP: Unknown frame type: " << type;
+                qAmqpDebug() << "AMQP: Unknown frame type: " << type;
             }
         } else {
             break;
@@ -194,7 +194,7 @@ void ClientPrivate::_q_readyRead()
 void ClientPrivate::sendFrame(const Frame::Base &frame)
 {
     if (socket->state() != QAbstractSocket::ConnectedState) {
-        qDebug() << Q_FUNC_INFO << "socket not connected: " << socket->state();
+        qAmqpDebug() << Q_FUNC_INFO << "socket not connected: " << socket->state();
         return;
     }
 
@@ -208,7 +208,7 @@ bool ClientPrivate::_q_method(const Frame::Method &frame)
     if (frame.methodClass() != Frame::fcConnection)
         return false;
 
-    qDebug() << "Connection:";
+    qAmqpDebug() << "Connection:";
     if (closed) {
         if (frame.id() == ClientPrivate::miCloseOk)
             closeOk(frame);
@@ -243,7 +243,7 @@ bool ClientPrivate::_q_method(const Frame::Method &frame)
 
 void ClientPrivate::start(const Frame::Method &frame)
 {
-    qDebug(">> Start");
+    qAmqpDebug(">> Start");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     quint8 version_major = 0;
@@ -257,13 +257,13 @@ void ClientPrivate::start(const Frame::Method &frame)
     QString mechanisms = Frame::readField('S', stream).toString();
     QString locales = Frame::readField('S', stream).toString();
 
-    qDebug(">> version_major: %d", version_major);
-    qDebug(">> version_minor: %d", version_minor);
+    qAmqpDebug(">> version_major: %d", version_major);
+    qAmqpDebug(">> version_minor: %d", version_minor);
 
     Frame::print(table);
 
-    qDebug(">> mechanisms: %s", qPrintable(mechanisms));
-    qDebug(">> locales: %s", qPrintable(locales));
+    qAmqpDebug(">> mechanisms: %s", qPrintable(mechanisms));
+    qAmqpDebug(">> locales: %s", qPrintable(locales));
 
     startOk();
 }
@@ -271,12 +271,12 @@ void ClientPrivate::start(const Frame::Method &frame)
 void ClientPrivate::secure(const Frame::Method &frame)
 {
     Q_UNUSED(frame)
-    qDebug() << Q_FUNC_INFO << "called!";
+    qAmqpDebug() << Q_FUNC_INFO << "called!";
 }
 
 void ClientPrivate::tune(const Frame::Method &frame)
 {
-    qDebug(">> Tune");
+    qAmqpDebug(">> Tune");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
@@ -288,9 +288,9 @@ void ClientPrivate::tune(const Frame::Method &frame)
     stream >> frame_max;
     stream >> heartbeat;
 
-    qDebug(">> channel_max: %d", channel_max);
-    qDebug(">> frame_max: %d", frame_max);
-    qDebug(">> heartbeat: %d", heartbeat);
+    qAmqpDebug(">> channel_max: %d", channel_max);
+    qAmqpDebug(">> frame_max: %d", frame_max);
+    qAmqpDebug(">> heartbeat: %d", heartbeat);
 
     if (heartbeatTimer) {
         heartbeatTimer->setInterval(heartbeat * 1000);
@@ -308,7 +308,7 @@ void ClientPrivate::openOk(const Frame::Method &frame)
 {
     Q_Q(Client);
     Q_UNUSED(frame)
-    qDebug(">> OpenOK");
+    qAmqpDebug(">> OpenOK");
     connected = true;
     Q_EMIT q->connected();
 }
@@ -317,7 +317,7 @@ void ClientPrivate::closeOk(const Frame::Method &frame)
 {
     Q_Q(Client);
     Q_UNUSED(frame)
-    qDebug() << Q_FUNC_INFO << "received";
+    qAmqpDebug() << Q_FUNC_INFO << "received";
     connected = false;
     if (heartbeatTimer)
         heartbeatTimer->stop();
@@ -327,7 +327,7 @@ void ClientPrivate::closeOk(const Frame::Method &frame)
 void ClientPrivate::close(const Frame::Method &frame)
 {
     Q_Q(Client);
-    qDebug(">> CLOSE");
+    qAmqpDebug(">> CLOSE");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
@@ -343,10 +343,10 @@ void ClientPrivate::close(const Frame::Method &frame)
         Q_EMIT q->error(error);
     }
 
-    qDebug(">> code: %d", code);
-    qDebug(">> text: %s", qPrintable(text));
-    qDebug(">> class-id: %d", classId);
-    qDebug(">> method-id: %d", methodId);
+    qAmqpDebug(">> code: %d", code);
+    qAmqpDebug(">> text: %s", qPrintable(text));
+    qAmqpDebug(">> class-id: %d", classId);
+    qAmqpDebug(">> method-id: %d", methodId);
     connected = false;
     Q_EMIT q->disconnected();
 }
@@ -373,7 +373,7 @@ void ClientPrivate::startOk()
 
 void ClientPrivate::secureOk()
 {
-    qDebug() << Q_FUNC_INFO;
+    qAmqpDebug() << Q_FUNC_INFO;
 }
 
 void ClientPrivate::tuneOk()
@@ -672,7 +672,7 @@ void SslClientPrivate::initSocket()
 void SslClientPrivate::_q_connect()
 {
     if (socket->state() != QAbstractSocket::UnconnectedState) {
-        qDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
+        qAmqpDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
         _q_disconnect();
     }
 

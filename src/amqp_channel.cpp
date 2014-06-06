@@ -58,7 +58,7 @@ bool ChannelPrivate::_q_method(const Frame::Method &frame)
     if (frame.methodClass() != Frame::fcChannel)
         return false;
 
-    qDebug("Channel#%d:", channelNumber);
+    qAmqpDebug("Channel#%d:", channelNumber);
 
     switch (frame.id()) {
     case miOpenOk:
@@ -100,7 +100,7 @@ void ChannelPrivate::open()
     if (!client->isConnected())
         return;
 
-    qDebug("Open channel #%d", channelNumber);
+    qAmqpDebug("Open channel #%d", channelNumber);
     Frame::Method frame(Frame::fcChannel, miOpen);
     frame.setChannel(channelNumber);
 
@@ -119,18 +119,18 @@ void ChannelPrivate::flow()
 void ChannelPrivate::flow(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
-    qDebug() << Q_FUNC_INFO;
+    qAmqpDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::flowOk()
 {
-    qDebug() << Q_FUNC_INFO;
+    qAmqpDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::flowOk(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
-    qDebug() << Q_FUNC_INFO;
+    qAmqpDebug() << Q_FUNC_INFO;
 }
 
 void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
@@ -153,7 +153,7 @@ void ChannelPrivate::close(int code, const QString &text, int classId, int metho
 void ChannelPrivate::close(const Frame::Method &frame)
 {
     Q_Q(Channel);
-    qDebug(">> CLOSE");
+    qAmqpDebug(">> CLOSE");
     stateChanged(csClosed);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -170,10 +170,10 @@ void ChannelPrivate::close(const Frame::Method &frame)
         Q_EMIT q->error(error);
     }
 
-    qDebug(">> code: %d", code);
-    qDebug(">> text: %s", qPrintable(text));
-    qDebug(">> class-id: %d", classId);
-    qDebug(">> method-id: %d", methodId);
+    qAmqpDebug(">> code: %d", code);
+    qAmqpDebug(">> text: %s", qPrintable(text));
+    qAmqpDebug(">> class-id: %d", classId);
+    qAmqpDebug(">> method-id: %d", methodId);
 }
 
 void ChannelPrivate::closeOk()
@@ -197,7 +197,7 @@ void ChannelPrivate::openOk(const Frame::Method &frame)
     Q_UNUSED(frame)
     Q_Q(Channel);
 
-    qDebug(">> OpenOK");
+    qAmqpDebug(">> OpenOK");
     opened = true;
     stateChanged(csOpened);
     q->channelOpened();
@@ -207,7 +207,7 @@ void ChannelPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount)
 {
     Q_UNUSED(prefetchSize)
     Q_UNUSED(prefetchCount)
-    qDebug() << Q_FUNC_INFO << "temporarily disabled";
+    qAmqpDebug() << Q_FUNC_INFO << "temporarily disabled";
 //    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, channelNumber, false);
 }
 

@@ -329,13 +329,13 @@ void Frame::print(const TableField &f)
     for (it = f.constBegin(); it != itEnd; ++it) {
         switch(it.value().type()) {
         case  QVariant::Hash:
-            qDebug() << "\t" << qPrintable(it.key()) << ": FIELD_TABLE";
+            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": FIELD_TABLE";
             break;
         case QVariant::List:
-            qDebug() << "\t" << qPrintable(it.key()) << ": ARRAY";
+            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": ARRAY";
             break;
         default:
-            qDebug() << "\t" << qPrintable(it.key()) << ": " << it.value();
+            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": " << it.value();
         }
     }
 }
@@ -482,7 +482,7 @@ void Frame::writeField(QDataStream &s, const QVariant &value)
         break;
 
     default:
-        qDebug() << Q_FUNC_INFO << "unhandled variant type: " << value.type();
+        qAmqpDebug() << Q_FUNC_INFO << "unhandled variant type: " << value.type();
     }
 
     if (type)
