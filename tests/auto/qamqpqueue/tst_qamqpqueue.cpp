@@ -21,6 +21,7 @@ private Q_SLOTS:
 
     void remove();
     void removeIfUnused();
+    void unbind();
 
 private:    // disabled
     void removeIfEmpty();
@@ -129,6 +130,20 @@ void tst_QAMQPQueue::removeIfEmpty()
     QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
     QCOMPARE(queue->error(), Channel::PreconditionFailed);
     QVERIFY(!queue->errorString().isEmpty());
+}
+
+void tst_QAMQPQueue::unbind()
+{
+    Queue *queue = client->createQueue("test-unbind");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->consume();   // required because AutoDelete will not delete if
+                        // there was never a consumer
+
+    queue->bind("amq.topic", "routingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+    queue->unbind("amq.topic", "routingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(unbound())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
