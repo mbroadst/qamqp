@@ -26,12 +26,12 @@ public:
 
     enum ChannelError {
         NoError = 0,
-        ContentTooLarge = 311,
-        NoConsumers = 313,
-        AccessRefused = 403,
-        NotFound = 404,
-        ResourceLocked = 405,
-        PreconditionFailed = 406
+        ContentTooLargeError = 311,
+        NoConsumersError = 313,
+        AccessRefusedError = 403,
+        NotFoundError = 404,
+        ResourceLockedError = 405,
+        PreconditionFailedError = 406
     };
     ChannelError error() const;
     QString errorString() const;

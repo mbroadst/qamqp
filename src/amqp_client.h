@@ -63,16 +63,16 @@ public:
 
     enum ConnectionError {
         NoError = 0,
-        ConnectionForced = 320,
-        InvalidPath = 402,
+        ConnectionForcedError = 320,
+        InvalidPathError = 402,
         FrameError = 501,
         SyntaxError = 502,
-        CommandInvalid = 503,
+        CommandInvalidError = 503,
         ChannelError = 504,
-        UnexpectedFrame = 505,
+        UnexpectedFrameError = 505,
         ResourceError = 506,
-        NotAllowed = 530,
-        NotImplemented = 540,
+        NotAllowedError = 530,
+        NotImplementedError = 540,
         InternalError = 541
     };
     ConnectionError error() const;
