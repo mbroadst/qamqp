@@ -16,15 +16,15 @@
 using namespace QAMQP;
 
 ClientPrivate::ClientPrivate(Client *q)
-    : port(AMQPPORT),
-      host(QString::fromLatin1(AMQPHOST)),
-      virtualHost(QString::fromLatin1(AMQPVHOST)),
+    : port(AMQP_PORT),
+      host(QString::fromLatin1(AMQP_HOST)),
+      virtualHost(QString::fromLatin1(AMQP_VHOST)),
       socket(0),
       closed(false),
       connected(false),
       channelMax(0),
       heartbeatDelay(0),
-      frameMax(0),
+      frameMax(AMQP_FRAME_MAX),
       error(Client::NoError),
       q_ptr(q)
 {
@@ -42,7 +42,7 @@ void ClientPrivate::init(const QUrl &connectionString)
     QObject::connect(heartbeatTimer, SIGNAL(timeout()), q, SLOT(_q_heartbeat()));
 
     authenticator = QSharedPointer<Authenticator>(
-        new AMQPlainAuthenticator(QString::fromLatin1(AMQPLOGIN), QString::fromLatin1(AMQPPSWD)));
+        new AMQPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
 
     if (connectionString.isValid()) {
         parseConnectionString(connectionString);
@@ -63,15 +63,15 @@ void ClientPrivate::initSocket()
 void ClientPrivate::parseConnectionString(const QUrl &connectionString)
 {
     Q_Q(Client);
-    if (connectionString.scheme() != AMQPSCHEME &&
-        connectionString.scheme() != AMQPSSCHEME) {
+    if (connectionString.scheme() != AMQP_SCHEME &&
+        connectionString.scheme() != AMQP_SSCHEME) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
         return;
     }
 
     q->setPassword(connectionString.password());
     q->setUsername(connectionString.userName());
-    q->setPort(connectionString.port(AMQPPORT));
+    q->setPort(connectionString.port(AMQP_PORT));
     q->setHost(connectionString.host());
     q->setVirtualHost(connectionString.path());
 }
@@ -156,7 +156,8 @@ void ClientPrivate::_q_readyRead()
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
             if (magic != Frame::FRAME_END) {
                 qAmqpDebug() << Q_FUNC_INFO << "FATAL: wrong end of frame";
-                _q_disconnect();
+                buffer.clear();
+                socket->close();
                 return;
             }
 
@@ -165,6 +166,11 @@ void ClientPrivate::_q_readyRead()
             case Frame::ftMethod:
             {
                 Frame::Method frame(streamB);
+                if (frame.size() > frameMax) {
+                    close(Client::FrameError, "frame size too large");
+                    return;
+                }
+
                 if (frame.methodClass() == Frame::fcConnection) {
                     _q_method(frame);
                 } else {
@@ -176,6 +182,11 @@ void ClientPrivate::_q_readyRead()
             case Frame::ftHeader:
             {
                 Frame::Content frame(streamB);
+                if (frame.size() > frameMax) {
+                    close(Client::FrameError, "frame size too large");
+                    return;
+                }
+
                 foreach (Frame::ContentHandler *methodHandler, contentHandlerByChannel[frame.channel()])
                     methodHandler->_q_content(frame);
             }
@@ -183,6 +194,11 @@ void ClientPrivate::_q_readyRead()
             case Frame::ftBody:
             {
                 Frame::ContentBody frame(streamB);
+                if (frame.size() > frameMax) {
+                    close(Client::FrameError, "frame size too large");
+                    return;
+                }
+
                 foreach (Frame::ContentBodyHandler *methodHandler, bodyHandlersByChannel[frame.channel()])
                     methodHandler->_q_body(frame);
             }
@@ -295,9 +311,17 @@ void ClientPrivate::tune(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    stream >> channelMax;
-    stream >> frameMax;
-    stream >> heartbeatDelay;
+    qint16 channel_max = 0,
+           heartbeat_delay = 0;
+    qint32 frame_max = 0;
+
+    stream >> channel_max;
+    stream >> frame_max;
+    stream >> heartbeat_delay;
+
+    channelMax = qMax(channel_max, channelMax);
+    heartbeatDelay = qMax(heartbeat_delay, heartbeatDelay);
+    frameMax = qMax(frame_max, frameMax);
 
     qAmqpDebug(">> channel_max: %d", channelMax);
     qAmqpDebug(">> frame_max: %d", frameMax);
@@ -395,7 +419,7 @@ void ClientPrivate::tuneOk()
 
     stream << qint16(channelMax);
     stream << qint32(frameMax);
-    stream << qint16(heartbeatTimer->interval() / 1000);
+    stream << qint16(heartbeatDelay / 1000);
 
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -618,6 +642,58 @@ void Client::setAutoReconnect(bool value)
     Q_D(Client);
     d->autoReconnect = value;
 }
+
+qint16 Client::channelMax() const
+{
+    Q_D(const Client);
+    return d->channelMax;
+}
+
+void Client::setChannelMax(qint16 channelMax)
+{
+    Q_D(Client);
+    if (d->connected) {
+        qAmqpDebug() << Q_FUNC_INFO << "can't modify value while connected";
+        return;
+    }
+
+    d->channelMax = channelMax;
+}
+
+qint32 Client::frameMax() const
+{
+    Q_D(const Client);
+    return d->frameMax;
+}
+
+void Client::setFrameMax(qint32 frameMax)
+{
+    Q_D(Client);
+    if (d->connected) {
+        qAmqpDebug() << Q_FUNC_INFO << "can't modify value while connected";
+        return;
+    }
+
+    d->frameMax = qMax(frameMax, AMQP_FRAME_MIN_SIZE);
+}
+
+qint16 Client::heartbeatDelay() const
+{
+    Q_D(const Client);
+    return d->heartbeatDelay;
+}
+
+void Client::setHeartbeatDelay(qint16 delay)
+{
+    Q_D(Client);
+    if (d->connected) {
+        qAmqpDebug() << Q_FUNC_INFO << "can't modify value while connected";
+        return;
+    }
+
+    d->heartbeatDelay = delay;
+}
+
 
 void Client::addCustomProperty(const QString &name, const QString &value)
 {

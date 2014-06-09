@@ -2,6 +2,7 @@
 #include "amqp_exchange_p.h"
 #include "amqp_queue.h"
 #include "amqp_global.h"
+#include "amqp_client.h"
 
 #include <QDataStream>
 #include <QDebug>
@@ -169,13 +170,13 @@ void Exchange::remove(bool ifUnused, bool noWait)
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    stream << qint16(0);    //reserver 1
+    stream << qint16(0);    //reserved 1
     Frame::writeField('s', stream, d->name);
 
     qint8 flag = 0;
     flag |= (ifUnused ? 0x1 : 0);
     flag |= (noWait ? 0x2 : 0);
-    stream << flag;    //reserver 1
+    stream << flag;         //reserved 1
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -227,9 +228,9 @@ void Exchange::publish(const QString &key, const QByteArray &message,
     d->sendFrame(content);
 
     int fullSize = message.size();
-    for (int sent = 0; sent < fullSize; sent += (FRAME_MAX - 7)) {
+    for (int sent = 0; sent < fullSize; sent += (d->client->frameMax() - 7)) {
         Frame::ContentBody body;
-        QByteArray partition = message.mid(sent, (FRAME_MAX - 7));
+        QByteArray partition = message.mid(sent, (d->client->frameMax() - 7));
         body.setChannel(d->channelNumber);
         body.setBody(partition);
         d->sendFrame(body);

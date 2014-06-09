@@ -28,6 +28,9 @@ class QAMQP_EXPORT Client : public QObject
     Q_PROPERTY(QString user READ username WRITE setUsername)
     Q_PROPERTY(QString password READ password WRITE setPassword)
     Q_PROPERTY(bool autoReconnect READ autoReconnect WRITE setAutoReconnect)
+    Q_PROPERTY(qint16 channelMax READ channelMax WRITE setChannelMax)
+    Q_PROPERTY(qint32 frameMax READ frameMax WRITE setFrameMax)
+    Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay)
 
 public:
     Client(QObject *parent = 0);
@@ -58,6 +61,15 @@ public:
 
     bool isConnected() const;
 
+    qint16 channelMax() const;
+    void setChannelMax(qint16 channelMax);
+
+    qint32 frameMax() const;
+    void setFrameMax(qint32 frameMax);
+
+    qint16 heartbeatDelay() const;
+    void setHeartbeatDelay(qint16 delay);
+
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 
@@ -87,7 +99,7 @@ public:
 
     // methods
     void connectToHost(const QString &connectionString = QString());
-    void connectToHost(const QHostAddress &address, quint16 port = AMQPPORT);
+    void connectToHost(const QHostAddress &address, quint16 port = AMQP_PORT);
     void disconnectFromHost();
 
 Q_SIGNALS:

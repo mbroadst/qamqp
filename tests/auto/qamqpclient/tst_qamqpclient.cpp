@@ -14,6 +14,8 @@ private Q_SLOTS:
     void connectDisconnect();
     void invalidAuthenticationMechanism();
 
+    void tune();
+
 private:
     void autoReconnect();
 
@@ -65,6 +67,27 @@ void tst_QAMQPClient::autoReconnect()
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
     QProcess::execute("rabbitmqctl", QStringList() << "start_app");
     QVERIFY(waitForSignal(&client, SIGNAL(connected()), 2));
+}
+
+void tst_QAMQPClient::tune()
+{
+    // NOTE: this is totally incomplete, but the framework is here to
+    //       test it. currently, only channel_max matters since the default
+    //       from rabbit is 0.
+
+    Client client;
+    client.setChannelMax(15);
+    client.setFrameMax(1000);
+    client.setHeartbeatDelay(600);
+
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+    QCOMPARE((int)client.channelMax(), 15);
+    QCOMPARE((int)client.heartbeatDelay(), 600);
+    QCOMPARE((int)client.frameMax(), 131072);
+
+    client.disconnectFromHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
 QTEST_MAIN(tst_QAMQPClient)
