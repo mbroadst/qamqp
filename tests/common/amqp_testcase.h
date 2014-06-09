@@ -13,7 +13,7 @@ public:
     virtual ~TestCase() {}
 
 protected:
-    bool waitForSignal(QObject *obj, const char *signal, int delay = 1)
+    bool waitForSignal(QObject *obj, const char *signal, int delay = 5)
     {
         QObject::connect(obj, signal, &QTestEventLoop::instance(), SLOT(exitLoop()));
         QPointer<QObject> safe = obj;
