@@ -235,4 +235,3 @@ void Exchange::publish(const QString &key, const QByteArray &message,
         d->sendFrame(body);
     }
 }
-

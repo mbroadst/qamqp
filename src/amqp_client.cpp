@@ -22,6 +22,9 @@ ClientPrivate::ClientPrivate(Client *q)
       socket(0),
       closed(false),
       connected(false),
+      channelMax(0),
+      heartbeatDelay(0),
+      frameMax(0),
       error(Client::NoError),
       q_ptr(q)
 {
@@ -90,6 +93,7 @@ void ClientPrivate::_q_disconnect()
         return;
     }
 
+    buffer.clear();
     close(200, "client disconnect");
 }
 
@@ -150,8 +154,11 @@ void ClientPrivate::_q_readyRead()
             const char *bufferData = buffer.constData();
             const quint8 type = *(quint8*)&bufferData[0];
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
-            if (magic != Frame::FRAME_END)
-                qWarning() << "Wrong end frame";
+            if (magic != Frame::FRAME_END) {
+                qAmqpDebug() << Q_FUNC_INFO << "FATAL: wrong end of frame";
+                _q_disconnect();
+                return;
+            }
 
             QDataStream streamB(&buffer, QIODevice::ReadOnly);
             switch(Frame::Type(type)) {
@@ -288,20 +295,16 @@ void ClientPrivate::tune(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    qint16 channel_max = 0,
-           heartbeat = 0;
-    qint32 frame_max = 0;
+    stream >> channelMax;
+    stream >> frameMax;
+    stream >> heartbeatDelay;
 
-    stream >> channel_max;
-    stream >> frame_max;
-    stream >> heartbeat;
-
-    qAmqpDebug(">> channel_max: %d", channel_max);
-    qAmqpDebug(">> frame_max: %d", frame_max);
-    qAmqpDebug(">> heartbeat: %d", heartbeat);
+    qAmqpDebug(">> channel_max: %d", channelMax);
+    qAmqpDebug(">> frame_max: %d", frameMax);
+    qAmqpDebug(">> heartbeat: %d", heartbeatDelay);
 
     if (heartbeatTimer) {
-        heartbeatTimer->setInterval(heartbeat * 1000);
+        heartbeatTimer->setInterval(heartbeatDelay * 1000);
         if (heartbeatTimer->interval())
             heartbeatTimer->start();
         else
@@ -390,9 +393,9 @@ void ClientPrivate::tuneOk()
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    stream << qint16(0); //channel_max
-    stream << qint32(FRAME_MAX); //frame_max
-    stream << qint16(heartbeatTimer->interval() / 1000); //heartbeat
+    stream << qint16(channelMax);
+    stream << qint32(frameMax);
+    stream << qint16(heartbeatTimer->interval() / 1000);
 
     frame.setArguments(arguments);
     sendFrame(frame);

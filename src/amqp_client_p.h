@@ -90,6 +90,9 @@ public:
     bool connected;
     QPointer<QTimer> heartbeatTimer;
     Frame::TableField customProperties;
+    qint16 channelMax;
+    qint16 heartbeatDelay;
+    qint32 frameMax;
 
     Client::ConnectionError error;
     QString errorString;
