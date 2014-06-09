@@ -1,14 +1,16 @@
 #ifndef qamqp_global_h__
 #define qamqp_global_h__
 
-#define AMQPSCHEME "amqp"
-#define AMQPSSCHEME "amqps"
-#define AMQPPORT 5672
-#define AMQPHOST "localhost"
-#define AMQPVHOST "/"
-#define AMQPLOGIN "guest"
-#define AMQPPSWD  "guest"
-#define FRAME_MAX 131072
+#define AMQP_SCHEME "amqp"
+#define AMQP_SSCHEME "amqps"
+#define AMQP_PORT 5672
+#define AMQP_HOST "localhost"
+#define AMQP_VHOST "/"
+#define AMQP_LOGIN "guest"
+#define AMQP_PSWD  "guest"
+
+#define AMQP_FRAME_MAX 131072
+#define AMQP_FRAME_MIN_SIZE 4096
 
 #define QAMQP_VERSION "0.3.0"
 
