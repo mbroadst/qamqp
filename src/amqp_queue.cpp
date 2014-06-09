@@ -207,11 +207,6 @@ void QueuePrivate::deliver(const Frame::Method &frame)
 
 void QueuePrivate::declare()
 {
-    if (name.isEmpty()) {
-        qAmqpDebug() << Q_FUNC_INFO << "can't declare queue with no name";
-        return;
-    }
-
     Frame::Method frame(Frame::fcQueue, QueuePrivate::miDeclare);
     frame.setChannel(channelNumber);
 

@@ -19,6 +19,8 @@ private Q_SLOTS:
     void standardExchanges_data();
     void standardExchanges();
 
+    void unnamedQueue();
+
     void remove();
     void removeIfUnused();
     void unbind();
@@ -88,6 +90,16 @@ void tst_QAMQPQueue::standardExchanges()
     defaultExchange->publish(routingKey, "test message");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     QCOMPARE(queue->getMessage().payload(), QByteArray("test message"));
+}
+
+void tst_QAMQPQueue::unnamedQueue()
+{
+    Queue *queue = client->createQueue();
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->consume();
+
+    QVERIFY(!queue->name().isEmpty());
 }
 
 void tst_QAMQPQueue::remove()
