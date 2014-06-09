@@ -19,7 +19,9 @@ private Q_SLOTS:
     void standardExchanges_data();
     void standardExchanges();
 
-    void unnamedQueue();
+    void unnamed();
+    void exclusiveAccess();
+    void exclusiveRemoval();
 
     void remove();
     void removeIfUnused();
@@ -42,8 +44,10 @@ void tst_QAMQPQueue::init()
 
 void tst_QAMQPQueue::cleanup()
 {
-    client->disconnectFromHost();
-    QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+    if (client->isConnected()) {
+        client->disconnectFromHost();
+        QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+    }
 }
 
 void tst_QAMQPQueue::defaultExchange()
@@ -92,7 +96,7 @@ void tst_QAMQPQueue::standardExchanges()
     QCOMPARE(queue->getMessage().payload(), QByteArray("test message"));
 }
 
-void tst_QAMQPQueue::unnamedQueue()
+void tst_QAMQPQueue::unnamed()
 {
     Queue *queue = client->createQueue();
     queue->declare();
@@ -100,6 +104,45 @@ void tst_QAMQPQueue::unnamedQueue()
     queue->consume();
 
     QVERIFY(!queue->name().isEmpty());
+}
+
+void tst_QAMQPQueue::exclusiveAccess()
+{
+    Queue *queue = client->createQueue("test-exclusive-queue");
+    queue->declare(Queue::Exclusive);
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    Client secondClient;
+    secondClient.connectToHost();
+    QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
+    Queue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
+    passiveQueue->declare(Queue::Passive);
+    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(ChannelError))));
+    QCOMPARE(passiveQueue->error(), Channel::ResourceLockedError);
+
+    secondClient.disconnectFromHost();
+    QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPQueue::exclusiveRemoval()
+{
+    Queue *queue = client->createQueue("test-exclusive-queue");
+    queue->declare(Queue::Exclusive);
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    client.data()->disconnectFromHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+
+    // create a new client and try to access the queue that should
+    // no longer exist
+    Client secondClient;
+    secondClient.connectToHost();
+    QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
+    Queue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
+    passiveQueue->declare(Queue::Passive);
+    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(ChannelError))));
+    QCOMPARE(passiveQueue->error(), Channel::NotFoundError);
+    secondClient.disconnectFromHost();
+    QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
 }
 
 void tst_QAMQPQueue::remove()
@@ -120,7 +163,7 @@ void tst_QAMQPQueue::removeIfUnused()
 
     queue->remove(Queue::roIfUnused);
     QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
-    QCOMPARE(queue->error(), Channel::PreconditionFailed);
+    QCOMPARE(queue->error(), Channel::PreconditionFailedError);
     QVERIFY(!queue->errorString().isEmpty());
 }
 
@@ -140,7 +183,7 @@ void tst_QAMQPQueue::removeIfEmpty()
 
     queue->remove(Queue::roIfEmpty);
     QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
-    QCOMPARE(queue->error(), Channel::PreconditionFailed);
+    QCOMPARE(queue->error(), Channel::PreconditionFailedError);
     QVERIFY(!queue->errorString().isEmpty());
 }
 
