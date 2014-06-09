@@ -319,9 +319,10 @@ void ClientPrivate::tune(const Frame::Method &frame)
     stream >> frame_max;
     stream >> heartbeat_delay;
 
-    channelMax = qMax(channel_max, channelMax);
-    heartbeatDelay = qMax(heartbeat_delay, heartbeatDelay);
-    frameMax = qMax(frame_max, frameMax);
+    if (!frameMax)
+        frameMax = frame_max;
+    channelMax = !channelMax ? channel_max : qMax(channel_max, channelMax);
+    heartbeatDelay = !heartbeatDelay ? heartbeat_delay: qMax(heartbeat_delay, heartbeatDelay);
 
     qAmqpDebug(">> channel_max: %d", channelMax);
     qAmqpDebug(">> frame_max: %d", frameMax);

@@ -71,20 +71,16 @@ void tst_QAMQPClient::autoReconnect()
 
 void tst_QAMQPClient::tune()
 {
-    // NOTE: this is totally incomplete, but the framework is here to
-    //       test it. currently, only channel_max matters since the default
-    //       from rabbit is 0.
-
     Client client;
     client.setChannelMax(15);
-    client.setFrameMax(1000);
+    client.setFrameMax(5000);
     client.setHeartbeatDelay(600);
 
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
     QCOMPARE((int)client.channelMax(), 15);
     QCOMPARE((int)client.heartbeatDelay(), 600);
-    QCOMPARE((int)client.frameMax(), 131072);
+    QCOMPARE((int)client.frameMax(), 5000);
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
