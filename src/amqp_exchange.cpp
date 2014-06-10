@@ -196,7 +196,7 @@ void Exchange::publish(const QString &key, const QByteArray &message,
 
 void Exchange::publish(const QString &key, const QByteArray &message,
                        const QString &mimeType, const QVariantHash &headers,
-                       const Exchange::MessageProperties &properties)
+                       const MessageProperties &properties)
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
@@ -220,8 +220,8 @@ void Exchange::publish(const QString &key, const QByteArray &message,
     content.setProperty(Frame::Content::cpHeaders, headers);
     content.setProperty(Frame::Content::cpMessageId, "0");
 
-    Exchange::MessageProperties::ConstIterator it;
-    Exchange::MessageProperties::ConstIterator itEnd = properties.constEnd();
+    MessageProperties::ConstIterator it;
+    MessageProperties::ConstIterator itEnd = properties.constEnd();
     for (it = properties.constBegin(); it != itEnd; ++it)
         content.setProperty(it.key(), it.value());
     content.setBody(message);

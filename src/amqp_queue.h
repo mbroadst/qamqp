@@ -1,6 +1,8 @@
 #ifndef amqp_queue_h__
 #define amqp_queue_h__
 
+#include <QQueue>
+
 #include "amqp_channel.h"
 #include "amqp_message.h"
 #include "amqp_global.h"
@@ -12,7 +14,7 @@ class Client;
 class ClientPrivate;
 class Exchange;
 class QueuePrivate;
-class QAMQP_EXPORT Queue : public Channel
+class QAMQP_EXPORT Queue : public Channel, public QQueue<Message>
 {
     Q_OBJECT
     Q_ENUMS(QueueOptions)
@@ -51,9 +53,6 @@ public:
     Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
 
     ~Queue();
-
-    bool hasMessage() const;
-    Message getMessage();
 
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;

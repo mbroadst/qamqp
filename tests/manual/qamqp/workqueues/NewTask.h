@@ -52,7 +52,7 @@ protected slots:
     {
         static quint64 counter = 0;
 
-        QAMQP::Exchange::MessageProperties properties;
+        QAMQP::MessageProperties properties;
         properties[QAMQP::Frame::Content::cpDeliveryMode] = 2; // Make message persistent
 
         QString message(QString("[%1: %2] Hello World! %3")

@@ -60,7 +60,7 @@ void tst_QAMQPQueue::defaultExchange()
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("test-default-exchange", "first message");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
-    Message message = queue->getMessage();
+    Message message = queue->dequeue();
     QCOMPARE(message.payload(), QByteArray("first message"));
 }
 
@@ -93,7 +93,7 @@ void tst_QAMQPQueue::standardExchanges()
     Exchange *defaultExchange = client->createExchange(exchange);
     defaultExchange->publish(routingKey, "test message");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
-    QCOMPARE(queue->getMessage().payload(), QByteArray("test message"));
+    QCOMPARE(queue->dequeue().payload(), QByteArray("test message"));
 }
 
 void tst_QAMQPQueue::unnamed()

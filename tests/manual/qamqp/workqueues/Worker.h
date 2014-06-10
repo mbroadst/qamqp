@@ -49,7 +49,7 @@ protected slots:
     void newMessage()
     {
         // Retrieve message
-        QAMQP::Message message = queue_->getMessage();
+        QAMQP::Message message = queue_->dequeue();
         qDebug() << "Worker::newMessage " << message.payload();
 
         // Simulate long processing

@@ -78,16 +78,17 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
 
 void QueuePrivate::_q_content(const Frame::Content &frame)
 {
+    Q_Q(Queue);
     Q_ASSERT(frame.channel() == channelNumber);
     if (frame.channel() != channelNumber)
         return;
 
-    if (messages.isEmpty()) {
+    if (q->isEmpty()) {
         qErrnoWarning("Received content-header without method frame before");
         return;
     }
 
-    Message message = messages.last();
+    Message message = q->last();
     message.d->leftSize = frame.bodySize();
     QHash<int, QVariant>::ConstIterator it;
     QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
@@ -102,15 +103,15 @@ void QueuePrivate::_q_body(const Frame::ContentBody &frame)
     if (frame.channel() != channelNumber)
         return;
 
-    if (messages.isEmpty()) {
+    if (q->isEmpty()) {
         qErrnoWarning("Received content-body without method frame before");
         return;
     }
 
-    Message message = messages.last();
+    Message message = q->last();
     message.d->payload.append(frame.body());
     message.d->leftSize -= frame.body().size();
-    if (message.d->leftSize == 0 && messages.size() == 1)
+    if (message.d->leftSize == 0 && q->size() == 1)
         Q_EMIT q->messageReceived();
 }
 
@@ -166,6 +167,7 @@ void QueuePrivate::unbindOk(const Frame::Method &frame)
 
 void QueuePrivate::getOk(const Frame::Method &frame)
 {
+    Q_Q(Queue);
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
 
@@ -174,7 +176,7 @@ void QueuePrivate::getOk(const Frame::Method &frame)
     message.d->redelivered = Frame::readField('t',in).toBool();
     message.d->exchangeName = Frame::readField('s',in).toString();
     message.d->routingKey = Frame::readField('s',in).toString();
-    messages.enqueue(message);
+    q->enqueue(message);
 }
 
 void QueuePrivate::consumeOk(const Frame::Method &frame)
@@ -188,6 +190,7 @@ void QueuePrivate::consumeOk(const Frame::Method &frame)
 
 void QueuePrivate::deliver(const Frame::Method &frame)
 {
+    Q_Q(Queue);
     qAmqpDebug() << Q_FUNC_INFO;
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
@@ -202,7 +205,7 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     message.d->redelivered = Frame::readField('t',in).toBool();
     message.d->exchangeName = Frame::readField('s',in).toString();
     message.d->routingKey = Frame::readField('s',in).toString();
-    messages.enqueue(message);
+    q->enqueue(message);
 }
 
 void QueuePrivate::declare()
@@ -397,22 +400,6 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
-}
-
-Message Queue::getMessage()
-{
-    Q_D(Queue);
-    return d->messages.dequeue();
-}
-
-bool Queue::hasMessage() const
-{
-    Q_D(const Queue);
-    if (d->messages.isEmpty())
-        return false;
-
-    const Message &message = d->messages.head();
-    return message.d->leftSize == 0;
 }
 
 void Queue::consume(int options)

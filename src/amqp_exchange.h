@@ -36,7 +36,6 @@ public:
     };
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
 
-    typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
     ExchangeOptions option() const;
 
     virtual ~Exchange();
@@ -57,7 +56,7 @@ public:
                  const QString &mimeType, const MessageProperties &properties = MessageProperties());
     void publish(const QString &key, const QByteArray &message,
                  const QString &mimeType, const QVariantHash &headers,
-                 const Exchange::MessageProperties &properties = Exchange::MessageProperties());
+                 const MessageProperties &properties = MessageProperties());
 
 Q_SIGNALS:
     void declared();

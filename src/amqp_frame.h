@@ -418,6 +418,8 @@ namespace Frame
 
 } // namespace Frame
 
+typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
+
 } // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Frame::decimal)
