@@ -20,15 +20,12 @@ public:
     Message &operator=(const Message &other);
     ~Message();
 
-    typedef Frame::Content::Property MessageProperty;
-    Q_DECLARE_FLAGS(MessageProperties, MessageProperty)
-
     qlonglong deliveryTag() const;
     bool redelivered() const;
     QString exchangeName() const;
     QString routingKey() const;
     QByteArray payload() const;
-    QHash<MessageProperty, QVariant> properties() const;
+    MessageProperties properties() const;
     Frame::TableField headers() const;
 
 private:

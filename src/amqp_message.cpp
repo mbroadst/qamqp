@@ -55,7 +55,7 @@ QByteArray Message::payload() const
     return d->payload;
 }
 
-QHash<Message::MessageProperty, QVariant> Message::properties() const
+MessageProperties Message::properties() const
 {
     return d->properties;
 }

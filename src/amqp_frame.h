@@ -419,6 +419,7 @@ namespace Frame
 } // namespace Frame
 
 typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
+typedef Frame::Content::Property MessageProperty;
 
 } // namespace QAMQP
 

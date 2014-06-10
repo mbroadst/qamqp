@@ -20,7 +20,7 @@ public:
     QString routingKey;
 
     QByteArray payload;
-    QHash<Message::MessageProperty, QVariant> properties;
+    MessageProperties properties;
     Frame::TableField headers;
 
     int leftSize;
