@@ -44,9 +44,7 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
             unbindOk(frame);
             break;
         case miPurgeOk:
-            deleteOk(frame);
-            break;
-        default:
+            purgeOk(frame);
             break;
         }
 
@@ -67,9 +65,8 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
         case bmGetEmpty:
             Q_EMIT q->empty();
             break;
-        default:
-            break;
         }
+
         return true;
     }
 
@@ -132,10 +129,24 @@ void QueuePrivate::declareOk(const Frame::Method &frame)
     Q_EMIT q->declared();
 }
 
+void QueuePrivate::purgeOk(const Frame::Method &frame)
+{
+    Q_Q(Queue);
+    qAmqpDebug() << "purged queue: " << name;
+
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+
+    qint32 messageCount = 0;
+    stream >> messageCount;
+
+    Q_EMIT q->purged(messageCount);
+}
+
 void QueuePrivate::deleteOk(const Frame::Method &frame)
 {
     Q_Q(Queue);
-    qAmqpDebug() << "Deleted or purged queue: " << name;
+    qAmqpDebug() << "deleted queue: " << name;
     declared = false;
 
     QByteArray data = frame.arguments();
@@ -291,6 +302,11 @@ void Queue::declare(int options)
     d->declare();
 }
 
+void Queue::forceRemove()
+{
+    remove(0);
+}
+
 void Queue::remove(int options)
 {
     Q_D(Queue);
@@ -420,7 +436,7 @@ void Queue::consume(int options)
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, d->consumerTag);
 
-    out << qint8(options);  // no-wait
+    out << qint8(options);
     Frame::writeField('F', out, Frame::TableField());
 
     frame.setArguments(arguments);

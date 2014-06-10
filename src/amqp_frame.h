@@ -246,7 +246,6 @@ namespace Frame
 
     };
 
-
     /*
      * @brief Class for working with content frames.
      * @detailed Implement main methods for serialize and deserialize raw content frame data.
@@ -260,8 +259,8 @@ namespace Frame
      *
      * | Property | Description |
      * | ---------- | ----------- |
-     * |cpContentType | MIME content type |
-     * | ocpContentEncoding | MIME content encoding |
+     * | cpContentType | MIME content type |
+     * | cpContentEncoding | MIME content encoding |
      * | cpHeaders | message header field table |
      * | cpDeliveryMode| nonpersistent (1) or persistent (2) |
      * | cpPriority | message priority, 0 to 9 |

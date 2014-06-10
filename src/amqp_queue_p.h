@@ -31,6 +31,7 @@ public:
     virtual void _q_body(const Frame::ContentBody &frame);
     void declareOk(const Frame::Method &frame);
     void deleteOk(const Frame::Method &frame);
+    void purgeOk(const Frame::Method &frame);
     void bindOk(const Frame::Method &frame);
     void unbindOk(const Frame::Method &frame);
     void getOk(const Frame::Method &frame);

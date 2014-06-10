@@ -68,6 +68,7 @@ public:
     void unbind(Exchange *exchange, const QString &key);
     void purge();
     void remove(int options = roIfUnused|roIfEmpty|roNoWait);
+    void forceRemove();
 
     // AMQP Basic
     void consume(int options = NoOptions);
@@ -81,6 +82,7 @@ Q_SIGNALS:
     void removed();
     void messageReceived();
     void empty();
+    void purged(int messageCount);
 
 protected:
     // reimp Channel
