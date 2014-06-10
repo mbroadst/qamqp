@@ -25,10 +25,9 @@ private Q_SLOTS:
 
     void remove();
     void removeIfUnused();
-    void unbind();
-
-private:    // disabled
     void removeIfEmpty();
+    void unbind();
+    void purge();
 
 private:
     QScopedPointer<Client> client;
@@ -169,22 +168,34 @@ void tst_QAMQPQueue::removeIfUnused()
 
 void tst_QAMQPQueue::removeIfEmpty()
 {
-    // NOTE: this will work once I refactor messages to easily
-    //       add propertis for e.g. persistence
-
+    // declare the queue and send messages to it
     Queue *queue = client->createQueue("test-remove-if-empty");
     queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();
-
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("test-remove-if-empty", "first message");
-    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
 
-    queue->remove(Queue::roIfEmpty);
-    QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
-    QCOMPARE(queue->error(), Channel::PreconditionFailedError);
-    QVERIFY(!queue->errorString().isEmpty());
+    // create a second client and try to delete the queue
+    {
+        Client secondClient;
+        secondClient.connectToHost();
+        QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
+        Queue *testDeleteQueue = secondClient.createQueue("test-remove-if-empty");
+        testDeleteQueue->declare(Queue::Passive);
+        QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(declared())));
+
+        testDeleteQueue->remove(Queue::roIfEmpty);
+        QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(error(ChannelError))));
+        QCOMPARE(testDeleteQueue->error(), Channel::PreconditionFailedError);
+        QVERIFY(!testDeleteQueue->errorString().isEmpty());
+
+        secondClient.disconnectFromHost();
+        QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
+    }
+
+    // clean up queue
+    queue->forceRemove();
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPQueue::unbind()
@@ -199,6 +210,42 @@ void tst_QAMQPQueue::unbind()
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
     queue->unbind("amq.topic", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(unbound())));
+}
+
+void tst_QAMQPQueue::purge()
+{
+    Queue *queue = client->createQueue("test-purge");
+    queue->declare(Queue::Durable);
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("test-purge", "first message");
+    defaultExchange->publish("test-purge", "second message");
+    defaultExchange->publish("test-purge", "third message");
+
+    // create second client to listen to messages and attempt purge
+    {
+        Client secondClient;
+        secondClient.connectToHost();
+        QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
+        Queue *testPurgeQueue = secondClient.createQueue("test-purge");
+        testPurgeQueue->declare(Queue::Passive);
+        QVERIFY(waitForSignal(testPurgeQueue, SIGNAL(declared())));
+
+        QSignalSpy spy(testPurgeQueue, SIGNAL(purged(int)));
+        testPurgeQueue->purge();
+        QVERIFY(waitForSignal(testPurgeQueue, SIGNAL(purged(int))));
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(testPurgeQueue->size(), 0);
+        QList<QVariant> arguments = spy.takeFirst();
+        QCOMPARE(arguments.at(0).toInt(), 3);
+
+        secondClient.disconnectFromHost();
+        QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
+    }
+
+    // clean up queue
+    queue->forceRemove();
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
