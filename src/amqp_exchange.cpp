@@ -74,8 +74,6 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
     case miDeleteOk:
         deleteOk(frame);
         break;
-    default:
-        break;
     }
 
     return true;
@@ -86,7 +84,7 @@ void ExchangePrivate::declareOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Exchange);
-    qAmqpDebug() << "Declared exchange: " << name;
+    qAmqpDebug() << "declared exchange: " << name;
     declared = true;
     Q_EMIT q->declared();
 }
@@ -96,7 +94,7 @@ void ExchangePrivate::deleteOk(const Frame::Method &frame)
     Q_UNUSED(frame)
 
     Q_Q(Exchange);
-    qAmqpDebug() << "Deleted exchange: " << name;
+    qAmqpDebug() << "deleted exchange: " << name;
     declared = false;
     Q_EMIT q->removed();
 }
@@ -104,7 +102,7 @@ void ExchangePrivate::deleteOk(const Frame::Method &frame)
 void ExchangePrivate::_q_disconnected()
 {
     ChannelPrivate::_q_disconnected();
-    qAmqpDebug() << "Exchange " << name << " disconnected";
+    qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
     declared = false;
 }
@@ -135,7 +133,7 @@ void Exchange::channelClosed()
     remove(true, true);
 }
 
-Exchange::ExchangeOptions Exchange::option() const
+Exchange::ExchangeOptions Exchange::options() const
 {
     Q_D(const Exchange);
     return d->options;

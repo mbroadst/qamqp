@@ -13,9 +13,9 @@ class ExchangePrivate;
 class QAMQP_EXPORT Exchange : public Channel
 {
     Q_OBJECT
-    Q_PROPERTY(QString type READ type)
-    Q_PROPERTY(ExchangeOptions option READ option)
-    Q_ENUMS(ExchangeOption)
+    Q_PROPERTY(QString type READ type CONSTANT)
+    Q_PROPERTY(ExchangeOptions options READ options CONSTANT)
+    Q_ENUMS(ExchangeOptions)
 
 public:
     enum ExchangeType {
@@ -35,8 +35,7 @@ public:
         NoWait = 0x10
     };
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
-
-    ExchangeOptions option() const;
+    ExchangeOptions options() const;
 
     virtual ~Exchange();
 
