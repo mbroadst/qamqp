@@ -116,8 +116,8 @@ void tst_QAMQPQueue::exclusiveAccess()
     QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
     Queue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
     passiveQueue->declare(Queue::Passive);
-    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(ChannelError))));
-    QCOMPARE(passiveQueue->error(), Channel::ResourceLockedError);
+    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(passiveQueue->error(), QAMQP::ResourceLockedError);
 
     secondClient.disconnectFromHost();
     QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
@@ -138,8 +138,8 @@ void tst_QAMQPQueue::exclusiveRemoval()
     QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
     Queue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
     passiveQueue->declare(Queue::Passive);
-    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(ChannelError))));
-    QCOMPARE(passiveQueue->error(), Channel::NotFoundError);
+    QVERIFY(waitForSignal(passiveQueue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(passiveQueue->error(), QAMQP::NotFoundError);
     secondClient.disconnectFromHost();
     QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
 }
@@ -161,8 +161,8 @@ void tst_QAMQPQueue::removeIfUnused()
     queue->consume();
 
     queue->remove(Queue::roIfUnused);
-    QVERIFY(waitForSignal(queue, SIGNAL(error(ChannelError))));
-    QCOMPARE(queue->error(), Channel::PreconditionFailedError);
+    QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(queue->error(), QAMQP::PreconditionFailedError);
     QVERIFY(!queue->errorString().isEmpty());
 }
 
@@ -185,8 +185,8 @@ void tst_QAMQPQueue::removeIfEmpty()
         QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(declared())));
 
         testDeleteQueue->remove(Queue::roIfEmpty);
-        QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(error(ChannelError))));
-        QCOMPARE(testDeleteQueue->error(), Channel::PreconditionFailedError);
+        QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(error(QAMQP::Error))));
+        QCOMPARE(testDeleteQueue->error(), QAMQP::PreconditionFailedError);
         QVERIFY(!testDeleteQueue->errorString().isEmpty());
 
         secondClient.disconnectFromHost();

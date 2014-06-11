@@ -73,21 +73,7 @@ public:
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 
-    enum ConnectionError {
-        NoError = 0,
-        ConnectionForcedError = 320,
-        InvalidPathError = 402,
-        FrameError = 501,
-        SyntaxError = 502,
-        CommandInvalidError = 503,
-        ChannelError = 504,
-        UnexpectedFrameError = 505,
-        ResourceError = 506,
-        NotAllowedError = 530,
-        NotImplementedError = 540,
-        InternalError = 541
-    };
-    ConnectionError error() const;
+    Error error() const;
     QString errorString() const;
 
     // channels
@@ -105,7 +91,7 @@ public:
 Q_SIGNALS:
     void connected();
     void disconnected();
-    void error(ConnectionError error);
+    void error(Error error);
 
 protected:
     Client(ClientPrivate *dd, QObject *parent = 0);
@@ -116,6 +102,7 @@ protected:
 
 private:
     Q_PRIVATE_SLOT(d_func(), void _q_socketConnected())
+    Q_PRIVATE_SLOT(d_func(), void _q_socketDisconnected())
     Q_PRIVATE_SLOT(d_func(), void _q_readyRead())
     Q_PRIVATE_SLOT(d_func(), void _q_socketError(QAbstractSocket::SocketError error))
     Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())

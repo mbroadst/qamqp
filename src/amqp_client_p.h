@@ -42,6 +42,7 @@ public:
 
     // private slots
     void _q_socketConnected();
+    void _q_socketDisconnected();
     void _q_readyRead();
     void _q_socketError(QAbstractSocket::SocketError error);
     void _q_heartbeat();
@@ -94,7 +95,7 @@ public:
     qint16 heartbeatDelay;
     qint32 frameMax;
 
-    Client::ConnectionError error;
+    Error error;
     QString errorString;
 
     Client * const q_ptr;

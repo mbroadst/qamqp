@@ -72,8 +72,8 @@ void tst_QAMQPExchange::removeIfUnused()
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
 
     exchange->remove(Exchange::roIfUnused);
-    QVERIFY(waitForSignal(exchange, SIGNAL(error(ChannelError))));
-    QCOMPARE(exchange->error(), Exchange::PreconditionFailedError);
+    QVERIFY(waitForSignal(exchange, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(exchange->error(), QAMQP::PreconditionFailedError);
     QVERIFY(!exchange->errorString().isEmpty());
 
     // cleanup

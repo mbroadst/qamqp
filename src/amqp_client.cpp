@@ -25,7 +25,7 @@ ClientPrivate::ClientPrivate(Client *q)
       channelMax(0),
       heartbeatDelay(0),
       frameMax(AMQP_FRAME_MAX),
-      error(Client::NoError),
+      error(QAMQP::NoError),
       q_ptr(q)
 {
 }
@@ -55,6 +55,7 @@ void ClientPrivate::initSocket()
     Q_Q(Client);
     socket = new QTcpSocket(q);
     QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
+    QObject::connect(socket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
     QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
@@ -105,6 +106,16 @@ void ClientPrivate::_q_socketConnected()
     socket->write(header, 8);
 }
 
+void ClientPrivate::_q_socketDisconnected()
+{
+    Q_Q(Client);
+    buffer.clear();
+    if (connected) {
+        connected = false;
+        Q_EMIT q->disconnected();
+    }
+}
+
 void ClientPrivate::_q_heartbeat()
 {
     Frame::Heartbeat frame;
@@ -131,9 +142,13 @@ void ClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
     case QAbstractSocket::ProxyConnectionTimeoutError:
 
     default:
-        qWarning() << "AMQP: Socket Error: " << socket->errorString();
+        qAmqpDebug() << "socket Error: " << socket->errorString();
         break;
     }
+
+    // per spec, on any error we need to close the socket immediately
+    // and send no more data;
+    socket->close();
 
     if (autoReconnect) {
         QTimer::singleShot(timeout, q, SLOT(_q_connect()));
@@ -167,7 +182,7 @@ void ClientPrivate::_q_readyRead()
             {
                 Frame::Method frame(streamB);
                 if (frame.size() > frameMax) {
-                    close(Client::FrameError, "frame size too large");
+                    close(FrameError, "frame size too large");
                     return;
                 }
 
@@ -183,7 +198,7 @@ void ClientPrivate::_q_readyRead()
             {
                 Frame::Content frame(streamB);
                 if (frame.size() > frameMax) {
-                    close(Client::FrameError, "frame size too large");
+                    close(FrameError, "frame size too large");
                     return;
                 }
 
@@ -195,7 +210,7 @@ void ClientPrivate::_q_readyRead()
             {
                 Frame::ContentBody frame(streamB);
                 if (frame.size() > frameMax) {
-                    close(Client::FrameError, "frame size too large");
+                    close(FrameError, "frame size too large");
                     return;
                 }
 
@@ -372,8 +387,8 @@ void ClientPrivate::close(const Frame::Method &frame)
     stream >> classId;
     stream >> methodId;
 
-    Client::ConnectionError checkError = static_cast<Client::ConnectionError>(code);
-    if (checkError != Client::NoError) {
+    Error checkError = static_cast<Error>(code);
+    if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
         Q_EMIT q->error(error);
@@ -749,6 +764,7 @@ void SslClientPrivate::initSocket()
     Q_Q(Client);
     QSslSocket *sslSocket = new QSslSocket(q);
     QObject::connect(sslSocket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
+    QObject::connect(sslSocket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(sslSocket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
     QObject::connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)),
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));

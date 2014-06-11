@@ -77,7 +77,7 @@ public:
     bool opened;
     bool needOpen;
 
-    Channel::ChannelError error;
+    Error error;
     QString errorString;
 
     Q_DECLARE_PUBLIC(Channel)

@@ -28,4 +28,29 @@
 
 #define qAmqpDebug if (qgetenv("QAMQP_DEBUG").isEmpty()); else qDebug
 
+namespace QAMQP {
+
+enum Error {
+    NoError = 0,
+    ContentTooLargeError = 311,
+    NoConsumersError = 313,
+    ConnectionForcedError = 320,
+    InvalidPathError = 402,
+    AccessRefusedError = 403,
+    NotFoundError = 404,
+    ResourceLockedError = 405,
+    PreconditionFailedError = 406,
+    FrameError = 501,
+    SyntaxError = 502,
+    CommandInvalidError = 503,
+    ChannelError = 504,
+    UnexpectedFrameError = 505,
+    ResourceError = 506,
+    NotAllowedError = 530,
+    NotImplementedError = 540,
+    InternalError = 541
+};
+
+}   // namespace QAMQP
+
 #endif // qamqp_global_h__

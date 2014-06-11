@@ -13,7 +13,6 @@ private Q_SLOTS:
     void connect();
     void connectDisconnect();
     void invalidAuthenticationMechanism();
-
     void tune();
 
 private:

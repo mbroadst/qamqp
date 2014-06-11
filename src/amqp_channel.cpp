@@ -13,7 +13,7 @@ ChannelPrivate::ChannelPrivate(Channel *q)
     : channelNumber(0),
       opened(false),
       needOpen(true),
-      error(Channel::NoError),
+      error(QAMQP::NoError),
       q_ptr(q)
 {
 }
@@ -163,8 +163,8 @@ void ChannelPrivate::close(const Frame::Method &frame)
     stream >> classId;
     stream >> methodId;
 
-    Channel::ChannelError checkError = static_cast<Channel::ChannelError>(code);
-    if (checkError != Channel::NoError) {
+    Error checkError = static_cast<Error>(code);
+    if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
         Q_EMIT q->error(error);
@@ -282,7 +282,7 @@ void Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
     d->setQOS(prefetchSize, prefetchCount);
 }
 
-Channel::ChannelError Channel::error() const
+Error Channel::error() const
 {
     Q_D(const Channel);
     return d->error;
