@@ -1,6 +1,8 @@
 #ifndef qamqp_global_h__
 #define qamqp_global_h__
 
+#include <QMetaType>
+
 #define AMQP_SCHEME "amqp"
 #define AMQP_SSCHEME "amqps"
 #define AMQP_PORT 5672
@@ -52,5 +54,7 @@ enum Error {
 };
 
 }   // namespace QAMQP
+
+Q_DECLARE_METATYPE(QAMQP::Error);
 
 #endif // qamqp_global_h__

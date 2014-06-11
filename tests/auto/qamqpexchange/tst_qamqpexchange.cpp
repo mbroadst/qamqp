@@ -17,6 +17,8 @@ private Q_SLOTS:
 
     void standardTypes_data();
     void standardTypes();
+    void invalidDeclaration_data();
+    void invalidDeclaration();
     void removeIfUnused();
 
 private:
@@ -57,6 +59,33 @@ void tst_QAMQPExchange::standardTypes()
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->remove(Exchange::roForce);
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
+}
+
+void tst_QAMQPExchange::invalidDeclaration_data()
+{
+    QTest::addColumn<QString>("exchangeName");
+    QTest::addColumn<Exchange::ExchangeType>("type");
+    QTest::addColumn<QAMQP::Error>("error");
+
+    QTest::newRow("amq.direct") << "amq.direct" << Exchange::Direct << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.fanout") << "amq.fanout" << Exchange::FanOut << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.headers") << "amq.headers" << Exchange::Headers << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.match") << "amq.match" << Exchange::Headers << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.topic") << "amq.topic" << Exchange::Topic << QAMQP::PreconditionFailedError;
+
+    QTest::newRow("amq.reserved") << "amq.reserved" << Exchange::Direct << QAMQP::AccessRefusedError;
+}
+
+void tst_QAMQPExchange::invalidDeclaration()
+{
+    QFETCH(QString, exchangeName);
+    QFETCH(Exchange::ExchangeType, type);
+    QFETCH(QAMQP::Error, error);
+
+    Exchange *exchange = client->createExchange(exchangeName);
+    exchange->declare(type);
+    QVERIFY(waitForSignal(exchange, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(exchange->error(), error);
 }
 
 void tst_QAMQPExchange::removeIfUnused()
