@@ -12,10 +12,32 @@ class tst_QAMQPExchange : public TestCase
 {
     Q_OBJECT
 private Q_SLOTS:
+    void init();
+    void cleanup();
+
     void standardTypes_data();
     void standardTypes();
     void removeIfUnused();
+
+private:
+    QScopedPointer<Client> client;
+
 };
+
+void tst_QAMQPExchange::init()
+{
+    client.reset(new Client);
+    client->connectToHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
+}
+
+void tst_QAMQPExchange::cleanup()
+{
+    if (client->isConnected()) {
+        client->disconnectFromHost();
+        QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+    }
+}
 
 void tst_QAMQPExchange::standardTypes_data()
 {
@@ -30,31 +52,20 @@ void tst_QAMQPExchange::standardTypes()
 {
     QFETCH(Exchange::ExchangeType, type);
 
-    Client client;
-    client.connectToHost();
-    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
-
-    Exchange *exchange = client.createExchange("test");
+    Exchange *exchange = client->createExchange("test");
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->remove(Exchange::roForce);
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
-
-    client.disconnectFromHost();
-    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
 void tst_QAMQPExchange::removeIfUnused()
 {
-    Client client;
-    client.connectToHost();
-    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
-
-    Exchange *exchange = client.createExchange("test-if-unused-exchange");
+    Exchange *exchange = client->createExchange("test-if-unused-exchange");
     exchange->declare(Exchange::Direct, Exchange::AutoDelete);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
 
-    Queue *queue = client.createQueue("test-if-unused-queue");
+    Queue *queue = client->createQueue("test-if-unused-queue");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     queue->bind("test-if-unused-exchange", "testRoutingKey");
@@ -68,8 +79,6 @@ void tst_QAMQPExchange::removeIfUnused()
     // cleanup
     queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
-    client.disconnectFromHost();
-    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
 QTEST_MAIN(tst_QAMQPExchange)
