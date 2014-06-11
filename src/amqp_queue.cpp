@@ -302,11 +302,6 @@ void Queue::declare(int options)
     d->declare();
 }
 
-void Queue::forceRemove()
-{
-    remove(0);
-}
-
 void Queue::remove(int options)
 {
     Q_D(Queue);

@@ -194,7 +194,7 @@ void tst_QAMQPQueue::removeIfEmpty()
     }
 
     // clean up queue
-    queue->forceRemove();
+    queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
@@ -244,7 +244,7 @@ void tst_QAMQPQueue::purge()
     }
 
     // clean up queue
-    queue->forceRemove();
+    queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 

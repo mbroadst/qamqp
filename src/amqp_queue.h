@@ -46,6 +46,7 @@ public:
     Q_DECLARE_FLAGS(ConsumeOptions, ConsumeOption)
 
     enum RemoveOption {
+        roForce = 0x0,
         roIfUnused = 0x1,
         roIfEmpty = 0x02,
         roNoWait = 0x04
@@ -68,7 +69,6 @@ public:
     void unbind(Exchange *exchange, const QString &key);
     void purge();
     void remove(int options = roIfUnused|roIfEmpty|roNoWait);
-    void forceRemove();
 
     // AMQP Basic
     void consume(int options = NoOptions);
