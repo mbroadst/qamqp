@@ -14,7 +14,7 @@ class tst_QAMQPExchange : public TestCase
 private Q_SLOTS:
     void standardTypes_data();
     void standardTypes();
-
+    void removeIfUnused();
 };
 
 void tst_QAMQPExchange::standardTypes_data()
@@ -37,9 +37,37 @@ void tst_QAMQPExchange::standardTypes()
     Exchange *exchange = client.createExchange("test");
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
-    exchange->remove(false, false);
+    exchange->remove(Exchange::roForce);
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 
+    client.disconnectFromHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPExchange::removeIfUnused()
+{
+    Client client;
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+
+    Exchange *exchange = client.createExchange("test-if-unused-exchange");
+    exchange->declare(Exchange::Direct, Exchange::AutoDelete);
+    QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
+
+    Queue *queue = client.createQueue("test-if-unused-queue");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->bind("test-if-unused-exchange", "testRoutingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+
+    exchange->remove(Exchange::roIfUnused);
+    QVERIFY(waitForSignal(exchange, SIGNAL(error(ChannelError))));
+    QCOMPARE(exchange->error(), Exchange::PreconditionFailedError);
+    QVERIFY(!exchange->errorString().isEmpty());
+
+    // cleanup
+    queue->remove(Queue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }

@@ -118,7 +118,6 @@ Exchange::Exchange(int channelNumber, Client *parent)
 
 Exchange::~Exchange()
 {
-    remove();
 }
 
 void Exchange::channelOpened()
@@ -130,7 +129,6 @@ void Exchange::channelOpened()
 
 void Exchange::channelClosed()
 {
-    remove(true, true);
 }
 
 Exchange::ExchangeOptions Exchange::options() const
@@ -159,7 +157,7 @@ void Exchange::declare(const QString &type, ExchangeOptions options , const Fram
     d->declare();
 }
 
-void Exchange::remove(bool ifUnused, bool noWait)
+void Exchange::remove(int options)
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDelete);
@@ -170,11 +168,7 @@ void Exchange::remove(bool ifUnused, bool noWait)
 
     stream << qint16(0);    //reserved 1
     Frame::writeField('s', stream, d->name);
-
-    qint8 flag = 0;
-    flag |= (ifUnused ? 0x1 : 0);
-    flag |= (noWait ? 0x2 : 0);
-    stream << flag;         //reserved 1
+    stream << qint8(options);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

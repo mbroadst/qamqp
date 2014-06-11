@@ -26,6 +26,13 @@ public:
     };
     QString type() const;
 
+    enum RemoveOption {
+        roForce = 0x0,
+        roIfUnused = 0x1,
+        roNoWait = 0x04
+    };
+    Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
+
     enum ExchangeOption {
         NoOptions = 0x0,
         Passive = 0x01,
@@ -46,7 +53,7 @@ public:
     void declare(const QString &type = QLatin1String("direct"),
                  ExchangeOptions options = NoOptions,
                  const Frame::TableField &args = Frame::TableField());
-    void remove(bool ifUnused = true, bool noWait = true);
+    void remove(int options = roIfUnused|roNoWait);
 
     // AMQP Basic
     void publish(const QString &key, const QString &message,
