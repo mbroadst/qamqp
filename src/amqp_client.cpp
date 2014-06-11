@@ -723,6 +723,18 @@ QString Client::customProperty(const QString &name) const
     return d->customProperties.value(name).toString();
 }
 
+Error Client::error() const
+{
+    Q_D(const Client);
+    return d->error;
+}
+
+QString Client::errorString() const
+{
+    Q_D(const Client);
+    return d->errorString;
+}
+
 void Client::connectToHost(const QString &connectionString)
 {
     Q_D(Client);

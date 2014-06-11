@@ -17,8 +17,10 @@ private Q_SLOTS:
 
     void standardTypes_data();
     void standardTypes();
-    void invalidDeclaration_data();
+    void invalidStandardDeclaration_data();
+    void invalidStandardDeclaration();
     void invalidDeclaration();
+    void invalidRedeclaration();
     void removeIfUnused();
 
 private:
@@ -61,7 +63,7 @@ void tst_QAMQPExchange::standardTypes()
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 }
 
-void tst_QAMQPExchange::invalidDeclaration_data()
+void tst_QAMQPExchange::invalidStandardDeclaration_data()
 {
     QTest::addColumn<QString>("exchangeName");
     QTest::addColumn<Exchange::ExchangeType>("type");
@@ -76,7 +78,7 @@ void tst_QAMQPExchange::invalidDeclaration_data()
     QTest::newRow("amq.reserved") << "amq.reserved" << Exchange::Direct << QAMQP::AccessRefusedError;
 }
 
-void tst_QAMQPExchange::invalidDeclaration()
+void tst_QAMQPExchange::invalidStandardDeclaration()
 {
     QFETCH(QString, exchangeName);
     QFETCH(Exchange::ExchangeType, type);
@@ -86,6 +88,34 @@ void tst_QAMQPExchange::invalidDeclaration()
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(exchange->error(), error);
+}
+
+void tst_QAMQPExchange::invalidDeclaration()
+{
+    Exchange *exchange = client->createExchange("test-invalid-declaration");
+    exchange->declare("invalidExchangeType");
+    QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(client->error(), QAMQP::CommandInvalidError);
+}
+
+void tst_QAMQPExchange::invalidRedeclaration()
+{
+    Exchange *exchange = client->createExchange("test-invalid-redeclaration");
+    exchange->declare(Exchange::Direct);
+    QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
+
+    Exchange *redeclared = client->createExchange("test-invalid-redeclaration");
+    redeclared->declare(Exchange::FanOut);
+    QVERIFY(waitForSignal(redeclared, SIGNAL(error(QAMQP::Error))));
+
+    // this is per spec:
+    // QCOMPARE(redeclared->error(), QAMQP::NotAllowedError);
+    // this is for rabbitmq:
+    QCOMPARE(redeclared->error(), QAMQP::PreconditionFailedError);
+
+    // cleanup
+    exchange->remove();
+    QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 }
 
 void tst_QAMQPExchange::removeIfUnused()

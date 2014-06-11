@@ -91,7 +91,7 @@ public:
 Q_SIGNALS:
     void connected();
     void disconnected();
-    void error(Error error);
+    void error(QAMQP::Error error);
 
 protected:
     Client(ClientPrivate *dd, QObject *parent = 0);
