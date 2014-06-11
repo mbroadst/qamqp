@@ -18,11 +18,13 @@ private Q_SLOTS:
     void defaultExchange();
     void standardExchanges_data();
     void standardExchanges();
-
+    void invalidDeclaration_data();
+    void invalidDeclaration();
+    void invalidBind();
     void unnamed();
     void exclusiveAccess();
     void exclusiveRemoval();
-
+    void notFound();
     void remove();
     void removeIfUnused();
     void removeIfEmpty();
@@ -95,6 +97,42 @@ void tst_QAMQPQueue::standardExchanges()
     QCOMPARE(queue->dequeue().payload(), QByteArray("test message"));
 }
 
+void tst_QAMQPQueue::invalidDeclaration_data()
+{
+    QTest::addColumn<QString>("queueName");
+    QTest::addColumn<QAMQP::Error>("error");
+
+    QTest::newRow("amq.direct") << "amq.direct" <<  QAMQP::AccessRefusedError;
+    QTest::newRow("amq.fanout") << "amq.fanout" << QAMQP::AccessRefusedError;
+    QTest::newRow("amq.headers") << "amq.headers" << QAMQP::AccessRefusedError;
+    QTest::newRow("amq.match") << "amq.match" << QAMQP::AccessRefusedError;
+    QTest::newRow("amq.topic") << "amq.topic" << QAMQP::AccessRefusedError;
+    QTest::newRow("amq.reserved") << "amq.reserved" << QAMQP::AccessRefusedError;
+}
+
+void tst_QAMQPQueue::invalidDeclaration()
+{
+    QFETCH(QString, queueName);
+    QFETCH(QAMQP::Error, error);
+
+    Queue *queue = client->createQueue(queueName);
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(queue->error(), error);
+}
+
+void tst_QAMQPQueue::invalidBind()
+{
+    Queue *queue = client->createQueue("test-invalid-bind");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->consume();   // for autodelete
+
+    queue->bind("non-existant-exchange", "routingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(queue->error(), QAMQP::NotFoundError);
+}
+
 void tst_QAMQPQueue::unnamed()
 {
     Queue *queue = client->createQueue();
@@ -142,6 +180,14 @@ void tst_QAMQPQueue::exclusiveRemoval()
     QCOMPARE(passiveQueue->error(), QAMQP::NotFoundError);
     secondClient.disconnectFromHost();
     QVERIFY(waitForSignal(&secondClient, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPQueue::notFound()
+{
+    Queue *queue = client->createQueue("test-not-found");
+    queue->declare(Queue::Passive);
+    QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(queue->error(), QAMQP::NotFoundError);
 }
 
 void tst_QAMQPQueue::remove()
