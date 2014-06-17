@@ -174,19 +174,19 @@ void Exchange::remove(int options)
     d->sendFrame(frame);
 }
 
-void Exchange::publish(const QString &key, const QString &message,
+void Exchange::publish(const QString &message, const QString &routingKey,
                        const MessageProperties &properties)
 {
-    publish(key, message.toUtf8(), QLatin1String("text.plain"), QVariantHash(), properties);
+    publish(message.toUtf8(), routingKey, QLatin1String("text.plain"), QVariantHash(), properties);
 }
 
-void Exchange::publish(const QString &key, const QByteArray &message,
+void Exchange::publish(const QByteArray &message, const QString &routingKey,
                        const QString &mimeType, const MessageProperties &properties)
 {
-    publish(key, message, mimeType, QVariantHash(), properties);
+    publish(message, routingKey, mimeType, QVariantHash(), properties);
 }
 
-void Exchange::publish(const QString &key, const QByteArray &message,
+void Exchange::publish(const QByteArray &message, const QString &routingKey,
                        const QString &mimeType, const QVariantHash &headers,
                        const MessageProperties &properties)
 {
@@ -199,7 +199,7 @@ void Exchange::publish(const QString &key, const QByteArray &message,
 
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, key);
+    Frame::writeField('s', out, routingKey);
     out << qint8(0);
 
     frame.setArguments(arguments);

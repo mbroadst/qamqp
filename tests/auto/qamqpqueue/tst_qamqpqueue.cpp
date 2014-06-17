@@ -59,7 +59,7 @@ void tst_QAMQPQueue::defaultExchange()
     queue->consume();
 
     Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("test-default-exchange", "first message");
+    defaultExchange->publish("first message", "test-default-exchange");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     Message message = queue->dequeue();
     QCOMPARE(message.payload(), QByteArray("first message"));
@@ -92,7 +92,7 @@ void tst_QAMQPQueue::standardExchanges()
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
 
     Exchange *defaultExchange = client->createExchange(exchange);
-    defaultExchange->publish(routingKey, "test message");
+    defaultExchange->publish("test message", routingKey);
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     QCOMPARE(queue->dequeue().payload(), QByteArray("test message"));
 }
@@ -219,7 +219,7 @@ void tst_QAMQPQueue::removeIfEmpty()
     queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("test-remove-if-empty", "first message");
+    defaultExchange->publish("first message", "test-remove-if-empty");
 
     // create a second client and try to delete the queue
     {
@@ -264,9 +264,9 @@ void tst_QAMQPQueue::purge()
     queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("test-purge", "first message");
-    defaultExchange->publish("test-purge", "second message");
-    defaultExchange->publish("test-purge", "third message");
+    defaultExchange->publish("first message", "test-purge");
+    defaultExchange->publish("second message", "test-purge");
+    defaultExchange->publish("third message", "test-purge");
 
     // create second client to listen to messages and attempt purge
     {

@@ -56,11 +56,11 @@ public:
     void remove(int options = roIfUnused|roNoWait);
 
     // AMQP Basic
-    void publish(const QString &key, const QString &message,
+    void publish(const QString &message, const QString &routingKey,
                  const MessageProperties &properties = MessageProperties());
-    void publish(const QString &key, const QByteArray &message,
+    void publish(const QByteArray &message, const QString &routingKey,
                  const QString &mimeType, const MessageProperties &properties = MessageProperties());
-    void publish(const QString &key, const QByteArray &message,
+    void publish(const QByteArray &message, const QString &routingKey,
                  const QString &mimeType, const QVariantHash &headers,
                  const MessageProperties &properties = MessageProperties());
 
