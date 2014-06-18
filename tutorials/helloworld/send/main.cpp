@@ -16,6 +16,7 @@ public:
 public Q_SLOTS:
     void start() {
         connect(&m_client, SIGNAL(connected()), this, SLOT(clientConnected()));
+        connect(&m_client, SIGNAL(disconnected()), qApp, SLOT(quit()));
         m_client.connectToHost();
     }
 
@@ -33,7 +34,7 @@ private Q_SLOTS:
         Exchange *defaultExchange = m_client.createExchange();
         defaultExchange->publish("Hello World!", "hello");
         qDebug() << " [x] Sent 'Hello World!'";
-        QTimer::singleShot(25, qApp, SLOT(quit()));
+        m_client.disconnectFromHost();
     }
 
 private:
