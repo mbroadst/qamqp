@@ -1,4 +1,5 @@
 TEMPLATE = subdirs
 SUBDIRS += src \
-           tests
+           tests \
+           tutorials
 CONFIG += ordered

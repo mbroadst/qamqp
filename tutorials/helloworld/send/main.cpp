@@ -1,0 +1,52 @@
+#include <QCoreApplication>
+#include <QTimer>
+#include <QDebug>
+
+#include "amqp_client.h"
+#include "amqp_exchange.h"
+#include "amqp_queue.h"
+using namespace QAMQP;
+
+class Sender : public QObject
+{
+    Q_OBJECT
+public:
+    Sender(QObject *parent = 0) : QObject(parent) {}
+
+public Q_SLOTS:
+    void start() {
+        connect(&m_client, SIGNAL(connected()), this, SLOT(clientConnected()));
+        m_client.connectToHost();
+    }
+
+private Q_SLOTS:
+    void clientConnected() {
+        Queue *queue = m_client.createQueue("hello");
+        connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
+        queue->declare();
+    }
+
+    void queueDeclared() {
+        Queue *queue = qobject_cast<Queue*>(sender());
+        if (!queue)
+            return;
+        Exchange *defaultExchange = m_client.createExchange();
+        defaultExchange->publish("Hello World!", "hello");
+        qDebug() << " [x] Sent 'Hello World!'";
+        QTimer::singleShot(25, qApp, SLOT(quit()));
+    }
+
+private:
+    Client m_client;
+
+};
+
+int main(int argc, char **argv)
+{
+    QCoreApplication app(argc, argv);
+    Sender sender;
+    sender.start();
+    return app.exec();
+}
+
+#include "main.moc"
