@@ -2,6 +2,8 @@
 #define amqp_queue_p_h__
 
 #include <QQueue>
+#include <QStringList>
+
 #include "amqp_channel_p.h"
 
 namespace QAMQP
@@ -43,9 +45,11 @@ public:
     bool delayedDeclare;
     bool declared;
     bool noAck;
-    QString consumerTag;
+    QString explicitConsumerTag;
+    QStringList consumerTags;
     QQueue<QPair<QString, QString> > delayedBindings;
     bool recievingMessage;
+    Message currentMessage;
 
     Q_DECLARE_PUBLIC(Queue)
 
