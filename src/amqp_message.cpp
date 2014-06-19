@@ -30,6 +30,13 @@ Message &Message::operator=(const Message &other)
     return *this;
 }
 
+bool Message::isValid() const
+{
+    return d->deliveryTag != 0 &&
+           !d->exchangeName.isNull() &&
+           !d->routingKey.isNull();
+}
+
 qlonglong Message::deliveryTag() const
 {
     return d->deliveryTag;

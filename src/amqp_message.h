@@ -3,7 +3,7 @@
 
 #include <QByteArray>
 #include <QHash>
-#include <QExplicitlySharedDataPointer>
+#include <QSharedDataPointer>
 
 #include "amqp_frame.h"
 #include "amqp_global.h"
@@ -20,6 +20,8 @@ public:
     Message &operator=(const Message &other);
     ~Message();
 
+    bool isValid() const;
+
     qlonglong deliveryTag() const;
     bool redelivered() const;
     QString exchangeName() const;
@@ -29,7 +31,7 @@ public:
     Frame::TableField headers() const;
 
 private:
-    QExplicitlySharedDataPointer<MessagePrivate> d;
+    QSharedDataPointer<MessagePrivate> d;
     friend class QueuePrivate;
     friend class Queue;
 
