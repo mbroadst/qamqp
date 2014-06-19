@@ -82,7 +82,8 @@ namespace Frame
 
     /*
      * @brief Definition implementation of TableField type
-     * @detailed Define implementation TableField type in builtin Qt types. Key contains field name, value contains field data.
+     * @detailed Define implementation TableField type in builtin Qt types.
+     * Key contains field name, value contains field data.
      * It can by any type witch support serialization in AMQP types.
      */
     typedef QHash<QString, QVariant> TableField;
@@ -257,22 +258,22 @@ namespace Frame
      *     short     short   long long       short          remainder...
      * @endcode
      *
-     * | Property | Description |
-     * | ---------- | ----------- |
-     * | cpContentType | MIME content type |
-     * | cpContentEncoding | MIME content encoding |
-     * | cpHeaders | message header field table |
-     * | cpDeliveryMode| nonpersistent (1) or persistent (2) |
-     * | cpPriority | message priority, 0 to 9 |
-     * | cpCorrelationId | application correlation identifier |
-     * | cpReplyTo | address to reply to |
-     * | cpExpiration | message expiration specification |
-     * | cpMessageId | application message identifier |
-     * | cpTimestamp | message timestamp |
-     * | cpType | message type name |
-     * | cpUserId | creating user id |
-     * | cpAppId | creating application id |
-     * | cpClusterID| cluster ID |
+     * | Property           | Description                            |
+     * | ------------------ | -------------------------------------- |
+     * | cpContentType      | MIME content type                      |
+     * | cpContentEncoding  | MIME content encoding                  |
+     * | cpHeaders          | message header field table             |
+     * | cpDeliveryMode     | nonpersistent (1) or persistent (2)    |
+     * | cpPriority         | message priority, 0 to 9               |
+     * | cpCorrelationId    | application correlation identifier     |
+     * | cpReplyTo          | address to reply to                    |
+     * | cpExpiration       | message expiration specification       |
+     * | cpMessageId        | application message identifier         |
+     * | cpTimestamp        | message timestamp                      |
+     * | cpType             | message type name                      |
+     * | cpUserId           | creating user id                       |
+     * | cpAppId            | creating application id                |
+     * | cpClusterID        | cluster ID                             |
      *
      * Default property:
      * @sa setProperty

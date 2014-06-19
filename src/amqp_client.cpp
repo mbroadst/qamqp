@@ -170,9 +170,7 @@ void ClientPrivate::_q_readyRead()
             const quint8 type = *(quint8*)&bufferData[0];
             const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
             if (magic != Frame::FRAME_END) {
-                qAmqpDebug() << Q_FUNC_INFO << "FATAL: wrong end of frame";
-                buffer.clear();
-                socket->close();
+                close(UnexpectedFrameError, "wrong end of frame");
                 return;
             }
 
@@ -200,6 +198,9 @@ void ClientPrivate::_q_readyRead()
                 if (frame.size() > frameMax) {
                     close(FrameError, "frame size too large");
                     return;
+                } else if (frame.channel() <= 0) {
+                    close(ChannelError, "channel number must be greater than zero");
+                    return;
                 }
 
                 foreach (Frame::ContentHandler *methodHandler, contentHandlerByChannel[frame.channel()])
@@ -212,6 +213,9 @@ void ClientPrivate::_q_readyRead()
                 if (frame.size() > frameMax) {
                     close(FrameError, "frame size too large");
                     return;
+                } else if (frame.channel() <= 0) {
+                    close(ChannelError, "channel number must be greater than zero");
+                    return;
                 }
 
                 foreach (Frame::ContentBodyHandler *methodHandler, bodyHandlersByChannel[frame.channel()])
@@ -219,10 +223,20 @@ void ClientPrivate::_q_readyRead()
             }
                 break;
             case Frame::ftHeartbeat:
+            {
+                Frame::Method frame(streamB);
+                if (frame.channel() != 0) {
+                    close(FrameError, "heartbeat must have channel id zero");
+                    return;
+                }
+
                 qAmqpDebug("AMQP: Heartbeat");
+            }
                 break;
             default:
                 qAmqpDebug() << "AMQP: Unknown frame type: " << type;
+                close(FrameError, "invalid frame type");
+                return;
             }
         } else {
             break;
