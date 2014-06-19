@@ -7,11 +7,11 @@
 #include "amqp_queue.h"
 using namespace QAMQP;
 
-class LogReceiver : public QObject
+class DirectLogReceiver : public QObject
 {
     Q_OBJECT
 public:
-    LogReceiver(QObject *parent = 0) : QObject(parent) {}
+    DirectLogReceiver(QObject *parent = 0) : QObject(parent) {}
 
 public Q_SLOTS:
     void start(const QStringList &severities) {
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    LogReceiver logReceiver;
+    DirectLogReceiver logReceiver;
     logReceiver.start(severities);
     return app.exec();
 }

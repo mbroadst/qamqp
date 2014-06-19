@@ -22,14 +22,14 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Exchange *exchange = m_client.createExchange("direct_logs");
-        connect(exchange, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
-        exchange->declare(Exchange::Direct);
+        Exchange *direct_logs = m_client.createExchange("direct_logs");
+        connect(direct_logs, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
+        direct_logs->declare(Exchange::Direct);
     }
 
     void exchangeDeclared() {
-        Exchange *exchange = qobject_cast<Exchange*>(sender());
-        if (!exchange)
+        Exchange *direct_logs = qobject_cast<Exchange*>(sender());
+        if (!direct_logs)
             return;
 
         QStringList args = qApp->arguments();
@@ -44,7 +44,7 @@ private Q_SLOTS:
             message = "Hello World!";
         }
 
-        exchange->publish(message, severity);
+        direct_logs->publish(message, severity);
         qDebug(" [x] Sent %s:%s", severity.toLatin1().constData(), message.toLatin1().constData());
         m_client.disconnectFromHost();
     }
