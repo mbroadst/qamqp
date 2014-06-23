@@ -23,6 +23,7 @@ private Q_SLOTS:
     void invalidRedeclaration();
     void removeIfUnused();
     void invalidMandatoryRouting();
+    void invalidImmediateRouting();
 
 private:
     QScopedPointer<Client> client;
@@ -147,6 +148,14 @@ void tst_QAMQPExchange::invalidMandatoryRouting()
     defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poMandatory);
     QVERIFY(waitForSignal(defaultExchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(defaultExchange->error(), QAMQP::UnroutableKey);
+}
+
+void tst_QAMQPExchange::invalidImmediateRouting()
+{
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poImmediate);
+    QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(client->error(), QAMQP::NotImplementedError);
 }
 
 QTEST_MAIN(tst_QAMQPExchange)
