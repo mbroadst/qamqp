@@ -26,9 +26,16 @@ public:
     };
     QString type() const;
 
+    enum PublishOption {
+        poNoOptions = 0x0,
+        poMandatory = 0x01,
+        poImmediate = 0x02
+    };
+    Q_DECLARE_FLAGS(PublishOptions, PublishOption)
+
     enum RemoveOption {
         roForce = 0x0,
-        roIfUnused = 0x1,
+        roIfUnused = 0x01,
         roNoWait = 0x04
     };
     Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
@@ -37,8 +44,8 @@ public:
         NoOptions = 0x0,
         Passive = 0x01,
         Durable = 0x02,
-        AutoDelete = 0x4,
-        Internal = 0x8,
+        AutoDelete = 0x04,
+        Internal = 0x08,
         NoWait = 0x10
     };
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
@@ -57,12 +64,15 @@ public:
 
     // AMQP Basic
     void publish(const QString &message, const QString &routingKey,
-                 const MessageProperties &properties = MessageProperties());
+                 const MessageProperties &properties = MessageProperties(),
+                 int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey,
-                 const QString &mimeType, const MessageProperties &properties = MessageProperties());
+                 const QString &mimeType, const MessageProperties &properties = MessageProperties(),
+                 int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey,
                  const QString &mimeType, const QVariantHash &headers,
-                 const MessageProperties &properties = MessageProperties());
+                 const MessageProperties &properties = MessageProperties(),
+                 int publishOptions = poNoOptions);
 
 Q_SIGNALS:
     void declared();

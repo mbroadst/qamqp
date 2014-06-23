@@ -25,6 +25,7 @@ public:
     virtual bool _q_method(const Frame::Method &frame);
     void declareOk(const Frame::Method &frame);
     void deleteOk(const Frame::Method &frame);
+    void basicReturn(const Frame::Method &frame);
 
     QString type;
     Exchange::ExchangeOptions options;

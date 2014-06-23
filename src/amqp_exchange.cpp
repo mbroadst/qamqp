@@ -64,19 +64,37 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
     if (ChannelPrivate::_q_method(frame))
         return true;
 
-    if (frame.methodClass() != Frame::fcExchange)
-        return false;
+    if (frame.methodClass() == Frame::fcExchange) {
+        switch (frame.id()) {
+        case miDeclareOk:
+            declareOk(frame);
+            break;
 
-    switch(frame.id()) {
-    case miDeclareOk:
-        declareOk(frame);
-        break;
-    case miDeleteOk:
-        deleteOk(frame);
-        break;
+        case miDeleteOk:
+            deleteOk(frame);
+            break;
+
+        default:
+            qDebug() << Q_FUNC_INFO << "unhandled exchange method: " << frame.id();
+            break;
+        }
+
+        return true;
+    } else if (frame.methodClass() == Frame::fcBasic) {
+        switch (frame.id()) {
+        case bmReturn:
+            basicReturn(frame);
+            break;
+
+        default:
+            qDebug() << Q_FUNC_INFO << "unhandled basic method: " << frame.id();
+            break;
+        }
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 void ExchangePrivate::declareOk(const Frame::Method &frame)
@@ -105,6 +123,31 @@ void ExchangePrivate::_q_disconnected()
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
     declared = false;
+}
+
+void ExchangePrivate::basicReturn(const Frame::Method &frame)
+{
+    Q_Q(Exchange);
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+
+    quint16 replyCode;
+    stream >> replyCode;
+    QString replyText = Frame::readField('s', stream).toString();
+    QString exchangeName = Frame::readField('s', stream).toString();
+    QString routingKey = Frame::readField('s', stream).toString();
+
+    Error checkError = static_cast<Error>(replyCode);
+    if (checkError != QAMQP::NoError) {
+        error = checkError;
+        errorString = qPrintable(replyText);
+        Q_EMIT q->error(error);
+    }
+
+    qAmqpDebug(">> replyCode: %d", replyCode);
+    qAmqpDebug(">> replyText: %s", qPrintable(replyText));
+    qAmqpDebug(">> exchangeName: %s", qPrintable(exchangeName));
+    qAmqpDebug(">> routingKey: %s", qPrintable(routingKey));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -175,20 +218,22 @@ void Exchange::remove(int options)
 }
 
 void Exchange::publish(const QString &message, const QString &routingKey,
-                       const MessageProperties &properties)
+                       const MessageProperties &properties, int publishOptions)
 {
-    publish(message.toUtf8(), routingKey, QLatin1String("text.plain"), QVariantHash(), properties);
+    publish(message.toUtf8(), routingKey, QLatin1String("text.plain"),
+            QVariantHash(), properties, publishOptions);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &routingKey,
-                       const QString &mimeType, const MessageProperties &properties)
+                       const QString &mimeType, const MessageProperties &properties,
+                       int publishOptions)
 {
-    publish(message, routingKey, mimeType, QVariantHash(), properties);
+    publish(message, routingKey, mimeType, QVariantHash(), properties, publishOptions);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &routingKey,
                        const QString &mimeType, const QVariantHash &headers,
-                       const MessageProperties &properties)
+                       const MessageProperties &properties, int publishOptions)
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
@@ -200,7 +245,7 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
     Frame::writeField('s', out, routingKey);
-    out << qint8(0);
+    out << qint8(publishOptions);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

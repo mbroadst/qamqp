@@ -22,6 +22,7 @@ private Q_SLOTS:
     void invalidDeclaration();
     void invalidRedeclaration();
     void removeIfUnused();
+    void invalidMandatoryRouting();
 
 private:
     QScopedPointer<Client> client;
@@ -138,6 +139,14 @@ void tst_QAMQPExchange::removeIfUnused()
     // cleanup
     queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
+}
+
+void tst_QAMQPExchange::invalidMandatoryRouting()
+{
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poMandatory);
+    QVERIFY(waitForSignal(defaultExchange, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(defaultExchange->error(), QAMQP::UnroutableKey);
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

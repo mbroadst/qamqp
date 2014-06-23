@@ -30,24 +30,24 @@ public:
         NoOptions = 0x0,
         Passive = 0x01,
         Durable = 0x02,
-        Exclusive = 0x4,
-        AutoDelete = 0x8,
+        Exclusive = 0x04,
+        AutoDelete = 0x08,
         NoWait = 0x10
     };
     Q_DECLARE_FLAGS(QueueOptions, QueueOption)
     int options() const;
 
     enum ConsumeOption {
-        coNoLocal = 0x1,
+        coNoLocal = 0x01,
         coNoAck = 0x02,
         coExclusive = 0x04,
-        coNoWait = 0x8
+        coNoWait = 0x08
     };
     Q_DECLARE_FLAGS(ConsumeOptions, ConsumeOption)
 
     enum RemoveOption {
         roForce = 0x0,
-        roIfUnused = 0x1,
+        roIfUnused = 0x01,
         roIfEmpty = 0x02,
         roNoWait = 0x04
     };
