@@ -76,6 +76,7 @@ public:
     bool consume(int options = NoOptions);
     void get();
     void ack(const Message &message);
+    bool cancel(bool noWait = false);
 
 Q_SIGNALS:
     void declared();
@@ -86,6 +87,7 @@ Q_SIGNALS:
     void empty();
     void purged(int messageCount);
     void consuming(const QString &consumerTag);
+    void cancelled(const QString &consumerTag);
 
 protected:
     // reimp Channel

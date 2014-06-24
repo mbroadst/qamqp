@@ -66,6 +66,9 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
         case bmGetEmpty:
             Q_EMIT q->empty();
             break;
+        case bmCancelOk:
+            cancelOk(frame);
+            break;
         }
 
         return true;
@@ -240,6 +243,21 @@ void QueuePrivate::declare()
         delayedDeclare = false;
 }
 
+void QueuePrivate::cancelOk(const Frame::Method &frame)
+{
+    Q_Q(Queue);
+    qAmqpDebug() << Q_FUNC_INFO;
+    QByteArray data = frame.arguments();
+    QDataStream in(&data, QIODevice::ReadOnly);
+    QString consumer = Frame::readField('s',in).toString();
+    if (consumerTag != consumer) {
+        qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer;
+        return;
+    }
+
+    consumerTag.clear();
+    Q_EMIT q->cancelled(consumer);
+}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -505,4 +523,31 @@ void Queue::ack(const Message &message)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
+}
+
+bool Queue::cancel(bool noWait)
+{
+    Q_D(Queue);
+    if (!d->consuming) {
+        qAmqpDebug() << Q_FUNC_INFO << "not consuming!";
+        return false;
+    }
+
+    if (d->consumerTag.isEmpty()) {
+        qAmqpDebug() << Q_FUNC_INFO << "consuming with an empty consumer tag, failing...";
+        return false;
+    }
+
+    Frame::Method frame(Frame::fcBasic, QueuePrivate::bmCancel);
+    frame.setChannel(d->channelNumber);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    Frame::writeField('s', out, d->consumerTag);
+    out << (noWait ? qint8(0x01) : qint8(0x0));
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+    return true;
 }

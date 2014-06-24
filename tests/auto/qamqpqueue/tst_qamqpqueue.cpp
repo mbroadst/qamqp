@@ -31,6 +31,9 @@ private Q_SLOTS:
     void unbind();
     void purge();
     void canOnlyStartConsumingOnce();
+    void cancel();
+    void invalidCancelBecauseNotConsuming();
+    void invalidCancelBecauseInvalidConsumerTag();
 
 private:
     QScopedPointer<Client> client;
@@ -310,9 +313,56 @@ void tst_QAMQPQueue::canOnlyStartConsumingOnce()
     QSignalSpy spy(queue, SIGNAL(consuming(QString)));
     QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
     QVERIFY(queue->isConsuming());
+    QVERIFY(!spy.isEmpty());
     QList<QVariant> arguments = spy.takeFirst();
     QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
     QCOMPARE(queue->consume(), false);
+}
+
+void tst_QAMQPQueue::cancel()
+{
+    Queue *queue = client->createQueue("test-cancel");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->consume());
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    QVERIFY(queue->isConsuming());
+    QVERIFY(!spy.isEmpty());
+    QList<QVariant> arguments = spy.takeFirst();
+    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+
+    QString consumerTag = queue->consumerTag();
+    QSignalSpy cancelSpy(queue, SIGNAL(cancelled(QString)));
+    QVERIFY(queue->cancel());
+    QVERIFY(waitForSignal(queue, SIGNAL(cancelled(QString))));
+    QVERIFY(!cancelSpy.isEmpty());
+    arguments = cancelSpy.takeFirst();
+    QCOMPARE(arguments.at(0).toString(), consumerTag);
+}
+
+void tst_QAMQPQueue::invalidCancelBecauseNotConsuming()
+{
+    Queue *queue = client->createQueue("test-invalid-cancel-because-not-consuming");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QCOMPARE(queue->cancel(), false);
+}
+
+void tst_QAMQPQueue::invalidCancelBecauseInvalidConsumerTag()
+{
+    Queue *queue = client->createQueue("test-invalid-cancel-because-invalid-consumer-tag");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->consume());
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    QVERIFY(queue->isConsuming());
+    QVERIFY(!spy.isEmpty());
+    QList<QVariant> arguments = spy.takeFirst();
+    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+    queue->setConsumerTag(QString());
+    QCOMPARE(queue->cancel(), false);
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

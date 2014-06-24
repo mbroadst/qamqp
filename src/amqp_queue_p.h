@@ -26,19 +26,22 @@ public:
     ~QueuePrivate();
 
     void declare();
-
-    // method handler related
     virtual bool _q_method(const Frame::Method &frame);
-    virtual void _q_content(const Frame::Content &frame);
-    virtual void _q_body(const Frame::ContentBody &frame);
+
+    // AMQP Queue method handlers
     void declareOk(const Frame::Method &frame);
     void deleteOk(const Frame::Method &frame);
     void purgeOk(const Frame::Method &frame);
     void bindOk(const Frame::Method &frame);
     void unbindOk(const Frame::Method &frame);
-    void getOk(const Frame::Method &frame);
     void consumeOk(const Frame::Method &frame);
+
+    // AMQP Basic method handlers
+    virtual void _q_content(const Frame::Content &frame);
+    virtual void _q_body(const Frame::ContentBody &frame);
     void deliver(const Frame::Method &frame);
+    void getOk(const Frame::Method &frame);
+    void cancelOk(const Frame::Method &frame);
 
     QString type;
     int options;
