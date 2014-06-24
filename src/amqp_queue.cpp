@@ -15,7 +15,8 @@ QueuePrivate::QueuePrivate(Queue *q)
       delayedDeclare(false),
       declared(false),
       noAck(true),
-      recievingMessage(false)
+      recievingMessage(false),
+      consuming(false)
 {
 }
 
@@ -190,12 +191,14 @@ void QueuePrivate::getOk(const Frame::Method &frame)
 
 void QueuePrivate::consumeOk(const Frame::Method &frame)
 {
+    Q_Q(Queue);
     qAmqpDebug() << "consume ok: " << name;
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
-    QString consumerTag = Frame::readField('s',stream).toString();
+    consumerTag = Frame::readField('s',stream).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
-    consumerTags.append(consumerTag);
+    consuming = true;
+    Q_EMIT q->consuming(consumerTag);
 }
 
 void QueuePrivate::deliver(const Frame::Method &frame)
@@ -204,7 +207,7 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
     QString consumer = Frame::readField('s',in).toString();
-    if (!consumerTags.contains(consumer)) {
+    if (consumerTag != consumer) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer;
         return;
     }
@@ -411,12 +414,17 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
     d->sendFrame(frame);
 }
 
-void Queue::consume(int options)
+bool Queue::consume(int options)
 {
     Q_D(Queue);
     if (!d->opened) {
         qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
-        return;
+        return false;
+    }
+
+    if (d->consuming) {
+        qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
+        return false;
     }
 
     Frame::Method frame(Frame::fcBasic, QueuePrivate::bmConsume);
@@ -427,25 +435,32 @@ void Queue::consume(int options)
 
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, d->explicitConsumerTag);
+    Frame::writeField('s', out, d->consumerTag);
 
     out << qint8(options);
     Frame::writeField('F', out, Frame::TableField());
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
+    return true;
 }
 
 void Queue::setConsumerTag(const QString &consumerTag)
 {
     Q_D(Queue);
-    d->explicitConsumerTag = consumerTag;
+    d->consumerTag = consumerTag;
 }
 
 QString Queue::consumerTag() const
 {
     Q_D(const Queue);
-    return d->explicitConsumerTag;
+    return d->consumerTag;
+}
+
+bool Queue::isConsuming() const
+{
+    Q_D(const Queue);
+    return d->consuming;
 }
 
 void Queue::get()

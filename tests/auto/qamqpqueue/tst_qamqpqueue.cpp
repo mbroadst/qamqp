@@ -30,6 +30,7 @@ private Q_SLOTS:
     void removeIfEmpty();
     void unbind();
     void purge();
+    void canOnlyStartConsumingOnce();
 
 private:
     QScopedPointer<Client> client;
@@ -56,7 +57,8 @@ void tst_QAMQPQueue::defaultExchange()
     Queue *queue = client->createQueue("test-default-exchange");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();
+    QVERIFY(queue->consume());
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("first message", "test-default-exchange");
@@ -85,8 +87,9 @@ void tst_QAMQPQueue::standardExchanges()
     Queue *queue = client->createQueue(queueName);
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();   // required because AutoDelete will not delete if
-                        // there was never a consumer
+    QVERIFY(queue->consume());   // required because AutoDelete will not delete if
+                                 // there was never a consumer
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     queue->bind(exchange, routingKey);
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
@@ -126,7 +129,8 @@ void tst_QAMQPQueue::invalidBind()
     Queue *queue = client->createQueue("test-invalid-bind");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();   // for autodelete
+    QVERIFY(queue->consume());   // for autodelete
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     queue->bind("non-existant-exchange", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
@@ -138,7 +142,8 @@ void tst_QAMQPQueue::unnamed()
     Queue *queue = client->createQueue();
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();
+    QVERIFY(queue->consume());
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     QVERIFY(!queue->name().isEmpty());
 }
@@ -204,7 +209,8 @@ void tst_QAMQPQueue::removeIfUnused()
     Queue *queue = client->createQueue("test-remove-if-unused");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();
+    QVERIFY(queue->consume());
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     queue->remove(Queue::roIfUnused);
     QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
@@ -249,8 +255,9 @@ void tst_QAMQPQueue::unbind()
     Queue *queue = client->createQueue("test-unbind");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    queue->consume();   // required because AutoDelete will not delete if
-                        // there was never a consumer
+    QVERIFY(queue->consume());   // required because AutoDelete will not delete if
+                                 // there was never a consumer
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     queue->bind("amq.topic", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
@@ -292,6 +299,20 @@ void tst_QAMQPQueue::purge()
     // clean up queue
     queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
+}
+
+void tst_QAMQPQueue::canOnlyStartConsumingOnce()
+{
+    Queue *queue = client->createQueue("test-single-consumer");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->consume());
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    QVERIFY(queue->isConsuming());
+    QList<QVariant> arguments = spy.takeFirst();
+    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+    QCOMPARE(queue->consume(), false);
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

@@ -45,11 +45,11 @@ public:
     bool delayedDeclare;
     bool declared;
     bool noAck;
-    QString explicitConsumerTag;
-    QStringList consumerTags;
+    QString consumerTag;
     QQueue<QPair<QString, QString> > delayedBindings;
     bool recievingMessage;
     Message currentMessage;
+    bool consuming;
 
     Q_DECLARE_PUBLIC(Queue)
 

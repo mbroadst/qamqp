@@ -30,7 +30,6 @@ private Q_SLOTS:
     void exchangeDeclared() {
         Queue *temporaryQueue = m_client.createQueue();
         connect(temporaryQueue, SIGNAL(declared()), this, SLOT(queueDeclared()));
-        connect(temporaryQueue, SIGNAL(bound()), this, SLOT(queueBound()));
         connect(temporaryQueue, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
         temporaryQueue->declare(Queue::Exclusive);
     }
@@ -40,16 +39,12 @@ private Q_SLOTS:
         if (!temporaryQueue)
             return;
 
+        // start consuming
+        temporaryQueue->consume(Queue::coNoAck);
+
         foreach (QString severity, m_severities)
             temporaryQueue->bind("direct_logs", severity);
         qDebug() << " [*] Waiting for logs. To exit press CTRL+C";
-    }
-
-    void queueBound() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
-        if (!temporaryQueue)
-            return;
-        temporaryQueue->consume(Queue::coNoAck);
     }
 
     void messageReceived() {

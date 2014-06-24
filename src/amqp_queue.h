@@ -55,6 +55,8 @@ public:
 
     ~Queue();
 
+    bool isConsuming() const;
+
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
 
@@ -71,7 +73,7 @@ public:
     void remove(int options = roIfUnused|roIfEmpty|roNoWait);
 
     // AMQP Basic
-    void consume(int options = NoOptions);
+    bool consume(int options = NoOptions);
     void get();
     void ack(const Message &message);
 
@@ -83,6 +85,7 @@ Q_SIGNALS:
     void messageReceived();
     void empty();
     void purged(int messageCount);
+    void consuming(const QString &consumerTag);
 
 protected:
     // reimp Channel
