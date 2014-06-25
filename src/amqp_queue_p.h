@@ -47,9 +47,9 @@ public:
     int options;
     bool delayedDeclare;
     bool declared;
-    bool noAck;
-    QString consumerTag;
     QQueue<QPair<QString, QString> > delayedBindings;
+
+    QString consumerTag;
     bool recievingMessage;
     Message currentMessage;
     bool consuming;

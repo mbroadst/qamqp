@@ -20,7 +20,6 @@ class QAMQP_EXPORT Queue : public Channel, public QQueue<Message>
     Q_ENUMS(QueueOptions)
     Q_PROPERTY(int options READ options CONSTANT)
     Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
-    Q_PROPERTY(bool noAck READ noAck WRITE setNoAck)
     Q_ENUMS(QueueOption)
     Q_ENUMS(ConsumeOption)
     Q_ENUMS(RemoveOption)
@@ -56,12 +55,8 @@ public:
     ~Queue();
 
     bool isConsuming() const;
-
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
-
-    void setNoAck(bool noAck);
-    bool noAck() const;
 
     // AMQP Queue
     void declare(int options = Durable|AutoDelete);
@@ -74,7 +69,7 @@ public:
 
     // AMQP Basic
     bool consume(int options = NoOptions);
-    void get();
+    void get(bool noAck = true);
     void ack(const Message &message);
     bool cancel(bool noWait = false);
 
@@ -83,9 +78,10 @@ Q_SIGNALS:
     void bound();
     void unbound();
     void removed();
+    void purged(int messageCount);
+
     void messageReceived();
     void empty();
-    void purged(int messageCount);
     void consuming(const QString &consumerTag);
     void cancelled(const QString &consumerTag);
 

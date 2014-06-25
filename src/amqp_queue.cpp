@@ -14,7 +14,6 @@ QueuePrivate::QueuePrivate(Queue *q)
     : ChannelPrivate(q),
       delayedDeclare(false),
       declared(false),
-      noAck(true),
       recievingMessage(false),
       consuming(false)
 {
@@ -296,18 +295,6 @@ int Queue::options() const
     return d->options;
 }
 
-void Queue::setNoAck(bool noAck)
-{
-    Q_D(Queue);
-    d->noAck = noAck;
-}
-
-bool Queue::noAck() const
-{
-    Q_D(const Queue);
-    return d->noAck;
-}
-
 void Queue::declare(int options)
 {
     Q_D(Queue);
@@ -481,11 +468,11 @@ bool Queue::isConsuming() const
     return d->consuming;
 }
 
-void Queue::get()
+void Queue::get(bool noAck)
 {
     Q_D(Queue);
     if (!d->opened) {
-        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
 
@@ -498,7 +485,7 @@ void Queue::get()
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
 
-    out << qint8(d->noAck ? 1 : 0); // noAck
+    out << qint8(noAck ? 1 : 0); // noAck
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -508,7 +495,7 @@ void Queue::ack(const Message &message)
 {
     Q_D(Queue);
     if (!d->opened) {
-        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
+        qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
 
