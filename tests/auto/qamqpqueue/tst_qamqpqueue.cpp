@@ -34,11 +34,26 @@ private Q_SLOTS:
     void cancel();
     void invalidCancelBecauseNotConsuming();
     void invalidCancelBecauseInvalidConsumerTag();
+    void getEmpty();
 
 private:
+    void declareQueueAndVerifyConsuming(Queue *queue);
     QScopedPointer<Client> client;
 
 };
+
+void tst_QAMQPQueue::declareQueueAndVerifyConsuming(Queue *queue)
+{
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->consume());
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    QVERIFY(queue->isConsuming());
+    QVERIFY(!spy.isEmpty());
+    QList<QVariant> arguments = spy.takeFirst();
+    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+}
 
 void tst_QAMQPQueue::init()
 {
@@ -58,10 +73,7 @@ void tst_QAMQPQueue::cleanup()
 void tst_QAMQPQueue::defaultExchange()
 {
     Queue *queue = client->createQueue("test-default-exchange");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    declareQueueAndVerifyConsuming(queue);
 
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("first message", "test-default-exchange");
@@ -88,11 +100,7 @@ void tst_QAMQPQueue::standardExchanges()
     QString routingKey = QString("testRoutingKey-%1").arg(exchange);
 
     Queue *queue = client->createQueue(queueName);
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());   // required because AutoDelete will not delete if
-                                 // there was never a consumer
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    declareQueueAndVerifyConsuming(queue);
 
     queue->bind(exchange, routingKey);
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
@@ -130,10 +138,7 @@ void tst_QAMQPQueue::invalidDeclaration()
 void tst_QAMQPQueue::invalidBind()
 {
     Queue *queue = client->createQueue("test-invalid-bind");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());   // for autodelete
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    declareQueueAndVerifyConsuming(queue);
 
     queue->bind("non-existant-exchange", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
@@ -143,11 +148,7 @@ void tst_QAMQPQueue::invalidBind()
 void tst_QAMQPQueue::unnamed()
 {
     Queue *queue = client->createQueue();
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-
+    declareQueueAndVerifyConsuming(queue);
     QVERIFY(!queue->name().isEmpty());
 }
 
@@ -210,10 +211,7 @@ void tst_QAMQPQueue::remove()
 void tst_QAMQPQueue::removeIfUnused()
 {
     Queue *queue = client->createQueue("test-remove-if-unused");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    declareQueueAndVerifyConsuming(queue);
 
     queue->remove(Queue::roIfUnused);
     QVERIFY(waitForSignal(queue, SIGNAL(error(QAMQP::Error))));
@@ -256,11 +254,7 @@ void tst_QAMQPQueue::removeIfEmpty()
 void tst_QAMQPQueue::unbind()
 {
     Queue *queue = client->createQueue("test-unbind");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());   // required because AutoDelete will not delete if
-                                 // there was never a consumer
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+    declareQueueAndVerifyConsuming(queue);
 
     queue->bind("amq.topic", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
@@ -307,37 +301,21 @@ void tst_QAMQPQueue::purge()
 void tst_QAMQPQueue::canOnlyStartConsumingOnce()
 {
     Queue *queue = client->createQueue("test-single-consumer");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-    QVERIFY(queue->isConsuming());
-    QVERIFY(!spy.isEmpty());
-    QList<QVariant> arguments = spy.takeFirst();
-    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+    declareQueueAndVerifyConsuming(queue);
     QCOMPARE(queue->consume(), false);
 }
 
 void tst_QAMQPQueue::cancel()
 {
     Queue *queue = client->createQueue("test-cancel");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-    QVERIFY(queue->isConsuming());
-    QVERIFY(!spy.isEmpty());
-    QList<QVariant> arguments = spy.takeFirst();
-    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+    declareQueueAndVerifyConsuming(queue);
 
     QString consumerTag = queue->consumerTag();
     QSignalSpy cancelSpy(queue, SIGNAL(cancelled(QString)));
     QVERIFY(queue->cancel());
     QVERIFY(waitForSignal(queue, SIGNAL(cancelled(QString))));
     QVERIFY(!cancelSpy.isEmpty());
-    arguments = cancelSpy.takeFirst();
+    QList<QVariant> arguments = cancelSpy.takeFirst();
     QCOMPARE(arguments.at(0).toString(), consumerTag);
 }
 
@@ -347,22 +325,27 @@ void tst_QAMQPQueue::invalidCancelBecauseNotConsuming()
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     QCOMPARE(queue->cancel(), false);
+
+    // clean up queue
+    queue->remove(Queue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPQueue::invalidCancelBecauseInvalidConsumerTag()
 {
     Queue *queue = client->createQueue("test-invalid-cancel-because-invalid-consumer-tag");
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-    QVERIFY(queue->isConsuming());
-    QVERIFY(!spy.isEmpty());
-    QList<QVariant> arguments = spy.takeFirst();
-    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+    declareQueueAndVerifyConsuming(queue);
     queue->setConsumerTag(QString());
     QCOMPARE(queue->cancel(), false);
+}
+
+void tst_QAMQPQueue::getEmpty()
+{
+    Queue *queue = client->createQueue("test-get-empty");
+    declareQueueAndVerifyConsuming(queue);
+
+    queue->get();
+    QVERIFY(waitForSignal(queue, SIGNAL(empty())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
