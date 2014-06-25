@@ -74,7 +74,11 @@ void ClientPrivate::parseConnectionString(const QUrl &connectionString)
     q->setUsername(connectionString.userName());
     q->setPort(connectionString.port(AMQP_PORT));
     q->setHost(connectionString.host());
-    q->setVirtualHost(connectionString.path());
+
+    QString vhost = connectionString.path();
+    if (vhost.startsWith("/"))
+        vhost = vhost.mid(1);
+    q->setVirtualHost(vhost);
 }
 
 void ClientPrivate::_q_connect()
