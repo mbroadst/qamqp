@@ -33,8 +33,7 @@ class QAMQP_EXPORT Client : public QObject
     Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay)
 
 public:
-    Client(QObject *parent = 0);
-    Client(const QUrl &connectionString, QObject *parent = 0);
+    explicit Client(QObject *parent = 0);
     ~Client();
 
     // properties
@@ -84,7 +83,7 @@ public:
     Queue *createQueue(const QString &name, int channelNumber = -1);
 
     // methods
-    void connectToHost(const QString &connectionString = QString());
+    void connectToHost(const QString &uri = QString());
     void connectToHost(const QHostAddress &address, quint16 port = AMQP_PORT);
     void disconnectFromHost();
 

@@ -35,9 +35,11 @@ public:
     ClientPrivate(Client *q);
     virtual ~ClientPrivate();
 
-    virtual void init(const QUrl &connectionString = QUrl());
+    virtual void init();
     virtual void initSocket();
-    void parseConnectionString(const QUrl &connectionString);
+    void setUsername(const QString &username);
+    void setPassword(const QString &password);
+    void parseConnectionString(const QString &uri);
     void sendFrame(const Frame::Base &frame);
 
     // private slots
@@ -69,7 +71,7 @@ public:
     void close(const Frame::Method &frame);
     void closeOk();
 
-    quint32 port;
+    quint16 port;
     QString host;
     QString virtualHost;
 

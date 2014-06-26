@@ -3,6 +3,7 @@
 
 #include <QProcess>
 #include "amqp_client.h"
+#include "amqp_client_p.h"
 #include "amqp_authenticator.h"
 
 using namespace QAMQP;
@@ -14,6 +15,9 @@ private Q_SLOTS:
     void connectDisconnect();
     void invalidAuthenticationMechanism();
     void tune();
+
+    void validateUri_data();
+    void validateUri();
 
 private:
     void autoReconnect();
@@ -83,6 +87,59 @@ void tst_QAMQPClient::tune()
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::validateUri_data()
+{
+    QTest::addColumn<QString>("uri");
+    QTest::addColumn<QString>("expectedUsername");
+    QTest::addColumn<QString>("expectedPassword");
+    QTest::addColumn<QString>("expectedHost");
+    QTest::addColumn<quint16>("expectedPort");
+    QTest::addColumn<QString>("expectedVirtualHost");
+
+    QTest::newRow("standard") << "amqp://user:pass@host:10000/vhost"
+        << "user" << "pass" << "host" << quint16(10000) << "vhost";
+#if QT_VERSION >= 0x040806
+    QTest::newRow("urlencoded") << "amqp://user%61:%61pass@ho%61st:10000/v%2fhost"
+        << "usera" << "apass" << "hoast" << quint16(10000) << "v/host";
+#endif
+    QTest::newRow("empty") << "amqp://" << "" << "" << "" << quint16(AMQP_PORT) << "";
+    QTest::newRow("empty2") << "amqp://:@/" << "" << "" << "" << quint16(AMQP_PORT) << "";
+    QTest::newRow("onlyuser") << "amqp://user@" << "user" << "" << "" << quint16(AMQP_PORT) << "";
+    QTest::newRow("userpass") << "amqp://user:pass@" << "user" << "pass" << "" << quint16(AMQP_PORT) << "";
+    QTest::newRow("onlyhost") << "amqp://host" << "" << "" << "host" << quint16(AMQP_PORT) << "";
+    QTest::newRow("onlyport") << "amqp://:10000" << "" << "" << "" << quint16(10000) << "";
+    QTest::newRow("onlyvhost") << "amqp:///vhost" << "" << "" << "" << quint16(AMQP_PORT) << "vhost";
+    QTest::newRow("urlencodedvhost") << "amqp://host/%2f"
+        << "" << "" << "host" << quint16(AMQP_PORT) << "/";
+    QTest::newRow("ipv6") << "amqp://[::1]" << "" << "" << "::1" << quint16(AMQP_PORT) << "";
+}
+
+void tst_QAMQPClient::validateUri()
+{
+    QFETCH(QString, uri);
+    QFETCH(QString, expectedUsername);
+    QFETCH(QString, expectedPassword);
+    QFETCH(QString, expectedHost);
+    QFETCH(quint16, expectedPort);
+    QFETCH(QString, expectedVirtualHost);
+
+    ClientPrivate clientPrivate(0);
+    // fake init
+    clientPrivate.authenticator = QSharedPointer<Authenticator>(
+        new AMQPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
+
+    // test parsing
+    clientPrivate.parseConnectionString(uri);
+    AMQPlainAuthenticator *auth =
+        static_cast<AMQPlainAuthenticator*>(clientPrivate.authenticator.data());
+
+    QCOMPARE(auth->login(), expectedUsername);
+    QCOMPARE(auth->password(), expectedPassword);
+    QCOMPARE(clientPrivate.host, expectedHost);
+    QCOMPARE(clientPrivate.port, expectedPort);
+    QCOMPARE(clientPrivate.virtualHost, expectedVirtualHost);
 }
 
 QTEST_MAIN(tst_QAMQPClient)

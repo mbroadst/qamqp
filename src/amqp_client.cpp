@@ -34,7 +34,7 @@ ClientPrivate::~ClientPrivate()
 {
 }
 
-void ClientPrivate::init(const QUrl &connectionString)
+void ClientPrivate::init()
 {
     Q_Q(Client);
     initSocket();
@@ -43,11 +43,6 @@ void ClientPrivate::init(const QUrl &connectionString)
 
     authenticator = QSharedPointer<Authenticator>(
         new AMQPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
-
-    if (connectionString.isValid()) {
-        parseConnectionString(connectionString);
-        _q_connect();
-    }
 }
 
 void ClientPrivate::initSocket()
@@ -61,24 +56,54 @@ void ClientPrivate::initSocket()
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
 }
 
-void ClientPrivate::parseConnectionString(const QUrl &connectionString)
+void ClientPrivate::setUsername(const QString &username)
 {
-    Q_Q(Client);
+    Authenticator *auth = authenticator.data();
+    if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
+        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
+        a->setLogin(username);
+    }
+}
+
+void ClientPrivate::setPassword(const QString &password)
+{
+    Authenticator *auth = authenticator.data();
+    if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
+        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
+        a->setPassword(password);
+    }
+}
+
+void ClientPrivate::parseConnectionString(const QString &uri)
+{
+#if QT_VERSION > 0x040801
+    QUrl connectionString = QUrl::fromUserInput(uri);
+#else
+    QUrl connectionString(uri, QUrl::TolerantMode);
+#endif
+
     if (connectionString.scheme() != AMQP_SCHEME &&
         connectionString.scheme() != AMQP_SSCHEME) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
         return;
     }
 
-    q->setPassword(connectionString.password());
-    q->setUsername(connectionString.userName());
-    q->setPort(connectionString.port(AMQP_PORT));
-    q->setHost(connectionString.host());
+
+    port = connectionString.port(AMQP_PORT);
+    host = connectionString.host();
 
     QString vhost = connectionString.path();
     if (vhost.startsWith("/"))
         vhost = vhost.mid(1);
-    q->setVirtualHost(vhost);
+#if QT_VERSION <= 0x050200
+    virtualHost = QUrl::fromPercentEncoding(vhost.toUtf8());
+    setPassword(QUrl::fromPercentEncoding(connectionString.password().toUtf8()));
+    setUsername(QUrl::fromPercentEncoding(connectionString.userName().toUtf8()));
+#else
+    virtualHost = vhost;
+    setPassword(connectionString.password());
+    setUsername(connectionString.userName());
+#endif
 }
 
 void ClientPrivate::_q_connect()
@@ -506,14 +531,6 @@ Client::Client(QObject *parent)
     d->init();
 }
 
-Client::Client(const QUrl &connectionString, QObject *parent)
-    : QObject(parent),
-      d_ptr(new ClientPrivate(this))
-{
-    Q_D(Client);
-    d->init(connectionString);
-}
-
 Client::Client(ClientPrivate *dd, QObject *parent)
     : QObject(parent),
       d_ptr(dd)
@@ -583,12 +600,8 @@ QString Client::username() const
 
 void Client::setUsername(const QString &username)
 {
-    Q_D(const Client);
-    Authenticator *auth = d->authenticator.data();
-    if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
-        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
-        a->setLogin(username);
-    }
+    Q_D(Client);
+    d->setUsername(username);
 }
 
 QString Client::password() const
@@ -606,11 +619,7 @@ QString Client::password() const
 void Client::setPassword(const QString &password)
 {
     Q_D(Client);
-    Authenticator *auth = d->authenticator.data();
-    if (auth && auth->type() == QLatin1String("AMQPLAIN")) {
-        AMQPlainAuthenticator *a = static_cast<AMQPlainAuthenticator*>(auth);
-        a->setPassword(password);
-    }
+    d->setPassword(password);
 }
 
 Exchange *Client::createExchange(int channelNumber)
@@ -753,15 +762,15 @@ QString Client::errorString() const
     return d->errorString;
 }
 
-void Client::connectToHost(const QString &connectionString)
+void Client::connectToHost(const QString &uri)
 {
     Q_D(Client);
-    if (connectionString.isEmpty()) {
+    if (uri.isEmpty()) {
         d->_q_connect();
         return;
     }
 
-    d->parseConnectionString(QUrl::fromUserInput(connectionString));
+    d->parseConnectionString(uri);
     d->_q_connect();
 }
 
@@ -827,13 +836,6 @@ void SslClientPrivate::_q_sslErrors(const QList<QSslError> &errors)
 SslClient::SslClient(QObject *parent)
     : Client(new SslClientPrivate(this), parent)
 {
-}
-
-SslClient::SslClient(const QUrl &connectionString, QObject *parent)
-    : Client(new SslClientPrivate(this), parent)
-{
-    Q_D(SslClient);
-    d->init(connectionString);
 }
 
 SslClient::~SslClient()
