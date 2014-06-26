@@ -36,6 +36,7 @@ private Q_SLOTS:
     void invalidCancelBecauseInvalidConsumerTag();
     void getEmpty();
     void get();
+    void verifyContentEncodingIssue33();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -380,6 +381,23 @@ void tst_QAMQPQueue::get()
     // clean up queue
     queue->remove(Queue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
+}
+
+void tst_QAMQPQueue::verifyContentEncodingIssue33()
+{
+    Queue *queue = client->createQueue("test-issue-33");
+    declareQueueAndVerifyConsuming(queue);
+
+    Exchange *defaultExchange = client->createExchange();
+    MessageProperties properties;
+    properties.insert(Frame::Content::cpContentEncoding, "fakeContentEncoding");
+    defaultExchange->publish("some data", "test-issue-33", properties);
+
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    Message message = queue->dequeue();
+    QString contentType =
+        message.properties().value(Frame::Content::cpContentEncoding).toString();
+    QCOMPARE(contentType, QLatin1String("fakeContentEncoding"));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
