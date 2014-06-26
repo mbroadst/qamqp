@@ -27,16 +27,22 @@ public:
     Error error() const;
     QString errorString() const;
 
+    qint32 prefetchSize() const;
+    qint16 prefetchCount() const;
+
+    // AMQP Basic
+    void qos(qint16 prefetchCount, qint32 prefetchSize = 0);
+
 public Q_SLOTS:
     void closeChannel();
     void reopen();
-    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
 
 Q_SIGNALS:
     void opened();
     void closed();
     void flowChanged(bool enabled);
     void error(QAMQP::Error error);
+    void qosDefined();
 
 protected:
     virtual void channelOpened() = 0;

@@ -13,6 +13,10 @@ ChannelPrivate::ChannelPrivate(Channel *q)
     : channelNumber(0),
       opened(false),
       needOpen(true),
+      prefetchSize(0),
+      requestedPrefetchSize(0),
+      prefetchCount(0),
+      requestedPrefetchCount(0),
       error(QAMQP::NoError),
       q_ptr(q)
 {
@@ -55,6 +59,15 @@ bool ChannelPrivate::_q_method(const Frame::Method &frame)
     if (frame.channel() != channelNumber)
         return true;
 
+    if (frame.methodClass() == Frame::fcBasic) {
+        if (frame.id() == bmQosOk) {
+            qosOk(frame);
+            return true;
+        }
+
+        return false;
+    }
+
     if (frame.methodClass() != Frame::fcChannel)
         return false;
 
@@ -88,8 +101,12 @@ void ChannelPrivate::_q_open()
 
 void ChannelPrivate::sendFrame(const Frame::Base &frame)
 {
-    if (client)
-        client->d_func()->sendFrame(frame);
+    if (!client) {
+        qAmqpDebug() << Q_FUNC_INFO << "invalid client";
+        return;
+    }
+
+    client->d_func()->sendFrame(frame);
 }
 
 void ChannelPrivate::open()
@@ -203,18 +220,20 @@ void ChannelPrivate::openOk(const Frame::Method &frame)
     q->channelOpened();
 }
 
-void ChannelPrivate::setQOS(qint32 prefetchSize, quint16 prefetchCount)
-{
-    Q_UNUSED(prefetchSize)
-    Q_UNUSED(prefetchCount)
-    qAmqpDebug() << Q_FUNC_INFO << "temporarily disabled";
-//    client_->d_func()->connection_->d_func()->setQOS(prefetchSize, prefetchCount, channelNumber, false);
-}
-
 void ChannelPrivate::_q_disconnected()
 {
     nextChannelNumber = 0;
     opened = false;
+}
+
+void ChannelPrivate::qosOk(const Frame::Method &frame)
+{
+    Q_Q(Channel);
+    Q_UNUSED(frame)
+
+    prefetchCount = requestedPrefetchCount;
+    prefetchSize = requestedPrefetchSize;
+    Q_EMIT q->qosDefined();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -276,10 +295,36 @@ bool Channel::isOpened() const
     return d->opened;
 }
 
-void Channel::setQOS(qint32 prefetchSize, quint16 prefetchCount)
+void Channel::qos(qint16 prefetchCount, qint32 prefetchSize)
 {
     Q_D(Channel);
-    d->setQOS(prefetchSize, prefetchCount);
+    Frame::Method frame(Frame::fcBasic, ChannelPrivate::bmQos);
+    frame.setChannel(d->channelNumber);
+
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+
+    d->requestedPrefetchSize = prefetchSize;
+    d->requestedPrefetchCount = prefetchCount;
+
+    stream << qint32(prefetchSize);
+    stream << qint16(prefetchCount);
+    stream << qint8(0x0);   // global
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+}
+
+qint32 Channel::prefetchSize() const
+{
+    Q_D(const Channel);
+    return d->prefetchSize;
+}
+
+qint16 Channel::prefetchCount() const
+{
+    Q_D(const Channel);
+    return d->prefetchCount;
 }
 
 Error Channel::error() const

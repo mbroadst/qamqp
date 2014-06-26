@@ -49,7 +49,6 @@ public:
     void init(int channel, Client *client);
     void stateChanged(State state);
 
-    void setQOS(qint32 prefetchSize, quint16 prefetchCount);
     void sendFrame(const Frame::Base &frame);
 
     void open();
@@ -65,6 +64,7 @@ public:
     void flowOk(const Frame::Method &frame);
     void close(const Frame::Method &frame);
     void closeOk(const Frame::Method &frame);
+    void qosOk(const Frame::Method &frame);
 
     // private slots
     virtual void _q_disconnected();
@@ -76,6 +76,11 @@ public:
     static int nextChannelNumber;
     bool opened;
     bool needOpen;
+
+    qint32 prefetchSize;
+    qint32 requestedPrefetchSize;
+    qint16 prefetchCount;
+    qint16 requestedPrefetchCount;
 
     Error error;
     QString errorString;

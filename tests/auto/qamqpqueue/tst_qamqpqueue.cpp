@@ -37,6 +37,9 @@ private Q_SLOTS:
     void getEmpty();
     void get();
     void verifyContentEncodingIssue33();
+    void defineQos();
+    void invalidQos();
+    void qos();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -398,6 +401,71 @@ void tst_QAMQPQueue::verifyContentEncodingIssue33()
     QString contentType =
         message.properties().value(Frame::Content::cpContentEncoding).toString();
     QCOMPARE(contentType, QLatin1String("fakeContentEncoding"));
+}
+
+void tst_QAMQPQueue::defineQos()
+{
+    Queue *queue = client->createQueue("test-define-qos");
+    declareQueueAndVerifyConsuming(queue);
+
+    queue->qos(10);
+    QVERIFY(waitForSignal(queue, SIGNAL(qosDefined())));
+    QCOMPARE(queue->prefetchCount(), qint16(10));
+    QCOMPARE(queue->prefetchSize(), 0);
+
+    // clean up queue
+    queue->remove(Queue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
+}
+
+void tst_QAMQPQueue::invalidQos()
+{
+    Queue *queue = client->createQueue("test-invalid-define-qos");
+    declareQueueAndVerifyConsuming(queue);
+
+    queue->qos(10, 10);
+    QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(client->error(), QAMQP::NotImplementedError);
+}
+
+void tst_QAMQPQueue::qos()
+{
+    Queue *queue = client->createQueue("test-qos");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    queue->qos(1);
+    QVERIFY(waitForSignal(queue, SIGNAL(qosDefined())));
+    QCOMPARE(queue->prefetchCount(), qint16(1));
+    QCOMPARE(queue->prefetchSize(), 0);
+
+    // load up the queue
+    const int messageCount = 10;
+    Exchange *defaultExchange = client->createExchange();
+    for (int i = 0; i < messageCount; ++i) {
+        QString message = QString("message %1").arg(i);
+        defaultExchange->publish(message, "test-qos");
+    }
+
+    QTest::qWait(100);
+
+    // begin consuming, one at a time
+    QVERIFY(queue->consume());
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+
+    int messageReceivedCount = 0;
+    while (!queue->isEmpty()) {
+        QString expected = QString("message %1").arg(messageReceivedCount);
+        Message message = queue->dequeue();
+        QCOMPARE(message.payload(), expected.toUtf8());
+        queue->ack(message);
+        messageReceivedCount++;
+
+        if (messageReceivedCount < messageCount)
+            QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    }
+
+    QCOMPARE(messageReceivedCount, messageCount);
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
