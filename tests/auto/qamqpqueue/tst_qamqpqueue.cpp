@@ -35,6 +35,7 @@ private Q_SLOTS:
     void invalidCancelBecauseNotConsuming();
     void invalidCancelBecauseInvalidConsumerTag();
     void getEmpty();
+    void get();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -346,6 +347,39 @@ void tst_QAMQPQueue::getEmpty()
 
     queue->get();
     QVERIFY(waitForSignal(queue, SIGNAL(empty())));
+}
+
+void tst_QAMQPQueue::get()
+{
+    Queue *queue = client->createQueue("test-get");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    const int messageCount = 50;
+    Exchange *defaultExchange = client->createExchange();
+    for (int i = 0; i < messageCount; ++i) {
+        QString expected = QString("message %1").arg(i);
+        defaultExchange->publish(expected, "test-get");
+    }
+
+    // wait for messages to be delivered
+    QTest::qWait(25);
+
+    for (int i = 0; i < messageCount; ++i) {
+        QString expected = QString("message %1").arg(i);
+        queue->get(false);
+        QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+        Message message = queue->dequeue();
+        QCOMPARE(message.payload(), expected.toUtf8());
+        queue->ack(message);
+    }
+
+    queue->get(false);
+    QVERIFY(waitForSignal(queue, SIGNAL(empty())));
+
+    // clean up queue
+    queue->remove(Queue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
