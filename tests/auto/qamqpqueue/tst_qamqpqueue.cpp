@@ -40,6 +40,7 @@ private Q_SLOTS:
     void defineQos();
     void invalidQos();
     void qos();
+    void invalidRoutingKey();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -466,6 +467,15 @@ void tst_QAMQPQueue::qos()
     }
 
     QCOMPARE(messageReceivedCount, messageCount);
+}
+
+void tst_QAMQPQueue::invalidRoutingKey()
+{
+    QString routingKey = QString("%1").arg('1', 256, QLatin1Char('0'));
+    Queue *queue = client->createQueue(routingKey);
+    queue->declare();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(client->error(), QAMQP::FrameError);
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

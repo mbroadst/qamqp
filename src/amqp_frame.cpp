@@ -6,6 +6,8 @@
 #include <QList>
 #include <QDebug>
 
+#include "amqp_global.h"
+
 using namespace QAMQP;
 using namespace QAMQP::Frame;
 
@@ -342,7 +344,6 @@ void Frame::print(const TableField &f)
 
 void Frame::writeField(qint8 valueType, QDataStream &s, const QVariant &value, bool withType)
 {
-    QByteArray tmp;
     if (withType)
         s << valueType;
 
@@ -390,6 +391,10 @@ void Frame::writeField(qint8 valueType, QDataStream &s, const QVariant &value, b
     case 's':
     {
         QString str = value.toString();
+        if (str.length() >= 256) {
+            qAmqpDebug() << Q_FUNC_INFO << "invalid shortstr length: " << str.length();
+        }
+
         s << quint8(str.length());
         s.writeRawData(str.toLatin1().data(), str.length());
     }
