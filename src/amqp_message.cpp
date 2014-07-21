@@ -62,12 +62,22 @@ QByteArray Message::payload() const
     return d->payload;
 }
 
-MessageProperties Message::properties() const
-{
-    return d->properties;
-}
-
 Frame::TableField Message::headers() const
 {
     return d->headers;
+}
+
+bool Message::hasProperty(Property property) const
+{
+    return d->properties.contains(property);
+}
+
+void Message::setProperty(Property property, const QVariant &value)
+{
+    d->properties.insert(property, value);
+}
+
+QVariant Message::property(Property property, const QVariant &defaultValue) const
+{
+    return d->properties.value(property, defaultValue);
 }

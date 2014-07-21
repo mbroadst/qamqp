@@ -7,21 +7,6 @@
 
 #include "amqp_global.h"
 
-#define AMQP_BASIC_CONTENT_TYPE_FLAG (1 << 15)
-#define AMQP_BASIC_CONTENT_ENCODING_FLAG (1 << 14)
-#define AMQP_BASIC_HEADERS_FLAG (1 << 13)
-#define AMQP_BASIC_DELIVERY_MODE_FLAG (1 << 12)
-#define AMQP_BASIC_PRIORITY_FLAG (1 << 11)
-#define AMQP_BASIC_CORRELATION_ID_FLAG (1 << 10)
-#define AMQP_BASIC_REPLY_TO_FLAG (1 << 9)
-#define AMQP_BASIC_EXPIRATION_FLAG (1 << 8)
-#define AMQP_BASIC_MESSAGE_ID_FLAG (1 << 7)
-#define AMQP_BASIC_TIMESTAMP_FLAG (1 << 6)
-#define AMQP_BASIC_TYPE_FLAG (1 << 5)
-#define AMQP_BASIC_USER_ID_FLAG (1 << 4)
-#define AMQP_BASIC_APP_ID_FLAG (1 << 3)
-#define AMQP_BASIC_CLUSTER_ID_FLAG (1 << 2)
-
 /**
  *  Library namespace
  *  @namespace QAMQP

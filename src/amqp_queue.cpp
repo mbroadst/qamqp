@@ -91,7 +91,7 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
     QHash<int, QVariant>::ConstIterator it;
     QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
     for (it = frame.properties_.constBegin(); it != itEnd; ++it)
-        currentMessage.d->properties[MessageProperty(it.key())] = it.value();
+        currentMessage.d->properties[static_cast<Message::Property>(it.key())] = it.value();
 }
 
 void QueuePrivate::_q_body(const Frame::ContentBody &frame)

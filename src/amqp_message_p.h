@@ -18,11 +18,9 @@ public:
     bool redelivered;
     QString exchangeName;
     QString routingKey;
-
     QByteArray payload;
-    MessageProperties properties;
+    QHash<Message::Property, QVariant> properties;
     Frame::TableField headers;
-
     int leftSize;
 
 };

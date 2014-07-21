@@ -14,6 +14,21 @@
 #define AMQP_FRAME_MAX 131072
 #define AMQP_FRAME_MIN_SIZE 4096
 
+#define AMQP_BASIC_CONTENT_TYPE_FLAG (1 << 15)
+#define AMQP_BASIC_CONTENT_ENCODING_FLAG (1 << 14)
+#define AMQP_BASIC_HEADERS_FLAG (1 << 13)
+#define AMQP_BASIC_DELIVERY_MODE_FLAG (1 << 12)
+#define AMQP_BASIC_PRIORITY_FLAG (1 << 11)
+#define AMQP_BASIC_CORRELATION_ID_FLAG (1 << 10)
+#define AMQP_BASIC_REPLY_TO_FLAG (1 << 9)
+#define AMQP_BASIC_EXPIRATION_FLAG (1 << 8)
+#define AMQP_BASIC_MESSAGE_ID_FLAG (1 << 7)
+#define AMQP_BASIC_TIMESTAMP_FLAG (1 << 6)
+#define AMQP_BASIC_TYPE_FLAG (1 << 5)
+#define AMQP_BASIC_USER_ID_FLAG (1 << 4)
+#define AMQP_BASIC_APP_ID_FLAG (1 << 3)
+#define AMQP_BASIC_CLUSTER_ID_FLAG (1 << 2)
+
 #define QAMQP_VERSION "0.3.0"
 
 #define AMQP_CONNECTION_FORCED 320
@@ -31,6 +46,7 @@
 #define qAmqpDebug if (qgetenv("QAMQP_DEBUG").isEmpty()); else qDebug
 
 namespace QAMQP {
+
 
 enum Error {
     NoError = 0,

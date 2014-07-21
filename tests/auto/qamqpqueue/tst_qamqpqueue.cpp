@@ -399,8 +399,8 @@ void tst_QAMQPQueue::verifyContentEncodingIssue33()
 
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     Message message = queue->dequeue();
-    QString contentType =
-        message.properties().value(Frame::Content::cpContentEncoding).toString();
+    QVERIFY(message.hasProperty(Message::ContentEncoding));
+    QString contentType = message.property(Message::ContentEncoding).toString();
     QCOMPARE(contentType, QLatin1String("fakeContentEncoding"));
 }
 
