@@ -42,7 +42,7 @@ qlonglong Message::deliveryTag() const
     return d->deliveryTag;
 }
 
-bool Message::redelivered() const
+bool Message::isRedelivered() const
 {
     return d->redelivered;
 }
@@ -62,11 +62,6 @@ QByteArray Message::payload() const
     return d->payload;
 }
 
-Frame::TableField Message::headers() const
-{
-    return d->headers;
-}
-
 bool Message::hasProperty(Property property) const
 {
     return d->properties.contains(property);
@@ -80,4 +75,19 @@ void Message::setProperty(Property property, const QVariant &value)
 QVariant Message::property(Property property, const QVariant &defaultValue) const
 {
     return d->properties.value(property, defaultValue);
+}
+
+bool Message::hasHeader(const QString &header) const
+{
+    return d->headers.contains(header);
+}
+
+void Message::setHeader(const QString &header, const QVariant &value)
+{
+    d->headers.insert(header, value);
+}
+
+QVariant Message::header(const QString &header, const QVariant &defaultValue) const
+{
+    return d->headers.value(header, defaultValue);
 }

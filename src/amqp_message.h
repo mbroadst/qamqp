@@ -42,14 +42,17 @@ public:
     void setProperty(Property property, const QVariant &value);
     QVariant property(Property property, const QVariant &defaultValue = QString()) const;
 
+    bool hasHeader(const QString &header) const;
+    void setHeader(const QString &header, const QVariant &value);
+    QVariant header(const QString &header, const QVariant &defaultValue = QString()) const;
+
     bool isValid() const;
+    bool isRedelivered() const;
 
     qlonglong deliveryTag() const;
-    bool redelivered() const;
     QString exchangeName() const;
     QString routingKey() const;
     QByteArray payload() const;
-    Frame::TableField headers() const;
 
 private:
     QSharedDataPointer<MessagePrivate> d;
