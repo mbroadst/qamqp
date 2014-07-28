@@ -436,6 +436,8 @@ void tst_QAMQPQueue::qos()
     QVERIFY(waitForSignal(queue, SIGNAL(qosDefined())));
     QCOMPARE(queue->prefetchCount(), qint16(1));
     QCOMPARE(queue->prefetchSize(), 0);
+    QVERIFY(queue->consume());
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
 
     // load up the queue
     const int messageCount = 10;
@@ -445,10 +447,7 @@ void tst_QAMQPQueue::qos()
         defaultExchange->publish(message, "test-qos");
     }
 
-    // begin consuming, one at a time
-    QVERIFY(queue->consume());
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     int messageReceivedCount = 0;
     while (!queue->isEmpty()) {
         QString expected = QString("message %1").arg(messageReceivedCount);
