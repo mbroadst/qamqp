@@ -112,6 +112,7 @@ void tst_QAMQPExchange::invalidRedeclaration()
 
     // this is per spec:
     // QCOMPARE(redeclared->error(), QAMQP::NotAllowedError);
+
     // this is for rabbitmq:
     QCOMPARE(redeclared->error(), QAMQP::PreconditionFailedError);
 

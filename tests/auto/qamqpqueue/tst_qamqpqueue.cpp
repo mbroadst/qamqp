@@ -367,9 +367,6 @@ void tst_QAMQPQueue::get()
         defaultExchange->publish(expected, "test-get");
     }
 
-    // wait for messages to be delivered
-    QTest::qWait(25);
-
     for (int i = 0; i < messageCount; ++i) {
         QString expected = QString("message %1").arg(i);
         queue->get(false);
@@ -447,8 +444,6 @@ void tst_QAMQPQueue::qos()
         QString message = QString("message %1").arg(i);
         defaultExchange->publish(message, "test-qos");
     }
-
-    QTest::qWait(100);
 
     // begin consuming, one at a time
     QVERIFY(queue->consume());

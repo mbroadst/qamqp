@@ -57,6 +57,7 @@ void Base::writeHeader(QDataStream &stream) const
 void Base::writeEnd(QDataStream &stream) const
 {
     stream << qint8(FRAME_END);
+    stream.device()->waitForBytesWritten(1000);
 }
 
 void Base::writePayload(QDataStream &stream) const
