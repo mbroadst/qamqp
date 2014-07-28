@@ -484,8 +484,7 @@ void Queue::get(bool noAck)
 
     out << qint16(0);   //reserved 1
     Frame::writeField('s', out, d->name);
-
-    out << qint8(noAck ? 1 : 0); // noAck
+    out << qint8(noAck ? 1 : 0); // no-ack
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -505,8 +504,8 @@ void Queue::ack(const Message &message)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << message.deliveryTag();   // reserved 1
-    out << qint8(0);                // noAck
+    out << message.deliveryTag();
+    out << qint8(0); // multiple
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

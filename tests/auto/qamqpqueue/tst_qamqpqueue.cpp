@@ -360,7 +360,7 @@ void tst_QAMQPQueue::get()
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
 
-    const int messageCount = 50;
+    const int messageCount = 200;
     Exchange *defaultExchange = client->createExchange();
     for (int i = 0; i < messageCount; ++i) {
         QString expected = QString("message %1").arg(i);
@@ -370,7 +370,14 @@ void tst_QAMQPQueue::get()
     for (int i = 0; i < messageCount; ++i) {
         QString expected = QString("message %1").arg(i);
         queue->get(false);
-        QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+        if (!waitForSignal(queue, SIGNAL(messageReceived()))) {
+            // NOTE: this is here instead of waiting for messages to be
+            //       available with a sleep above. It makes the test a little
+            //       longer if there's a miss, look into a proper fix in the future
+            i--;
+            continue;
+        }
+
         Message message = queue->dequeue();
         QCOMPARE(message.payload(), expected.toUtf8());
         queue->ack(message);
