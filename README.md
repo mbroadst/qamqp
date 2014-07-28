@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mbroadst/qamqp-ng.svg?branch=master)](https://travis-ci.org/mbroadst/qamqp-ng)
+[![Build Status](https://travis-ci.org/mbroadst/qamqp-ng.svg?branch=master)](https://travis-ci.org/mbroadst/qamqp)
 
 QAMQP
 =============
