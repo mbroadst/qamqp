@@ -164,6 +164,7 @@ void tst_QAMQPQueue::exclusiveAccess()
     Queue *queue = client->createQueue("test-exclusive-queue");
     queue->declare(Queue::Exclusive);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->options() & Queue::Exclusive);
 
     Client secondClient;
     secondClient.connectToHost();
@@ -182,6 +183,7 @@ void tst_QAMQPQueue::exclusiveRemoval()
     Queue *queue = client->createQueue("test-exclusive-queue");
     queue->declare(Queue::Exclusive);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->options() & Queue::Exclusive);
     client.data()->disconnectFromHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
 
@@ -232,6 +234,8 @@ void tst_QAMQPQueue::removeIfEmpty()
     Queue *queue = client->createQueue("test-remove-if-empty");
     queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->options() & Queue::Durable);
+
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("first message", "test-remove-if-empty");
 
@@ -243,6 +247,7 @@ void tst_QAMQPQueue::removeIfEmpty()
         Queue *testDeleteQueue = secondClient.createQueue("test-remove-if-empty");
         testDeleteQueue->declare(Queue::Passive);
         QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(declared())));
+        QVERIFY(testDeleteQueue->options() & Queue::Passive);
 
         testDeleteQueue->remove(Queue::roIfEmpty);
         QVERIFY(waitForSignal(testDeleteQueue, SIGNAL(error(QAMQP::Error))));
@@ -296,6 +301,8 @@ void tst_QAMQPQueue::purge()
     Queue *queue = client->createQueue("test-purge");
     queue->declare(Queue::Durable);
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->options() & Queue::Durable);
+
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("first message", "test-purge");
     defaultExchange->publish("second message", "test-purge");
@@ -309,6 +316,7 @@ void tst_QAMQPQueue::purge()
         Queue *testPurgeQueue = secondClient.createQueue("test-purge");
         testPurgeQueue->declare(Queue::Passive);
         QVERIFY(waitForSignal(testPurgeQueue, SIGNAL(declared())));
+        QVERIFY(testPurgeQueue->options() & Queue::Passive);
 
         QSignalSpy spy(testPurgeQueue, SIGNAL(purged(int)));
         testPurgeQueue->purge();
