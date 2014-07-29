@@ -60,11 +60,6 @@ void Base::writeEnd(QDataStream &stream) const
     stream.device()->waitForBytesWritten(1000);
 }
 
-void Base::writePayload(QDataStream &stream) const
-{
-    Q_UNUSED(stream)
-}
-
 void Base::readHeader(QDataStream &stream)
 {
     stream >> type_;
@@ -72,6 +67,7 @@ void Base::readHeader(QDataStream &stream)
     stream >> size_;
 }
 
+/*
 void Base::readEnd(QDataStream &stream)
 {
     unsigned char end_  = 0;
@@ -79,12 +75,7 @@ void Base::readEnd(QDataStream &stream)
     if (end_ != FRAME_END)
         qWarning("Wrong end of frame");
 }
-
-void Base::readPayload(QDataStream &stream)
-{
-    stream.skipRawData(size_);
-}
-
+*/
 void Base::toStream(QDataStream &stream) const
 {
     writeHeader(stream);
@@ -94,47 +85,45 @@ void Base::toStream(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-Frame::Method::Method(MethodClass methodClass, qint16 id)
-    : Base(ftMethod), methodClass_(methodClass), id_(id)
+Method::Method(MethodClass methodClass, qint16 id)
+    : Base(ftMethod),
+      methodClass_(methodClass),
+      id_(id)
 {
 }
 
-Frame::Method::Method(QDataStream &raw)
+Method::Method(QDataStream &raw)
     : Base(raw)
 {
     readPayload(raw);
 }
 
-Frame::Method::Method(): Base(ftMethod)
-{
-}
-
-MethodClass Frame::Method::methodClass() const
+MethodClass Method::methodClass() const
 {
     return MethodClass(methodClass_);
 }
 
-qint16 Frame::Method::id() const
+qint16 Method::id() const
 {
     return id_;
 }
 
-qint32 Frame::Method::size() const
+qint32 Method::size() const
 {
     return sizeof(id_) + sizeof(methodClass_) + arguments_.size();
 }
 
-void Frame::Method::setArguments(const QByteArray &data)
+void Method::setArguments(const QByteArray &data)
 {
     arguments_ = data;
 }
 
-QByteArray Frame::Method::arguments() const
+QByteArray Method::arguments() const
 {
     return arguments_;
 }
 
-void Frame::Method::readPayload(QDataStream &stream)
+void Method::readPayload(QDataStream &stream)
 {
     stream >> methodClass_;
     stream >> id_;
@@ -143,7 +132,7 @@ void Frame::Method::readPayload(QDataStream &stream)
     stream.readRawData(arguments_.data(), arguments_.size());
 }
 
-void Frame::Method::writePayload(QDataStream &stream) const
+void Method::writePayload(QDataStream &stream) const
 {
     stream << quint16(methodClass_);
     stream << quint16(id_);

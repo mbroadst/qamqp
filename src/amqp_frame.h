@@ -147,12 +147,12 @@ namespace Frame
 
     protected:
         void writeHeader(QDataStream &stream) const;
-        virtual void writePayload(QDataStream &stream) const;
+        virtual void writePayload(QDataStream &stream) const = 0;
         void writeEnd(QDataStream &stream) const;
 
         void readHeader(QDataStream &stream);
-        virtual void readPayload(QDataStream &stream);
-        void readEnd(QDataStream &stream);
+        virtual void readPayload(QDataStream &stream) = 0;
+        // void readEnd(QDataStream &stream);
 
         qint32 size_;
 
@@ -181,23 +181,17 @@ namespace Frame
         /*
          * Method class constructor.
          * @detailed Construct frame class for sending.
-         */
-        Method();
-
-        /*
-         * Method class constructor.
-         * @detailed Construct frame class for sending.
          * @param methodClass Define method class id of constructed frame.
          * @param id Define method id of constructed frame.
          */
-        Method(MethodClass methodClass, qint16 id);
+        explicit Method(MethodClass methodClass, qint16 id);
 
         /*
          * Method class constructor.
          * @detailed Construct frame class from received raw data.
          * @param raw Data stream for reading source data.
          */
-        Method(QDataStream &raw);
+        explicit Method(QDataStream &raw);
 
         /*
          * Method class type.
