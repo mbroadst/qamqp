@@ -12,6 +12,8 @@ class tst_QAMQPClient : public TestCase
     Q_OBJECT
 private Q_SLOTS:
     void connect();
+    void connectProperties();
+    void connectHostAddress();
     void connectDisconnect();
     void invalidAuthenticationMechanism();
     void tune();
@@ -29,6 +31,40 @@ void tst_QAMQPClient::connect()
     Client client;
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+
+    QCOMPARE(client.host(), QLatin1String(AMQP_HOST));
+    QCOMPARE(client.port(), quint16(AMQP_PORT));
+    QCOMPARE(client.virtualHost(), QLatin1String(AMQP_VHOST));
+    QCOMPARE(client.username(), QLatin1String(AMQP_LOGIN));
+    QCOMPARE(client.password(), QLatin1String(AMQP_PSWD));
+    QCOMPARE(client.autoReconnect(), false);
+
+    client.disconnectFromHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::connectProperties()
+{
+    Client client;
+    client.setHost("localhost");
+    client.setPort(5672);
+    client.setVirtualHost("/");
+    client.setUsername("guest");
+    client.setPassword("guest");
+    client.setAutoReconnect(false);
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+    client.disconnectFromHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::connectHostAddress()
+{
+    Client client;
+    client.connectToHost(QHostAddress::LocalHost, 5672);
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+    client.disconnectFromHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
 void tst_QAMQPClient::connectDisconnect()
