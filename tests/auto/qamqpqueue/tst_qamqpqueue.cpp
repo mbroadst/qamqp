@@ -28,7 +28,7 @@ private Q_SLOTS:
     void remove();
     void removeIfUnused();
     void removeIfEmpty();
-    void unbind();
+    void bindUnbind();
     void purge();
     void canOnlyStartConsumingOnce();
     void cancel();
@@ -257,14 +257,22 @@ void tst_QAMQPQueue::removeIfEmpty()
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
-void tst_QAMQPQueue::unbind()
+void tst_QAMQPQueue::bindUnbind()
 {
-    Queue *queue = client->createQueue("test-unbind");
+    Queue *queue = client->createQueue("test-bind-unbind");
     declareQueueAndVerifyConsuming(queue);
 
     queue->bind("amq.topic", "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
     queue->unbind("amq.topic", "routingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(unbound())));
+
+    Exchange *amqTopic = client->createExchange("amq.topic");
+    amqTopic->declare(Exchange::Direct, Exchange::Passive);
+    QVERIFY(waitForSignal(amqTopic, SIGNAL(declared())));
+    queue->bind(amqTopic, "routingKey");
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+    queue->unbind(amqTopic, "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(unbound())));
 }
 
