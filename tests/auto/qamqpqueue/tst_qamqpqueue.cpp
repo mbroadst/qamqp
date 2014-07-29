@@ -29,6 +29,7 @@ private Q_SLOTS:
     void removeIfUnused();
     void removeIfEmpty();
     void bindUnbind();
+    void delayedBind();
     void purge();
     void canOnlyStartConsumingOnce();
     void cancel();
@@ -274,6 +275,20 @@ void tst_QAMQPQueue::bindUnbind()
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
     queue->unbind(amqTopic, "routingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(unbound())));
+}
+
+void tst_QAMQPQueue::delayedBind()
+{
+    client->disconnectFromHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+    Queue *queue = client->createQueue("test-delayed-bind");
+    queue->declare();
+    queue->bind("amq.topic", "routingKey");
+
+    client->connectToHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
 }
 
 void tst_QAMQPQueue::purge()

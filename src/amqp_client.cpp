@@ -415,6 +415,7 @@ void ClientPrivate::closeOk(const Frame::Method &frame)
     connected = false;
     if (heartbeatTimer)
         heartbeatTimer->stop();
+    socket->disconnectFromHost();
     Q_EMIT q->disconnected();
 }
 
