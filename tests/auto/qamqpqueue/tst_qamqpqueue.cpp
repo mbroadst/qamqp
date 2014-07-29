@@ -308,6 +308,10 @@ void tst_QAMQPQueue::delayedBind()
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+
+    // clean up queue
+    queue->remove(Queue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPQueue::purge()
