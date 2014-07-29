@@ -45,6 +45,9 @@ private Q_SLOTS:
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
+    void verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
+                                      const QString &exchangeName = QLatin1String(""),
+                                      bool redelivered = false);
     QScopedPointer<Client> client;
 
 };
@@ -60,6 +63,14 @@ void tst_QAMQPQueue::declareQueueAndVerifyConsuming(Queue *queue)
     QVERIFY(!spy.isEmpty());
     QList<QVariant> arguments = spy.takeFirst();
     QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
+}
+
+void tst_QAMQPQueue::verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
+                                                  const QString &exchangeName, bool redelivered)
+{
+    QCOMPARE(message.routingKey(), routingKey);
+    QCOMPARE(message.exchangeName(), exchangeName);
+    QCOMPARE(message.isRedelivered(), redelivered);
 }
 
 void tst_QAMQPQueue::init()
@@ -86,6 +97,7 @@ void tst_QAMQPQueue::defaultExchange()
     defaultExchange->publish("first message", "test-default-exchange");
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     Message message = queue->dequeue();
+    verifyStandardMessageHeaders(message, "test-default-exchange");
     QCOMPARE(message.payload(), QByteArray("first message"));
 }
 
@@ -115,7 +127,9 @@ void tst_QAMQPQueue::standardExchanges()
     Exchange *defaultExchange = client->createExchange(exchange);
     defaultExchange->publish("test message", routingKey);
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
-    QCOMPARE(queue->dequeue().payload(), QByteArray("test message"));
+    Message message = queue->dequeue();
+    verifyStandardMessageHeaders(message, routingKey, exchange);
+    QCOMPARE(message.payload(), QByteArray("test message"));
 }
 
 void tst_QAMQPQueue::invalidDeclaration_data()
@@ -410,6 +424,7 @@ void tst_QAMQPQueue::get()
         }
 
         Message message = queue->dequeue();
+        verifyStandardMessageHeaders(message, "test-get");
         QCOMPARE(message.payload(), expected.toUtf8());
         queue->ack(message);
     }
@@ -434,6 +449,7 @@ void tst_QAMQPQueue::verifyContentEncodingIssue33()
 
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
     Message message = queue->dequeue();
+    verifyStandardMessageHeaders(message, "test-issue-33");
     QVERIFY(message.hasProperty(Message::ContentEncoding));
     QString contentType = message.property(Message::ContentEncoding).toString();
     QCOMPARE(contentType, QLatin1String("fakeContentEncoding"));
@@ -490,6 +506,7 @@ void tst_QAMQPQueue::qos()
     while (!queue->isEmpty()) {
         QString expected = QString("message %1").arg(messageReceivedCount);
         Message message = queue->dequeue();
+        verifyStandardMessageHeaders(message, "test-qos");
         QCOMPARE(message.payload(), expected.toUtf8());
         queue->ack(message);
         messageReceivedCount++;
