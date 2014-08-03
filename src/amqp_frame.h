@@ -65,20 +65,8 @@ namespace Frame
         quint32 value;
     };
 
-    /*
-     * @brief Definition implementation of TableField type
-     * @detailed Define implementation TableField type in builtin Qt types.
-     * Key contains field name, value contains field data.
-     * It can by any type witch support serialization in AMQP types.
-     */
-    typedef QHash<QString, QVariant> TableField;
-
-    QDataStream &serialize(QDataStream &stream, const Frame::TableField &f);
-    QDataStream &deserialize(QDataStream &stream, Frame::TableField &f);
-    QVariant readField(qint8 valueType, QDataStream &s);
-    void writeField(QDataStream &s, const QVariant &value);
-    void writeField(qint8 valueType, QDataStream &s, const QVariant &value, bool withType = false);
-    void print(const Frame::TableField &f);
+    QVariant readAmqpField(QDataStream &s, QAMQP::ValueType type);
+    void writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant &value);
 
     /*
      * @brief Base class for any frames.
@@ -401,6 +389,6 @@ typedef Frame::Content::Property MessageProperty;
 } // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Frame::decimal)
-Q_DECLARE_METATYPE(QAMQP::Frame::TableField)
+//Q_DECLARE_METATYPE(QAMQP::Frame::TableField)
 
 #endif // amqp_frame_h__

@@ -156,10 +156,10 @@ void ChannelPrivate::close(int code, const QString &text, int classId, int metho
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s',stream, client->virtualHost());
+    Frame::writeAmqpField(stream, ShortString, client->virtualHost());
 
     stream << qint16(code);
-    Frame::writeField('s', stream, text);
+    Frame::writeAmqpField(stream, ShortString, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 
@@ -176,7 +176,8 @@ void ChannelPrivate::close(const Frame::Method &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
-    QString text(Frame::readField('s', stream).toString());
+    QString text = Frame::readAmqpField(stream, ShortString).toString();
+
     stream >> classId;
     stream >> methodId;
 

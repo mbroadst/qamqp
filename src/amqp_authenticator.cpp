@@ -1,6 +1,6 @@
-#include "amqp_authenticator.h"
+#include "amqp_table.h"
 #include "amqp_frame.h"
-
+#include "amqp_authenticator.h"
 using namespace QAMQP;
 
 AMQPlainAuthenticator::AMQPlainAuthenticator(const QString &l, const QString &p)
@@ -40,9 +40,9 @@ void AMQPlainAuthenticator::setPassword(const QString &p)
 
 void AMQPlainAuthenticator::write(QDataStream &out)
 {
-    Frame::writeField('s', out, type());
-    Frame::TableField response;
+    Frame::writeAmqpField(out, ShortString, type());
+    Table response;
     response["LOGIN"] = login_;
     response["PASSWORD"] = password_;
-    Frame::serialize(out, response);
+    out << response;
 }

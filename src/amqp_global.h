@@ -47,8 +47,36 @@
 
 namespace QAMQP {
 
+enum ValueType
+{
+    Invalid = -1,
 
-enum Error {
+    // basic AMQP types
+    Boolean,
+    ShortUint,
+    LongUint,
+    LongLongUint,
+    ShortString,
+    LongString,
+
+    // field-value types
+    ShortShortInt,
+    ShortShortUint,
+    ShortInt,
+    LongInt,
+    LongLongInt,
+    Float,
+    Double,
+    Decimal,
+    Array,
+    Timestamp,
+    Hash,
+    Bytes,
+    Void
+};
+
+enum Error
+{
     NoError = 0,
     ContentTooLargeError = 311,
     UnroutableKey = 312,

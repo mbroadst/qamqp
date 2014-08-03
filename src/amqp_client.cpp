@@ -1,18 +1,18 @@
-#include "amqp_client.h"
-#include "amqp_client_p.h"
-#include "amqp_global.h"
-#include "amqp_exchange.h"
-#include "amqp_exchange_p.h"
-#include "amqp_queue.h"
-#include "amqp_queue_p.h"
-#include "amqp_authenticator.h"
-
 #include <QTimer>
 #include <QTcpSocket>
 #include <QTextStream>
 #include <QStringList>
 #include <QtEndian>
 
+#include "amqp_global.h"
+#include "amqp_exchange.h"
+#include "amqp_exchange_p.h"
+#include "amqp_queue.h"
+#include "amqp_queue_p.h"
+#include "amqp_authenticator.h"
+#include "amqp_table.h"
+#include "amqp_client_p.h"
+#include "amqp_client.h"
 using namespace QAMQP;
 
 ClientPrivate::ClientPrivate(Client *q)
@@ -87,7 +87,6 @@ void ClientPrivate::parseConnectionString(const QString &uri)
         qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
         return;
     }
-
 
     port = connectionString.port(AMQP_PORT);
     host = connectionString.host();
@@ -329,21 +328,22 @@ void ClientPrivate::start(const Frame::Method &frame)
     qAmqpDebug(">> Start");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
+
     quint8 version_major = 0;
     quint8 version_minor = 0;
-
     stream >> version_major >> version_minor;
 
-    Frame::TableField table;
-    Frame::deserialize(stream, table);
+    Table table;
+    stream >> table;
 
-    QStringList mechanisms = Frame::readField('S', stream).toString().split(' ');
-    QString locales = Frame::readField('S', stream).toString();
+    QStringList mechanisms = Frame::readAmqpField(stream, LongString).toString().split(' ');
+    QString locales = Frame::readAmqpField(stream, LongString).toString();
 
     qAmqpDebug(">> version_major: %d", version_major);
     qAmqpDebug(">> version_minor: %d", version_minor);
 
-    Frame::print(table);
+    // NOTE: replace with qDebug overload
+    // Frame::print(table);
 
     qAmqpDebug() << ">> mechanisms: " << mechanisms;
     qAmqpDebug(">> locales: %s", qPrintable(locales));
@@ -427,7 +427,7 @@ void ClientPrivate::close(const Frame::Method &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
-    QString text(Frame::readField('s', stream).toString());
+    QString text = Frame::readAmqpField(stream, ShortString).toString();
     stream >> classId;
     stream >> methodId;
 
@@ -452,15 +452,15 @@ void ClientPrivate::startOk()
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::TableField clientProperties;
+    Table clientProperties;
     clientProperties["version"] = QString(QAMQP_VERSION);
     clientProperties["platform"] = QString("Qt %1").arg(qVersion());
     clientProperties["product"] = QString("QAMQP");
     clientProperties.unite(customProperties);
-    Frame::serialize(stream, clientProperties);
+    stream << clientProperties;
 
     authenticator->write(stream);
-    Frame::writeField('s', stream, "en_US");
+    Frame::writeAmqpField(stream, ShortString, QLatin1String("en_US"));
 
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -491,7 +491,7 @@ void ClientPrivate::open()
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s',stream, virtualHost);
+    Frame::writeAmqpField(stream, ShortString, virtualHost);
 
     stream << qint8(0);
     stream << qint8(0);
@@ -507,7 +507,7 @@ void ClientPrivate::close(int code, const QString &text, int classId, int method
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     stream << qint16(code);
-    Frame::writeField('s', stream, text);
+    Frame::writeAmqpField(stream, ShortString, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 

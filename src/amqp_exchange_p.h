@@ -1,6 +1,7 @@
 #ifndef amqp_exchange_p_h__
 #define amqp_exchange_p_h__
 
+#include "amqp_table.h"
 #include "amqp_exchange.h"
 #include "amqp_channel_p.h"
 
@@ -29,7 +30,7 @@ public:
 
     QString type;
     Exchange::ExchangeOptions options;
-    Frame::TableField arguments;
+    Table arguments;
     bool delayedDeclare;
     bool declared;
 

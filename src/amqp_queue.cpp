@@ -2,7 +2,7 @@
 #include "amqp_queue_p.h"
 #include "amqp_exchange.h"
 #include "amqp_message_p.h"
-
+#include "amqp_table.h"
 using namespace QAMQP;
 
 #include <QCoreApplication>
@@ -90,8 +90,12 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
     currentMessage.d->leftSize = frame.bodySize();
     QHash<int, QVariant>::ConstIterator it;
     QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
-    for (it = frame.properties_.constBegin(); it != itEnd; ++it)
-        currentMessage.d->properties[static_cast<Message::Property>(it.key())] = it.value();
+    for (it = frame.properties_.constBegin(); it != itEnd; ++it) {
+        Message::Property property = static_cast<Message::Property>(it.key());
+        if (property == Message::Headers)
+            currentMessage.d->headers = (it.value()).toHash();
+        currentMessage.d->properties[property] = it.value();
+    }
 }
 
 void QueuePrivate::_q_body(const Frame::ContentBody &frame)
@@ -123,7 +127,7 @@ void QueuePrivate::declareOk(const Frame::Method &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    name = Frame::readField('s', stream).toString();
+    name = Frame::readAmqpField(stream, ShortString).toString();
     qint32 messageCount = 0, consumerCount = 0;
     stream >> messageCount >> consumerCount;
     qAmqpDebug("message count %d\nConsumer count: %d", messageCount, consumerCount);
@@ -184,10 +188,10 @@ void QueuePrivate::getOk(const Frame::Method &frame)
     QDataStream in(&data, QIODevice::ReadOnly);
 
     Message message;
-    message.d->deliveryTag = Frame::readField('L',in).toLongLong();
-    message.d->redelivered = Frame::readField('t',in).toBool();
-    message.d->exchangeName = Frame::readField('s',in).toString();
-    message.d->routingKey = Frame::readField('s',in).toString();
+    message.d->deliveryTag = Frame::readAmqpField(in, LongLongUint).toLongLong();
+    message.d->redelivered = Frame::readAmqpField(in, Boolean).toBool();
+    message.d->exchangeName = Frame::readAmqpField(in, ShortString).toString();
+    message.d->routingKey = Frame::readAmqpField(in, ShortString).toString();
     currentMessage = message;
 }
 
@@ -197,7 +201,7 @@ void QueuePrivate::consumeOk(const Frame::Method &frame)
     qAmqpDebug() << "consume ok: " << name;
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
-    consumerTag = Frame::readField('s',stream).toString();
+    consumerTag = Frame::readAmqpField(stream, ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
     consuming = true;
     Q_EMIT q->consuming(consumerTag);
@@ -208,17 +212,17 @@ void QueuePrivate::deliver(const Frame::Method &frame)
     qAmqpDebug() << Q_FUNC_INFO;
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
-    QString consumer = Frame::readField('s',in).toString();
+    QString consumer = Frame::readAmqpField(in, ShortString).toString();
     if (consumerTag != consumer) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer;
         return;
     }
 
     Message message;
-    message.d->deliveryTag = Frame::readField('L',in).toLongLong();
-    message.d->redelivered = Frame::readField('t',in).toBool();
-    message.d->exchangeName = Frame::readField('s',in).toString();
-    message.d->routingKey = Frame::readField('s',in).toString();
+    message.d->deliveryTag = Frame::readAmqpField(in, LongLongUint).toLongLong();
+    message.d->redelivered = Frame::readAmqpField(in, Boolean).toBool();
+    message.d->exchangeName = Frame::readAmqpField(in, ShortString).toString();
+    message.d->routingKey = Frame::readAmqpField(in, ShortString).toString();
     currentMessage = message;
 }
 
@@ -231,9 +235,9 @@ void QueuePrivate::declare()
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, name);
+    Frame::writeAmqpField(out, ShortString, name);
     out << qint8(options);
-    Frame::writeField('F', out, Frame::TableField());
+    Frame::writeAmqpField(out, Hash, Table());
 
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -248,7 +252,7 @@ void QueuePrivate::cancelOk(const Frame::Method &frame)
     qAmqpDebug() << Q_FUNC_INFO;
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
-    QString consumer = Frame::readField('s',in).toString();
+    QString consumer = Frame::readAmqpField(in, ShortString).toString();
     if (consumerTag != consumer) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer;
         return;
@@ -323,7 +327,7 @@ void Queue::remove(int options)
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
+    Frame::writeAmqpField(out, ShortString, d->name);
     out << qint8(options);
 
     frame.setArguments(arguments);
@@ -343,7 +347,7 @@ void Queue::purge()
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
+    Frame::writeAmqpField(out, ShortString, d->name);
     out << qint8(0);    // no-wait
 
     frame.setArguments(arguments);
@@ -375,12 +379,12 @@ void Queue::bind(const QString &exchangeName, const QString &key)
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //  reserved 1
-    Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, exchangeName);
-    Frame::writeField('s', out, key);
+    Frame::writeAmqpField(out, ShortString, d->name);
+    Frame::writeAmqpField(out, ShortString, exchangeName);
+    Frame::writeAmqpField(out, ShortString, key);
 
     out << qint8(0);    //  no-wait
-    Frame::writeField('F', out, Frame::TableField());
+    Frame::writeAmqpField(out, Hash, Table());
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -410,10 +414,10 @@ void Queue::unbind(const QString &exchangeName, const QString &key)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, exchangeName);
-    Frame::writeField('s', out, key);
-    Frame::writeField('F', out, Frame::TableField());
+    Frame::writeAmqpField(out, ShortString, d->name);
+    Frame::writeAmqpField(out, ShortString, exchangeName);
+    Frame::writeAmqpField(out, ShortString, key);
+    Frame::writeAmqpField(out, Hash, Table());
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -439,11 +443,11 @@ bool Queue::consume(int options)
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, d->consumerTag);
+    Frame::writeAmqpField(out, ShortString, d->name);
+    Frame::writeAmqpField(out, ShortString, d->consumerTag);
 
     out << qint8(options);
-    Frame::writeField('F', out, Frame::TableField());
+    Frame::writeAmqpField(out, Hash, Table());
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -483,7 +487,7 @@ void Queue::get(bool noAck)
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
+    Frame::writeAmqpField(out, ShortString, d->name);
     out << qint8(noAck ? 1 : 0); // no-ack
 
     frame.setArguments(arguments);
@@ -530,7 +534,7 @@ bool Queue::cancel(bool noWait)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeField('s', out, d->consumerTag);
+    Frame::writeAmqpField(out, ShortString, d->consumerTag);
     out << (noWait ? qint8(0x01) : qint8(0x0));
 
     frame.setArguments(arguments);

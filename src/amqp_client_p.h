@@ -6,6 +6,12 @@
 #include <QPointer>
 #include <QAbstractSocket>
 
+#ifndef QT_NO_SSL
+#   include <QSslConfiguration>
+#   include <QSslError>
+#endif
+
+#include "amqp_table.h"
 #include "amqp_frame.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
@@ -92,7 +98,7 @@ public:
     bool closed;
     bool connected;
     QPointer<QTimer> heartbeatTimer;
-    Frame::TableField customProperties;
+    Table customProperties;
     qint16 channelMax;
     qint16 heartbeatDelay;
     qint32 frameMax;
@@ -106,6 +112,7 @@ public:
 };
 
 #ifndef QT_NO_SSL
+class SslClient;
 class SslClientPrivate : public ClientPrivate
 {
 public:

@@ -1,11 +1,10 @@
 #include "amqp_frame.h"
 
-#include <float.h>
-
 #include <QDateTime>
 #include <QList>
 #include <QDebug>
 
+#include "amqp_table.h"
 #include "amqp_global.h"
 
 using namespace QAMQP;
@@ -141,244 +140,99 @@ void Method::writePayload(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-QVariant Frame::readField(qint8 valueType, QDataStream &s)
+QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
 {
-    QVariant value;
-    QByteArray tmp;
-    qint8 nameSize_ = 0;
-    char octet = 0;
-
-    switch(valueType) {
-    case 't':
-        s.readRawData(&octet, sizeof(octet));
-        value = QVariant::fromValue<bool>(octet > 0);
-        break;
-    case 'b':
-        s.readRawData(&octet, sizeof(octet));
-        value = QVariant::fromValue<int>(octet);
-        break;
-    case 'B':
-        s.readRawData(&octet, sizeof(octet));
-        value = QVariant::fromValue<uint>(octet);
-        break;
-    case 'U':
+    switch (type) {
+    case Boolean:
     {
-        qint16 tmp_value_ = 0;
-        s >> tmp_value_;
-        value = QVariant::fromValue<int>(tmp_value_);
-        break;
+        quint8 octet = 0;
+        s >> octet;
+        return QVariant::fromValue<bool>(octet > 0);
     }
-    case 'u':
+    case ShortShortUint:
     {
-        quint16 tmp_value_ = 0;
-        s >> tmp_value_;
-        value = QVariant::fromValue<uint>(tmp_value_);
-        break;
+        quint8 octet = 0;
+        s >> octet;
+        return QVariant::fromValue<int>(octet);
     }
-    case 'I':
+    case ShortUint:
     {
-        qint32 tmp_value_ = 0;
-        s >> tmp_value_;
-        value = QVariant::fromValue<int>(tmp_value_);
-        break;
+        quint16 tmp_value = 0;
+        s >> tmp_value;
+        return QVariant::fromValue<uint>(tmp_value);
     }
-    case 'i':
+    case LongUint:
     {
-        quint32 tmp_value_ = 0;
-        s >> tmp_value_;
-        value = QVariant::fromValue<uint>(tmp_value_);
-        break;
+        quint32 tmp_value = 0;
+        s >> tmp_value;
+        return QVariant::fromValue<uint>(tmp_value);
     }
-    case 'L':
-    {
-        qlonglong v = 0 ;
-        s >> v;
-        value = v;
-    }
-
-        break;
-    case 'l':
+    case LongLongUint:
     {
         qulonglong v = 0 ;
         s >> v;
-        value = v;
+        return v;
     }
+    case ShortString:
+    {
+        qint8 size = 0;
+        QByteArray buffer;
 
-        break;
-    case 'f':
-    {
-        float tmp_value_;
-        s >> tmp_value_;
-        value = QVariant::fromValue<float>(tmp_value_);
-        break;
+        s >> size;
+        buffer.resize(size);
+        s.readRawData(buffer.data(), buffer.size());
+        return QString::fromUtf8(buffer.data(), size);
     }
-    case 'd':
+    case LongString:
     {
-        double tmp_value_;
-        s >> tmp_value_;
-        value = QVariant::fromValue<double>(tmp_value_);
-        break;
+        quint32 size = 0;
+        QByteArray buffer;
+
+        s >> size;
+        buffer.resize(size);
+        s.readRawData(buffer.data(), buffer.size());
+        return QString::fromUtf8(buffer.data(), buffer.size());
     }
-    case 'D':
+    case Timestamp:
     {
-        Frame::decimal v;
-        s >> v.scale;
-        s >> v.value;
-        value = QVariant::fromValue<Frame::decimal>(v);
+        qulonglong tmp_value;
+        s >> tmp_value;
+        return QDateTime::fromMSecsSinceEpoch(tmp_value);
     }
-        break;
-    case 's':
-        s >> nameSize_;
-        tmp.resize(nameSize_);
-        s.readRawData(tmp.data(), tmp.size());
-        value = QString::fromLatin1(tmp.data(), nameSize_);
-        break;
-    case 'S':
+    case Hash:
     {
-        quint32 length_ = 0;
-        s >> length_;
-        nameSize_ = length_;
-        tmp.resize(length_);
+        Table table;
+        s >> table;
+        return table;
     }
-        s.readRawData(tmp.data(), tmp.size());
-        value = QString::fromLatin1(tmp.data(), tmp.size());
-        break;
-    case 'A':
-    {
-        qint32 length_ = 0;
-        qint8 type = 0;
-        s >> length_;
-        QList<QVariant> array_;
-        for (int i =0; i < length_; ++i) {
-            s >> type;
-            array_ << readField(type, s);
-        }
-        value = array_;
-    }
-        break;
-    case 'T':
-    {
-        qulonglong tmp_value_;
-        s >> tmp_value_;
-        value = QDateTime::fromMSecsSinceEpoch(tmp_value_);
-        break;
-    }
-    case 'F':
-    {
-        TableField table_;
-        deserialize(s, table_);
-        value = table_;
-    }
-        break;
-    case 'V':
-        break;
+    case Void:
+        return QVariant();
     default:
-        qWarning("Unknown field type");
+        qWarning() << Q_FUNC_INFO << "unsupported value type: " << type;
     }
-    return value;
+
+    return QVariant();
 }
 
-QDataStream &Frame::deserialize(QDataStream &stream, Frame::TableField &f)
+void Frame::writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant &value)
 {
-    QByteArray data;
-    stream >> data;
-    QDataStream s(&data, QIODevice::ReadOnly);
-
-    while (!s.atEnd()) {
-        qint8 valueType = 0;
-        QString name = readField('s', s).toString();
-        s >> valueType;
-        f[name] = readField(valueType, s);
-    }
-
-    return stream;
-}
-
-QDataStream &Frame::serialize(QDataStream &stream, const TableField &f)
-{
-    QByteArray data;
-    QDataStream s(&data, QIODevice::WriteOnly);
-    TableField::ConstIterator it;
-    TableField::ConstIterator itEnd = f.constEnd();
-    for (it = f.constBegin(); it != itEnd; ++it) {
-        writeField('s', s, it.key());
-        writeField(s, it.value());
-    }
-
-    if (data.isEmpty()) {
-        stream << qint32(0);
-    } else {
-        stream << data;
-    }
-
-    return stream;
-}
-
-void Frame::print(const TableField &f)
-{
-    TableField::ConstIterator it;
-    TableField::ConstIterator itEnd = f.constEnd();
-    for (it = f.constBegin(); it != itEnd; ++it) {
-        switch(it.value().type()) {
-        case  QVariant::Hash:
-            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": FIELD_TABLE";
-            break;
-        case QVariant::List:
-            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": ARRAY";
-            break;
-        default:
-            qAmqpDebug() << "\t" << qPrintable(it.key()) << ": " << it.value();
-        }
-    }
-}
-
-void Frame::writeField(qint8 valueType, QDataStream &s, const QVariant &value, bool withType)
-{
-    if (withType)
-        s << valueType;
-
-    switch (valueType) {
-    case 't':
+    switch (type) {
+    case Boolean:
         s << (value.toBool() ? qint8(1) : qint8(0));
         break;
-    case 'b':
-        s << qint8(value.toInt());
+    case ShortShortUint:
+        s << qint8(value.toUInt());
         break;
-    case 'B':
-        s << quint8(value.toUInt());
-        break;
-    case 'U':
-        s << qint16(value.toInt());
-        break;
-    case 'u':
+    case ShortUint:
         s << quint16(value.toUInt());
         break;
-    case 'I':
-        s << qint32(value.toInt());
-        break;
-    case 'i':
+    case LongUint:
         s << quint32(value.toUInt());
         break;
-    case 'L':
-        s << qlonglong(value.toLongLong());
-        break;
-    case 'l':
+    case LongLongUint:
         s << qulonglong(value.toULongLong());
         break;
-    case 'f':
-        s << value.toFloat();
-        break;
-    case 'd':
-        s << value.toDouble();
-        break;
-    case 'D':
-    {
-        Frame::decimal v(value.value<Frame::decimal>());
-        s << v.scale;
-        s << v.value;
-    }
-        break;
-    case 's':
+    case ShortString:
     {
         QString str = value.toString();
         if (str.length() >= 256) {
@@ -386,102 +240,28 @@ void Frame::writeField(qint8 valueType, QDataStream &s, const QVariant &value, b
         }
 
         s << quint8(str.length());
-        s.writeRawData(str.toLatin1().data(), str.length());
+        s.writeRawData(str.toUtf8().data(), str.length());
     }
         break;
-    case 'S':
+    case LongString:
     {
         QString str = value.toString();
         s << quint32(str.length());
         s.writeRawData(str.toLatin1().data(), str.length());
     }
         break;
-    case 'A':
-    {
-        QList<QVariant> array_(value.toList());
-        s << quint32(array_.count());
-        for (int i =0; i < array_.count(); ++i)
-            writeField(s, array_.at(i));
-    }
-        break;
-    case 'T':
+    case Timestamp:
         s << qulonglong(value.toDateTime().toMSecsSinceEpoch());
         break;
-    case 'F':
+    case Hash:
     {
-        TableField table_(value.toHash());
-        serialize(s, table_);
+        Table table(value.toHash());
+        s << table;
     }
-        break;
-    case 'V':
         break;
     default:
-        qWarning("Unknown field type");
+        qWarning() << Q_FUNC_INFO << "unsupported value type: " << type;
     }
-}
-
-void Frame::writeField(QDataStream &s, const QVariant &value)
-{
-    char type = 0;
-    switch (value.type()) {
-    case QVariant::Bool:
-        type = 't';
-        break;
-    case QVariant::ByteArray:
-        type = 'S';
-        break;
-    case QVariant::Int:
-    {
-        int i = qAbs(value.toInt());
-        if (i <= qint8(0xFF)) {
-            type = 'b';
-        } else if (i <= qint16(0xFFFF)) {
-            type = 'U';
-        } else if (i <= qint16(0xFFFFFFFF)) {
-            type = 'I';
-        }
-    }
-        break;
-    case QVariant::UInt:
-    {
-        int i = value.toInt();
-        if (i <= qint8(0xFF)) {
-            type = 'B';
-        } else if (i <= qint16(0xFFFF)) {
-            type = 'u';
-        } else if (i <= qint16(0xFFFFFFFF)) {
-            type = 'i';
-        }
-    }
-        break;
-    case QVariant::LongLong:
-        type = 'L';
-        break;
-    case QVariant::ULongLong:
-        type = 'l';
-        break;
-    case QVariant::String:
-        type = 'S';
-        break;
-    case QVariant::DateTime:
-        type = 'T';
-        break;
-    case QVariant::Double:
-        type = value.toDouble() > FLT_MAX ? 'd' : 'f';
-        break;
-    case QVariant::Hash:
-        type = 'F';
-        break;
-    case QVariant::List:
-        type = 'A';
-        break;
-
-    default:
-        qAmqpDebug() << Q_FUNC_INFO << "unhandled variant type: " << value.type();
-    }
-
-    if (type)
-        writeField(type, s, value, true);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -522,46 +302,46 @@ qint32 Content::size() const
     out << prop_;
 
     if (prop_ & cpContentType)
-        writeField('s', out, properties_[cpContentType]);
+        writeAmqpField(out, ShortString, properties_[cpContentType]);
 
     if (prop_ & cpContentEncoding)
-        writeField('s', out, properties_[cpContentEncoding]);
+        writeAmqpField(out, ShortString, properties_[cpContentEncoding]);
 
     if (prop_ & cpHeaders)
-        writeField('F', out, properties_[cpHeaders]);
+        writeAmqpField(out, Hash, properties_[cpHeaders]);
 
     if (prop_ & cpDeliveryMode)
-        writeField('b', out, properties_[cpDeliveryMode]);
+        writeAmqpField(out, ShortShortUint, properties_[cpDeliveryMode]);
 
     if (prop_ & cpPriority)
-        writeField('b', out, properties_[cpPriority]);
+        writeAmqpField(out, ShortShortUint, properties_[cpPriority]);
 
     if (prop_ & cpCorrelationId)
-        writeField('s', out, properties_[cpCorrelationId]);
+        writeAmqpField(out, ShortString, properties_[cpCorrelationId]);
 
     if (prop_ & cpReplyTo)
-        writeField('s', out, properties_[cpReplyTo]);
+        writeAmqpField(out, ShortString, properties_[cpReplyTo]);
 
     if (prop_ & cpExpiration)
-        writeField('s', out, properties_[cpExpiration]);
+        writeAmqpField(out, ShortString, properties_[cpExpiration]);
 
     if (prop_ & cpMessageId)
-        writeField('s', out, properties_[cpMessageId]);
+        writeAmqpField(out, ShortString, properties_[cpMessageId]);
 
     if (prop_ & cpTimestamp)
-        writeField('T', out, properties_[cpTimestamp]);
+        writeAmqpField(out, Timestamp, properties_[cpTimestamp]);
 
     if (prop_ & cpType)
-        writeField('s', out, properties_[cpType]);
+        writeAmqpField(out, ShortString, properties_[cpType]);
 
     if (prop_ & cpUserId)
-        writeField('s', out, properties_[cpUserId]);
+        writeAmqpField(out, ShortString, properties_[cpUserId]);
 
     if (prop_ & cpAppId)
-        writeField('s', out, properties_[cpAppId]);
+        writeAmqpField(out, ShortString, properties_[cpAppId]);
 
     if (prop_ & cpClusterID)
-        writeField('s', out, properties_[cpClusterID]);
+        writeAmqpField(out, ShortString, properties_[cpClusterID]);
 
     return buffer_.size();
 }
@@ -599,46 +379,46 @@ void Content::readPayload(QDataStream &in)
     qint16 flags_ = 0;
     in >> flags_;
     if (flags_ & cpContentType)
-        properties_[cpContentType] = readField('s', in);
+        properties_[cpContentType] = readAmqpField(in, ShortString);
 
     if (flags_ & cpContentEncoding)
-        properties_[cpContentEncoding] = readField('s', in);
+        properties_[cpContentEncoding] = readAmqpField(in, ShortString);
 
     if (flags_ & cpHeaders)
-        properties_[cpHeaders] = readField('F', in);
+        properties_[cpHeaders] = readAmqpField(in, Hash);
 
     if (flags_ & cpDeliveryMode)
-        properties_[cpDeliveryMode] = readField('b', in);
+        properties_[cpDeliveryMode] = readAmqpField(in, ShortShortUint);
 
     if (flags_ & cpPriority)
-        properties_[cpPriority] = readField('b', in);
+        properties_[cpPriority] = readAmqpField(in, ShortShortUint);
 
     if (flags_ & cpCorrelationId)
-        properties_[cpCorrelationId] = readField('s', in);
+        properties_[cpCorrelationId] = readAmqpField(in, ShortString);
 
     if (flags_ & cpReplyTo)
-        properties_[cpReplyTo] = readField('s', in);
+        properties_[cpReplyTo] = readAmqpField(in, ShortString);
 
     if (flags_ & cpExpiration)
-        properties_[cpExpiration] = readField('s', in);
+        properties_[cpExpiration] = readAmqpField(in, ShortString);
 
     if (flags_ & cpMessageId)
-        properties_[cpMessageId] = readField('s', in);
+        properties_[cpMessageId] = readAmqpField(in, ShortString);
 
     if (flags_ & cpTimestamp)
-        properties_[cpTimestamp] = readField('T', in);
+        properties_[cpTimestamp] = readAmqpField(in, Timestamp);
 
     if (flags_ & cpType)
-        properties_[cpType] = readField('s', in);
+        properties_[cpType] = readAmqpField(in, ShortString);
 
     if (flags_ & cpUserId)
-        properties_[cpUserId] = readField('s', in);
+        properties_[cpUserId] = readAmqpField(in, ShortString);
 
     if (flags_ & cpAppId)
-        properties_[cpAppId] = readField('s', in);
+        properties_[cpAppId] = readAmqpField(in, ShortString);
 
     if (flags_ & cpClusterID)
-        properties_[cpClusterID] = readField('s', in);
+        properties_[cpClusterID] = readAmqpField(in, ShortString);
 }
 
 //////////////////////////////////////////////////////////////////////////

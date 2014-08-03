@@ -48,11 +48,11 @@ void ExchangePrivate::declare()
     QDataStream stream(&args, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeField('s', stream, name);
-    Frame::writeField('s', stream, type);
+    Frame::writeAmqpField(stream, ShortString, name);
+    Frame::writeAmqpField(stream, ShortString, type);
 
     stream << qint8(options);
-    Frame::writeField('F', stream, arguments);
+    Frame::writeAmqpField(stream, Hash, arguments);
 
     frame.setArguments(args);
     sendFrame(frame);
@@ -133,9 +133,9 @@ void ExchangePrivate::basicReturn(const Frame::Method &frame)
 
     quint16 replyCode;
     stream >> replyCode;
-    QString replyText = Frame::readField('s', stream).toString();
-    QString exchangeName = Frame::readField('s', stream).toString();
-    QString routingKey = Frame::readField('s', stream).toString();
+    QString replyText = Frame::readAmqpField(stream, ShortString).toString();
+    QString exchangeName = Frame::readAmqpField(stream, ShortString).toString();
+    QString routingKey = Frame::readAmqpField(stream, ShortString).toString();
 
     Error checkError = static_cast<Error>(replyCode);
     if (checkError != QAMQP::NoError) {
@@ -186,12 +186,12 @@ QString Exchange::type() const
     return d->type;
 }
 
-void Exchange::declare(ExchangeType type, ExchangeOptions options , const Frame::TableField &args)
+void Exchange::declare(ExchangeType type, ExchangeOptions options, const Table &args)
 {
     declare(ExchangePrivate::typeToString(type), options, args);
 }
 
-void Exchange::declare(const QString &type, ExchangeOptions options , const Frame::TableField &args)
+void Exchange::declare(const QString &type, ExchangeOptions options, const Table &args)
 {
     Q_D(Exchange);
     d->type = type;
@@ -210,7 +210,7 @@ void Exchange::remove(int options)
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeField('s', stream, d->name);
+    Frame::writeAmqpField(stream, ShortString, d->name);
     stream << qint8(options);
 
     frame.setArguments(arguments);
@@ -232,7 +232,7 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
 }
 
 void Exchange::publish(const QByteArray &message, const QString &routingKey,
-                       const QString &mimeType, const QVariantHash &headers,
+                       const QString &mimeType, const Table &headers,
                        const MessageProperties &properties, int publishOptions)
 {
     Q_D(Exchange);
@@ -243,8 +243,8 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeField('s', out, d->name);
-    Frame::writeField('s', out, routingKey);
+    Frame::writeAmqpField(out, ShortString, d->name);
+    Frame::writeAmqpField(out, ShortString, routingKey);
     out << qint8(publishOptions);
 
     frame.setArguments(arguments);

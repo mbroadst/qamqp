@@ -25,7 +25,8 @@ INSTALL_HEADERS += \
     amqp_frame.h \
     amqp_global.h \
     amqp_message.h \
-    amqp_queue.h
+    amqp_queue.h \
+    amqp_table.h
 
 HEADERS += \
     $${INSTALL_HEADERS} \
@@ -38,7 +39,8 @@ SOURCES += \
     amqp_exchange.cpp \
     amqp_frame.cpp \
     amqp_message.cpp \
-    amqp_queue.cpp
+    amqp_queue.cpp \
+    amqp_table.cpp
 
 # install
 headers.files = $${INSTALL_HEADERS}

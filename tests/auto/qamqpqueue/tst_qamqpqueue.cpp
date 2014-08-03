@@ -1,3 +1,5 @@
+#include <float.h>
+
 #include <QScopedPointer>
 
 #include <QtTest/QtTest>
@@ -42,6 +44,7 @@ private Q_SLOTS:
     void invalidQos();
     void qos();
     void invalidRoutingKey();
+    void tableFieldDataTypes();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -530,6 +533,85 @@ void tst_QAMQPQueue::invalidRoutingKey()
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::FrameError);
 }
+
+void tst_QAMQPQueue::tableFieldDataTypes()
+{
+    Queue *queue = client->createQueue("test-table-field-data-types");
+    declareQueueAndVerifyConsuming(queue);
+
+    Frame::decimal decimal;
+    decimal.scale = 2;
+    decimal.value = 12345;
+    QVariant decimalVariant = QVariant::fromValue<Frame::decimal>(decimal);
+
+    Table nestedTable;
+    nestedTable.insert("boolean", true);
+    nestedTable.insert("long-int", qint32(-65536));
+
+    QVariantList array;
+    array.append(true);
+    array.append(qint32(-65536));
+
+    QDateTime timestamp = QDateTime::currentDateTime();
+
+    Table headers;
+    headers.insert("boolean", true);
+    headers.insert("short-short-int", qint8(-15));
+    headers.insert("short-short-uint", quint8(15));
+    headers.insert("short-int", qint16(-256));
+    headers.insert("short-uint", QVariant::fromValue(quint16(256)));
+    headers.insert("long-int", qint32(-65536));
+    headers.insert("long-uint", quint32(65536));
+    headers.insert("long-long-int", qint64(-2147483648));
+    headers.insert("long-long-uint", quint64(2147483648));
+    headers.insert("float", 230.7);
+    headers.insert("double", double(FLT_MAX));
+    headers.insert("decimal-value", decimalVariant);
+    headers.insert("short-string", QLatin1String("test"));
+    headers.insert("long-string", QLatin1String("test"));
+    headers.insert("timestamp", timestamp);
+    headers.insert("nested-table", nestedTable);
+    headers.insert("array", array);
+    headers.insert("bytes", QByteArray("abcdefg1234567"));
+
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("dummy", "test-table-field-data-types", "text.plain", headers);
+
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    Message message = queue->dequeue();
+
+    QCOMPARE(message.header("boolean").toBool(), true);
+    QCOMPARE(qint8(message.header("short-short-int").toInt()), qint8(-15));
+    QCOMPARE(quint8(message.header("short-short-uint").toUInt()), quint8(15));
+    QCOMPARE(qint16(message.header("short-int").toInt()), qint16(-256));
+    QCOMPARE(quint16(message.header("short-uint").toUInt()), quint16(256));
+    QCOMPARE(qint32(message.header("long-int").toInt()), qint32(-65536));
+    QCOMPARE(quint32(message.header("long-uint").toUInt()), quint32(65536));
+    QCOMPARE(qint64(message.header("long-long-int").toLongLong()), qint64(-2147483648));
+    QCOMPARE(quint64(message.header("long-long-uint").toLongLong()), quint64(2147483648));
+    QCOMPARE(message.header("float").toFloat(), float(230.7));
+    QCOMPARE(message.header("double").toDouble(), double(FLT_MAX));
+    QCOMPARE(message.header("short-string").toString(), QLatin1String("test"));
+    QCOMPARE(message.header("long-string").toString(), QLatin1String("test"));
+    QCOMPARE(message.header("timestamp").toDateTime(), timestamp);
+    QCOMPARE(message.header("bytes").toByteArray(), QByteArray("abcdefg1234567"));
+
+    QVERIFY(message.hasHeader("nested-table"));
+    Table compareTable(message.header("nested-table").toHash());
+    foreach (QString key, nestedTable.keys()) {
+        QVERIFY(compareTable.contains(key));
+        QCOMPARE(nestedTable.value(key), compareTable.value(key));
+    }
+
+    QVERIFY(message.hasHeader("array"));
+    QVariantList compareArray = message.header("array").toList();
+    QCOMPARE(array, compareArray);
+
+    Frame::decimal receivedDecimal = message.header("decimal-value").value<Frame::decimal>();
+    QCOMPARE(receivedDecimal.scale, qint8(2));
+    QCOMPARE(receivedDecimal.value, quint32(12345));
+}
+
 
 QTEST_MAIN(tst_QAMQPQueue)
 #include "tst_qamqpqueue.moc"

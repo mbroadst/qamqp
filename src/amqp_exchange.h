@@ -1,6 +1,7 @@
 #ifndef amqp_exchange_h__
 #define amqp_exchange_h__
 
+#include "amqp_table.h"
 #include "amqp_channel.h"
 
 namespace QAMQP
@@ -56,10 +57,10 @@ public:
     // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
-                 const Frame::TableField &args = Frame::TableField());
+                 const Table &args = Table());
     void declare(const QString &type = QLatin1String("direct"),
                  ExchangeOptions options = NoOptions,
-                 const Frame::TableField &args = Frame::TableField());
+                 const Table &args = Table());
     void remove(int options = roIfUnused|roNoWait);
 
     // AMQP Basic
@@ -70,7 +71,7 @@ public:
                  const QString &mimeType, const MessageProperties &properties = MessageProperties(),
                  int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey,
-                 const QString &mimeType, const QVariantHash &headers,
+                 const QString &mimeType, const Table &headers,
                  const MessageProperties &properties = MessageProperties(),
                  int publishOptions = poNoOptions);
 
