@@ -261,7 +261,7 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
     MessageProperties::ConstIterator itEnd = properties.constEnd();
     for (it = properties.constBegin(); it != itEnd; ++it)
         content.setProperty(it.key(), it.value());
-    content.setBody(message);
+    content.setBodySize(message.size());
     d->sendFrame(content);
 
     int fullSize = message.size();

@@ -514,7 +514,7 @@ qint32 Content::size() const
     buffer_.clear();
     out << qint16(methodClass_);
     out << qint16(0); //weight
-    out << qlonglong(body_.size());
+    out << qlonglong(bodySize_);
 
     qint16 prop_ = 0;
     foreach (int p, properties_.keys())
@@ -566,14 +566,14 @@ qint32 Content::size() const
     return buffer_.size();
 }
 
-void Content::setBody(const QByteArray &data)
+qlonglong Content::bodySize() const
 {
-    body_ = data;
+    return bodySize_;
 }
 
-QByteArray Content::body() const
+void Content::setBodySize(qlonglong size)
 {
-    return body_;
+    bodySize_ = size;
 }
 
 void Content::setProperty(Property prop, const QVariant &value)
@@ -641,10 +641,6 @@ void Content::readPayload(QDataStream &in)
         properties_[cpClusterID] = readField('s', in);
 }
 
-qlonglong Content::bodySize() const
-{
-    return body_.isEmpty() ? bodySize_ : body_.size();
-}
 //////////////////////////////////////////////////////////////////////////
 
 ContentBody::ContentBody()

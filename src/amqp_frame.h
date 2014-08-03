@@ -322,16 +322,14 @@ namespace Frame
          */
         QVariant property(Property prop) const;
 
-        void setBody(const QByteArray &data);
-        QByteArray body() const;
         qlonglong bodySize() const;
+        void setBodySize(qlonglong size);
 
     protected:
         void writePayload(QDataStream &stream) const;
         void readPayload(QDataStream &stream);
         short methodClass_;
         qint16 id_;
-        QByteArray body_;
         mutable QByteArray buffer_;
         QHash<int, QVariant> properties_;
         qlonglong bodySize_;
