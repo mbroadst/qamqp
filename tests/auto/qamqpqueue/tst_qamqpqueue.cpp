@@ -45,6 +45,7 @@ private Q_SLOTS:
     void qos();
     void invalidRoutingKey();
     void tableFieldDataTypes();
+    void messageProperties();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -610,6 +611,47 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     Frame::decimal receivedDecimal = message.header("decimal-value").value<Frame::decimal>();
     QCOMPARE(receivedDecimal.scale, qint8(2));
     QCOMPARE(receivedDecimal.value, quint32(12345));
+}
+
+void tst_QAMQPQueue::messageProperties()
+{
+    Queue *queue = client->createQueue("test-message-properties");
+    declareQueueAndVerifyConsuming(queue);
+
+    QDateTime timestamp = QDateTime::currentDateTime();
+    MessageProperties properties;
+    properties.insert(Frame::Content::cpContentType, "some-content-type");
+    properties.insert(Frame::Content::cpContentEncoding, "some-content-encoding");
+    properties.insert(Frame::Content::cpDeliveryMode, 2);
+    properties.insert(Frame::Content::cpPriority, 5);
+    properties.insert(Frame::Content::cpCorrelationId, 42);
+    properties.insert(Frame::Content::cpReplyTo, "another-queue");
+    properties.insert(Frame::Content::cpMessageId, "some-message-id");
+    properties.insert(Frame::Content::cpExpiration, "60000");
+    properties.insert(Frame::Content::cpTimestamp, timestamp);
+    properties.insert(Frame::Content::cpType, "some-message-type");
+    properties.insert(Frame::Content::cpUserId, "guest");
+    properties.insert(Frame::Content::cpAppId, "some-app-id");
+    properties.insert(Frame::Content::cpClusterID, "some-cluster-id");
+
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("dummy", "test-message-properties", properties);
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    Message message = queue->dequeue();
+
+    QCOMPARE(message.property(Message::ContentType).toString(), QLatin1String("some-content-type"));
+    QCOMPARE(message.property(Message::ContentEncoding).toString(), QLatin1String("some-content-encoding"));
+    QCOMPARE(message.property(Message::DeliveryMode).toInt(), 2);
+    QCOMPARE(message.property(Message::Priority).toInt(), 5);
+    QCOMPARE(message.property(Message::CorrelationId).toInt(), 42);
+    QCOMPARE(message.property(Message::ReplyTo).toString(), QLatin1String("another-queue"));
+    QCOMPARE(message.property(Message::MessageId).toString(), QLatin1String("some-message-id"));
+    QCOMPARE(message.property(Message::Expiration).toString(), QLatin1String("60000"));
+    QCOMPARE(message.property(Message::Timestamp).toDateTime(), timestamp);
+    QCOMPARE(message.property(Message::Type).toString(), QLatin1String("some-message-type"));
+    QCOMPARE(message.property(Message::UserId).toString(), QLatin1String("guest"));
+    QCOMPARE(message.property(Message::AppId).toString(), QLatin1String("some-app-id"));
+    QCOMPARE(message.property(Message::ClusterID).toString(), QLatin1String("some-cluster-id"));
 }
 
 
