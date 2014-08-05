@@ -90,9 +90,9 @@ void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
     case QMetaType::Int:
     {
         int i = qAbs(value.toInt());
-        if (i <= qint8(UINT8_MAX)) {
+        if (i <= qint8(SCHAR_MAX)) {
             type = ShortShortInt;
-        } else if (i <= qint16(UINT16_MAX)) {
+        } else if (i <= qint16(SHRT_MAX)) {
             type = ShortInt;
         } else {
             type = LongInt;
@@ -105,9 +105,9 @@ void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
     case QMetaType::UInt:
     {
         int i = value.toInt();
-        if (i <= qint8(UINT8_MAX)) {
+        if (i <= qint8(SCHAR_MAX)) {
             type = ShortShortInt;
-        } else if (i <= qint16(UINT16_MAX)) {
+        } else if (i <= qint16(SHRT_MAX)) {
             type = ShortInt;
         } else {
             type = LongInt;
