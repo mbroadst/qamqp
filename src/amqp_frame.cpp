@@ -181,7 +181,7 @@ QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
         s >> size;
         buffer.resize(size);
         s.readRawData(buffer.data(), buffer.size());
-        return QString::fromUtf8(buffer.data(), size);
+        return QString::fromLatin1(buffer.data(), size);
     }
     case LongString:
     {
