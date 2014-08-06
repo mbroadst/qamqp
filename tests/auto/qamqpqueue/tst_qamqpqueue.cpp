@@ -108,21 +108,31 @@ void tst_QAMQPQueue::defaultExchange()
 void tst_QAMQPQueue::standardExchanges_data()
 {
     QTest::addColumn<QString>("exchange");
-    QTest::newRow("amq.direct") << "amq.direct";
-    QTest::newRow("amq.fanout") << "amq.fanout";
-    QTest::newRow("amq.headers") << "amq.headers";
-    QTest::newRow("amq.match") << "amq.match";
-    QTest::newRow("amq.topic") << "amq.topic";
+    QTest::addColumn<bool>("delayedDeclaration");
+
+    QTest::newRow("amq.direct") << "amq.direct" << false;
+    QTest::newRow("amq.direct-delayed") << "amq.direct" << true;
+    QTest::newRow("amq.fanout") << "amq.fanout" << false;
+    QTest::newRow("amq.fanout-delayed") << "amq.fanout" << true;
+    QTest::newRow("amq.headers") << "amq.headers" << false;
+    QTest::newRow("amq.headers-delayed") << "amq.headers" << true;
+    QTest::newRow("amq.match") << "amq.match" << false;
+    QTest::newRow("amq.match-delayed") << "amq.match" << true;
+    QTest::newRow("amq.topic") << "amq.topic" << false;
+    QTest::newRow("amq.topic-delayed") << "amq.topic" << true;
 }
 
 void tst_QAMQPQueue::standardExchanges()
 {
     QFETCH(QString, exchange);
+    QFETCH(bool, delayedDeclaration);
 
     QString queueName = QString("test-%1").arg(exchange);
     QString routingKey = QString("testRoutingKey-%1").arg(exchange);
 
     Queue *queue = client->createQueue(queueName);
+    if (!delayedDeclaration)
+        QVERIFY(waitForSignal(queue, SIGNAL(opened())));
     declareQueueAndVerifyConsuming(queue);
 
     queue->bind(exchange, routingKey);

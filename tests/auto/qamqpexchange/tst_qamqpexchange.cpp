@@ -48,17 +48,27 @@ void tst_QAMQPExchange::cleanup()
 void tst_QAMQPExchange::standardTypes_data()
 {
     QTest::addColumn<Exchange::ExchangeType>("type");
-    QTest::newRow("direct") << Exchange::Direct;
-    QTest::newRow("fanout") << Exchange::FanOut;
-    QTest::newRow("topic") << Exchange::Topic;
-    QTest::newRow("headers") << Exchange::Headers;
+    QTest::addColumn<bool>("delayedDeclaration");
+
+    QTest::newRow("direct") << Exchange::Direct << false;
+    QTest::newRow("direct-delayed") << Exchange::Direct << true;
+    QTest::newRow("fanout") << Exchange::FanOut << false;
+    QTest::newRow("fanout-delayed") << Exchange::FanOut << true;
+    QTest::newRow("topic") << Exchange::Topic << false;
+    QTest::newRow("topic-delayed") << Exchange::Topic << true;
+    QTest::newRow("headers") << Exchange::Headers << false;
+    QTest::newRow("headers-delayed") << Exchange::Headers << true;
 }
 
 void tst_QAMQPExchange::standardTypes()
 {
     QFETCH(Exchange::ExchangeType, type);
+    QFETCH(bool, delayedDeclaration);
 
     Exchange *exchange = client->createExchange("test");
+    if (!delayedDeclaration)
+        QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
+
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->remove(Exchange::roForce);
@@ -76,7 +86,6 @@ void tst_QAMQPExchange::invalidStandardDeclaration_data()
     QTest::newRow("amq.headers") << "amq.headers" << Exchange::Headers << QAMQP::PreconditionFailedError;
     QTest::newRow("amq.match") << "amq.match" << Exchange::Headers << QAMQP::PreconditionFailedError;
     QTest::newRow("amq.topic") << "amq.topic" << Exchange::Topic << QAMQP::PreconditionFailedError;
-
     QTest::newRow("amq.reserved") << "amq.reserved" << Exchange::Direct << QAMQP::AccessRefusedError;
 }
 
