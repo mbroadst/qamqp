@@ -46,6 +46,7 @@ private Q_SLOTS:
     void invalidRoutingKey();
     void tableFieldDataTypes();
     void messageProperties();
+    void closeChannel();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -664,6 +665,15 @@ void tst_QAMQPQueue::messageProperties()
     QCOMPARE(message.property(Message::ClusterID).toString(), QLatin1String("some-cluster-id"));
 }
 
+void tst_QAMQPQueue::closeChannel()
+{
+    Queue *queue = client->createQueue("test-close-channel");
+    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
+    declareQueueAndVerifyConsuming(queue);
+
+    queue->closeChannel();
+    QVERIFY(waitForSignal(queue, SIGNAL(closed())));
+}
 
 QTEST_MAIN(tst_QAMQPQueue)
 #include "tst_qamqpqueue.moc"

@@ -505,15 +505,14 @@ void ClientPrivate::open()
 
 void ClientPrivate::close(int code, const QString &text, int classId, int methodId)
 {
-    Frame::Method frame(Frame::fcConnection, ClientPrivate::miClose);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
-
     stream << qint16(code);
     Frame::writeAmqpField(stream, ShortString, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 
+    Frame::Method frame(Frame::fcConnection, ClientPrivate::miClose);
     frame.setArguments(arguments);
     sendFrame(frame);
 }

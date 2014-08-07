@@ -152,17 +152,22 @@ void ChannelPrivate::flowOk(const Frame::Method &frame)
 
 void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
 {
-    Frame::Method frame(Frame::fcChannel, miClose);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeAmqpField(stream, ShortString, client->virtualHost());
+    if (!code) code = 200;
+    Frame::writeAmqpField(stream, ShortUint, code);
+    if (!text.isEmpty()) {
+      Frame::writeAmqpField(stream, ShortString, text);
+    } else {
+      Frame::writeAmqpField(stream, ShortString, QLatin1String("OK"));
+    }
 
-    stream << qint16(code);
-    Frame::writeAmqpField(stream, ShortString, text);
-    stream << qint16(classId);
-    stream << qint16(methodId);
+    Frame::writeAmqpField(stream, ShortUint, classId);
+    Frame::writeAmqpField(stream, ShortUint, methodId);
 
+    Frame::Method frame(Frame::fcChannel, miClose);
+    frame.setChannel(channelNumber);
     frame.setArguments(arguments);
     sendFrame(frame);
 }
@@ -268,7 +273,8 @@ void Channel::closeChannel()
 void Channel::reopen()
 {
     Q_D(Channel);
-    closeChannel();
+    if (d->opened)
+        closeChannel();
     d->open();
 }
 
