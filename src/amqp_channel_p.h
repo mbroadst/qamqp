@@ -21,13 +21,6 @@ public:
          METHOD_ID_ENUM(miClose, 40)
     };
 
-    enum State {
-        csOpened,
-        csClosed,
-        csIdle,
-        csRunning
-    };
-
     enum BasicMethod {
         METHOD_ID_ENUM(bmQos, 10),
         METHOD_ID_ENUM(bmConsume, 20),
@@ -47,12 +40,10 @@ public:
     virtual ~ChannelPrivate();
 
     void init(int channel, Client *client);
-    void stateChanged(State state);
-
     void sendFrame(const Frame::Base &frame);
 
     void open();
-    void flow();
+    void flow(bool active);
     void flowOk();
     void close(int code, const QString &text, int classId, int methodId);
     void closeOk();

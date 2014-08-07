@@ -36,11 +36,13 @@ public:
 public Q_SLOTS:
     void closeChannel();
     void reopen();
+    void resume();
 
 Q_SIGNALS:
     void opened();
     void closed();
-    void flowChanged(bool enabled);
+    void resumed();
+    void paused();
     void error(QAMQP::Error error);
     void qosDefined();
 

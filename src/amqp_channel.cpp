@@ -34,25 +34,6 @@ void ChannelPrivate::init(int channel, Client *c)
     nextChannelNumber = qMax(channelNumber, (nextChannelNumber + 1));
 }
 
-void ChannelPrivate::stateChanged(State state)
-{
-    Q_Q(Channel);
-    switch(ChannelPrivate::State(state)) {
-    case ChannelPrivate::csOpened:
-        Q_EMIT q->opened();
-        break;
-    case ChannelPrivate::csClosed:
-        Q_EMIT q->closed();
-        break;
-    case ChannelPrivate::csIdle:
-        Q_EMIT q->flowChanged(false);
-        break;
-    case ChannelPrivate::csRunning:
-        Q_EMIT q->flowChanged(true);
-        break;
-    }
-}
-
 bool ChannelPrivate::_q_method(const Frame::Method &frame)
 {
     Q_ASSERT(frame.channel() == channelNumber);
@@ -129,10 +110,21 @@ void ChannelPrivate::open()
     sendFrame(frame);
 }
 
-void ChannelPrivate::flow()
+void ChannelPrivate::flow(bool active)
 {
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+    Frame::writeAmqpField(stream, ShortShortUint, (active ? 1 : 0));
+
+    Frame::Method frame(Frame::fcChannel, miFlow);
+    frame.setChannel(channelNumber);
+    frame.setArguments(arguments);
+    sendFrame(frame);
 }
 
+// NOTE: not implemented until I can figure out a good way to force the server
+//       to pause the channel in a test. It seems like RabbitMQ just doesn't
+//       care about flow control, preferring rather to use basic.qos
 void ChannelPrivate::flow(const Frame::Method &frame)
 {
     Q_UNUSED(frame);
@@ -146,8 +138,14 @@ void ChannelPrivate::flowOk()
 
 void ChannelPrivate::flowOk(const Frame::Method &frame)
 {
-    Q_UNUSED(frame);
-    qAmqpDebug() << Q_FUNC_INFO;
+    Q_Q(Channel);
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+    bool active = Frame::readAmqpField(stream, Boolean).toBool();
+    if (active)
+        Q_EMIT q->resumed();
+    else
+        Q_EMIT q->paused();
 }
 
 void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
@@ -176,7 +174,6 @@ void ChannelPrivate::close(const Frame::Method &frame)
 {
     Q_Q(Channel);
     qAmqpDebug(">> CLOSE");
-    stateChanged(csClosed);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
@@ -197,6 +194,7 @@ void ChannelPrivate::close(const Frame::Method &frame)
     qAmqpDebug(">> text: %s", qPrintable(text));
     qAmqpDebug(">> class-id: %d", classId);
     qAmqpDebug(">> method-id: %d", methodId);
+    Q_EMIT q->closed();
 }
 
 void ChannelPrivate::closeOk()
@@ -205,24 +203,20 @@ void ChannelPrivate::closeOk()
     sendFrame(frame);
 }
 
-void ChannelPrivate::closeOk(const Frame::Method &frame)
+void ChannelPrivate::closeOk(const Frame::Method &)
 {
-    Q_UNUSED(frame)
     Q_Q(Channel);
-
-    stateChanged(csClosed);
+    Q_EMIT q->closed();
     q->channelClosed();
     opened = false;
 }
 
-void ChannelPrivate::openOk(const Frame::Method &frame)
+void ChannelPrivate::openOk(const Frame::Method &)
 {
-    Q_UNUSED(frame)
     Q_Q(Channel);
-
     qAmqpDebug(">> OpenOK");
     opened = true;
-    stateChanged(csOpened);
+    Q_EMIT q->opened();
     q->channelOpened();
 }
 
@@ -344,6 +338,12 @@ QString Channel::errorString() const
 {
     Q_D(const Channel);
     return d->errorString;
+}
+
+void Channel::resume()
+{
+    Q_D(Channel);
+    d->flow(true);
 }
 
 #include "moc_amqp_channel.cpp"

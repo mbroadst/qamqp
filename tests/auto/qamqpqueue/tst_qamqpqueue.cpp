@@ -47,6 +47,7 @@ private Q_SLOTS:
     void tableFieldDataTypes();
     void messageProperties();
     void closeChannel();
+    void resumeChannel();
 
 private:
     void declareQueueAndVerifyConsuming(Queue *queue);
@@ -673,6 +674,16 @@ void tst_QAMQPQueue::closeChannel()
 
     queue->closeChannel();
     QVERIFY(waitForSignal(queue, SIGNAL(closed())));
+}
+
+void tst_QAMQPQueue::resumeChannel()
+{
+    Queue *queue = client->createQueue("test-resume");
+    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
+    declareQueueAndVerifyConsuming(queue);
+
+    queue->resume();
+    QVERIFY(waitForSignal(queue, SIGNAL(resumed())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
