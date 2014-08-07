@@ -447,6 +447,10 @@ void ClientPrivate::close(const Frame::Method &frame)
     qAmqpDebug(">> method-id: %d", methodId);
     connected = false;
     Q_EMIT q->disconnected();
+
+    // complete handshake
+    Frame::Method closeOkFrame(Frame::fcConnection, ClientPrivate::miCloseOk);
+    sendFrame(closeOkFrame);
 }
 
 void ClientPrivate::startOk()
@@ -514,13 +518,6 @@ void ClientPrivate::close(int code, const QString &text, int classId, int method
 
     Frame::Method frame(Frame::fcConnection, ClientPrivate::miClose);
     frame.setArguments(arguments);
-    sendFrame(frame);
-}
-
-void ClientPrivate::closeOk()
-{
-    Frame::Method frame(Frame::fcConnection, ClientPrivate::miCloseOk);
-    connected = false;
     sendFrame(frame);
 }
 

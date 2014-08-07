@@ -75,7 +75,6 @@ public:
     // method handlers, BOTH ways
     void close(int code, const QString &text, int classId = 0, int methodId = 0);
     void close(const Frame::Method &frame);
-    void closeOk();
 
     quint16 port;
     QString host;

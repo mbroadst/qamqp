@@ -195,12 +195,11 @@ void ChannelPrivate::close(const Frame::Method &frame)
     qAmqpDebug(">> class-id: %d", classId);
     qAmqpDebug(">> method-id: %d", methodId);
     Q_EMIT q->closed();
-}
 
-void ChannelPrivate::closeOk()
-{
-    Frame::Method frame(Frame::fcChannel, miCloseOk);
-    sendFrame(frame);
+    // complete handshake
+    Frame::Method closeOkFrame(Frame::fcChannel, miCloseOk);
+    closeOkFrame.setChannel(channelNumber);
+    sendFrame(closeOkFrame);
 }
 
 void ChannelPrivate::closeOk(const Frame::Method &)
