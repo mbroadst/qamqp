@@ -34,7 +34,7 @@ public:
     void qos(qint16 prefetchCount, qint32 prefetchSize = 0);
 
 public Q_SLOTS:
-    void closeChannel();
+    void close();
     void reopen();
     void resume();
 

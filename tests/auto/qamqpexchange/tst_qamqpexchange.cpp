@@ -175,8 +175,12 @@ void tst_QAMQPExchange::closeChannel()
     QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
     exchange->declare(Exchange::Direct);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
-    exchange->closeChannel();
+    exchange->close();
     QVERIFY(waitForSignal(exchange, SIGNAL(closed())));
+    exchange->reopen();
+    QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
+    exchange->remove(Exchange::roForce);
+    QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

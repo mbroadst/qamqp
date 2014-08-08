@@ -672,7 +672,7 @@ void tst_QAMQPQueue::closeChannel()
     QVERIFY(waitForSignal(queue, SIGNAL(opened())));
     declareQueueAndVerifyConsuming(queue);
 
-    queue->closeChannel();
+    queue->close();
     QVERIFY(waitForSignal(queue, SIGNAL(closed())));
 }
 

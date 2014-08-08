@@ -255,7 +255,7 @@ Channel::~Channel()
 {
 }
 
-void Channel::closeChannel()
+void Channel::close()
 {
     Q_D(Channel);
     d->needOpen = true;
@@ -267,7 +267,7 @@ void Channel::reopen()
 {
     Q_D(Channel);
     if (d->opened)
-        closeChannel();
+        close();
     d->open();
 }
 
