@@ -75,7 +75,6 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
             break;
 
         default:
-            qDebug() << Q_FUNC_INFO << "unhandled exchange method: " << frame.id();
             break;
         }
 
@@ -87,7 +86,6 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
             break;
 
         default:
-            qDebug() << Q_FUNC_INFO << "unhandled basic method: " << frame.id();
             break;
         }
 

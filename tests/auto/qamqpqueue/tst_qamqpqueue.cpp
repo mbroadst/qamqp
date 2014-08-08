@@ -48,20 +48,9 @@ private Q_SLOTS:
     void messageProperties();
 
 private:
-    void verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
-                                      const QString &exchangeName = QLatin1String(""),
-                                      bool redelivered = false);
     QScopedPointer<Client> client;
 
 };
-
-void tst_QAMQPQueue::verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
-                                                  const QString &exchangeName, bool redelivered)
-{
-    QCOMPARE(message.routingKey(), routingKey);
-    QCOMPARE(message.exchangeName(), exchangeName);
-    QCOMPARE(message.isRedelivered(), redelivered);
-}
 
 void tst_QAMQPQueue::init()
 {

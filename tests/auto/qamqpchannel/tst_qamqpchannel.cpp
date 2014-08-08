@@ -17,6 +17,7 @@ private Q_SLOTS:
 
     void close();
     void resume();
+    void sharedChannel();
 
 private:
     QScopedPointer<Client> client;
@@ -68,6 +69,20 @@ void tst_QAMQPChannel::resume()
 
     queue->resume();
     QVERIFY(waitForSignal(queue, SIGNAL(resumed())));
+}
+
+void tst_QAMQPChannel::sharedChannel()
+{
+    QString routingKey = "test-shared-channel";
+    Queue *queue = client->createQueue(routingKey);
+    declareQueueAndVerifyConsuming(queue);
+
+    Exchange *defaultExchange = client->createExchange("", queue->channelNumber());
+    defaultExchange->publish("first message", routingKey);
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    Message message = queue->dequeue();
+    verifyStandardMessageHeaders(message, routingKey);
+    QCOMPARE(message.payload(), QByteArray("first message"));
 }
 
 QTEST_MAIN(tst_QAMQPChannel)
