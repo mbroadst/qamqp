@@ -24,7 +24,6 @@ private Q_SLOTS:
     void removeIfUnused();
     void invalidMandatoryRouting();
     void invalidImmediateRouting();
-    void closeChannel();
 
 private:
     QScopedPointer<Client> client;
@@ -167,20 +166,6 @@ void tst_QAMQPExchange::invalidImmediateRouting()
     defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poImmediate);
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::NotImplementedError);
-}
-
-void tst_QAMQPExchange::closeChannel()
-{
-    Exchange *exchange = client->createExchange("test-close-channel");
-    QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
-    exchange->declare(Exchange::Direct);
-    QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
-    exchange->close();
-    QVERIFY(waitForSignal(exchange, SIGNAL(closed())));
-    exchange->reopen();
-    QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
-    exchange->remove(Exchange::roForce);
-    QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

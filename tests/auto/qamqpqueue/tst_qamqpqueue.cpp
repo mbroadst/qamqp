@@ -46,30 +46,14 @@ private Q_SLOTS:
     void invalidRoutingKey();
     void tableFieldDataTypes();
     void messageProperties();
-    void closeChannel();
-    void resumeChannel();
 
 private:
-    void declareQueueAndVerifyConsuming(Queue *queue);
     void verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
                                       const QString &exchangeName = QLatin1String(""),
                                       bool redelivered = false);
     QScopedPointer<Client> client;
 
 };
-
-void tst_QAMQPQueue::declareQueueAndVerifyConsuming(Queue *queue)
-{
-    queue->declare();
-    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
-    QVERIFY(queue->consume());
-    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
-    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
-    QVERIFY(queue->isConsuming());
-    QVERIFY(!spy.isEmpty());
-    QList<QVariant> arguments = spy.takeFirst();
-    QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
-}
 
 void tst_QAMQPQueue::verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
                                                   const QString &exchangeName, bool redelivered)
@@ -664,26 +648,6 @@ void tst_QAMQPQueue::messageProperties()
     QCOMPARE(message.property(Message::UserId).toString(), QLatin1String("guest"));
     QCOMPARE(message.property(Message::AppId).toString(), QLatin1String("some-app-id"));
     QCOMPARE(message.property(Message::ClusterID).toString(), QLatin1String("some-cluster-id"));
-}
-
-void tst_QAMQPQueue::closeChannel()
-{
-    Queue *queue = client->createQueue("test-close-channel");
-    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
-    declareQueueAndVerifyConsuming(queue);
-
-    queue->close();
-    QVERIFY(waitForSignal(queue, SIGNAL(closed())));
-}
-
-void tst_QAMQPQueue::resumeChannel()
-{
-    Queue *queue = client->createQueue("test-resume");
-    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
-    declareQueueAndVerifyConsuming(queue);
-
-    queue->resume();
-    QVERIFY(waitForSignal(queue, SIGNAL(resumed())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

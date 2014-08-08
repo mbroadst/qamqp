@@ -237,14 +237,6 @@ void ChannelPrivate::qosOk(const Frame::Method &frame)
 
 //////////////////////////////////////////////////////////////////////////
 
-Channel::Channel(int channelNumber, Client *client)
-    : QObject(client),
-      d_ptr(new ChannelPrivate(this))
-{
-    Q_D(Channel);
-    d->init(channelNumber, client);
-}
-
 Channel::Channel(ChannelPrivate *dd, Client *parent)
     : QObject(parent),
       d_ptr(dd)

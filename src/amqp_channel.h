@@ -51,7 +51,6 @@ protected:
     virtual void channelClosed() = 0;
 
 protected:
-    explicit Channel(int channelNumber = -1, Client *client = 0);
     explicit Channel(ChannelPrivate *dd, Client *client);
 
     Q_DISABLE_COPY(Channel)

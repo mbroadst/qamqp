@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 SUBDIRS = \
     qamqpclient \
     qamqpexchange \
-    qamqpqueue
+    qamqpqueue \
+    qamqpchannel

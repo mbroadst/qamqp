@@ -737,7 +737,6 @@ void Client::setHeartbeatDelay(qint16 delay)
     d->heartbeatDelay = delay;
 }
 
-
 void Client::addCustomProperty(const QString &name, const QString &value)
 {
     Q_D(Client);

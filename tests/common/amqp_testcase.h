@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QTestEventLoop>
 
+#include "amqp_queue.h"
+
 namespace QAMQP {
 
 class TestCase : public QObject
@@ -22,6 +24,19 @@ protected:
         if (!safe.isNull())
             QObject::disconnect(safe, signal, &QTestEventLoop::instance(), SLOT(exitLoop()));
         return !QTestEventLoop::instance().timeout();
+    }
+
+    void declareQueueAndVerifyConsuming(Queue *queue)
+    {
+        queue->declare();
+        QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+        QVERIFY(queue->consume());
+        QSignalSpy spy(queue, SIGNAL(consuming(QString)));
+        QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+        QVERIFY(queue->isConsuming());
+        QVERIFY(!spy.isEmpty());
+        QList<QVariant> arguments = spy.takeFirst();
+        QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
     }
 };
 
