@@ -98,8 +98,15 @@ enum Error
     InternalError = 541
 };
 
+struct decimal
+{
+    qint8 scale;
+    quint32 value;
+};
+
 }   // namespace QAMQP
 
-Q_DECLARE_METATYPE(QAMQP::Error);
+Q_DECLARE_METATYPE(QAMQP::Error)
+Q_DECLARE_METATYPE(QAMQP::decimal)
 
 #endif // qamqp_global_h__

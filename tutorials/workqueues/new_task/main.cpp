@@ -33,8 +33,8 @@ private Q_SLOTS:
             return;
 
         Exchange *defaultExchange = m_client.createExchange();
-        MessageProperties properties;
-        properties[Frame::Content::cpDeliveryMode] = "2";   // make message persistent
+        Message::PropertyHash properties;
+        properties[Message::DeliveryMode] = "2";   // make message persistent
 
         QString message;
         if (qApp->arguments().size() < 2)

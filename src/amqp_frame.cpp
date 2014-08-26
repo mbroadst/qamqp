@@ -1,11 +1,10 @@
-#include "amqp_frame.h"
-
 #include <QDateTime>
 #include <QList>
 #include <QDebug>
 
 #include "amqp_table.h"
 #include "amqp_global.h"
+#include "amqp_frame_p.h"
 
 using namespace QAMQP;
 using namespace QAMQP::Frame;
@@ -72,7 +71,7 @@ void Base::readEnd(QDataStream &stream)
     unsigned char end_  = 0;
     stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
     if (end_ != FRAME_END)
-        qWarning("Wrong end of frame");
+        qAmqpDebug("Wrong end of frame");
 }
 */
 void Base::toStream(QDataStream &stream) const
@@ -208,7 +207,7 @@ QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
     case Void:
         return QVariant();
     default:
-        qWarning() << Q_FUNC_INFO << "unsupported value type: " << type;
+        qAmqpDebug() << Q_FUNC_INFO << "unsupported value type: " << type;
     }
 
     return QVariant();
@@ -260,7 +259,7 @@ void Frame::writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant
     }
         break;
     default:
-        qWarning() << Q_FUNC_INFO << "unsupported value type: " << type;
+        qAmqpDebug() << Q_FUNC_INFO << "unsupported value type: " << type;
     }
 }
 

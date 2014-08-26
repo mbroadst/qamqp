@@ -1,5 +1,5 @@
 #include "amqp_table.h"
-#include "amqp_frame.h"
+#include "amqp_frame_p.h"
 #include "amqp_authenticator.h"
 using namespace QAMQP;
 

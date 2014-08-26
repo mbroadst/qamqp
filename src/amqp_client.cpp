@@ -319,7 +319,7 @@ bool ClientPrivate::_q_method(const Frame::Method &frame)
         closeOk(frame);
         break;
     default:
-        qWarning("Unknown method-id %d", frame.id());
+        qAmqpDebug("Unknown method-id %d", frame.id());
     }
 
     return true;

@@ -3,6 +3,7 @@
 
 #include "amqp_table.h"
 #include "amqp_channel.h"
+#include "amqp_message.h"
 
 namespace QAMQP
 {
@@ -65,14 +66,14 @@ public:
 
     // AMQP Basic
     void publish(const QString &message, const QString &routingKey,
-                 const MessageProperties &properties = MessageProperties(),
+                 const Message::PropertyHash &properties = Message::PropertyHash(),
                  int publishOptions = poNoOptions);
-    void publish(const QByteArray &message, const QString &routingKey,
-                 const QString &mimeType, const MessageProperties &properties = MessageProperties(),
+    void publish(const QByteArray &message, const QString &routingKey, const QString &mimeType,
+                 const Message::PropertyHash &properties = Message::PropertyHash(),
                  int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey,
                  const QString &mimeType, const Table &headers,
-                 const MessageProperties &properties = MessageProperties(),
+                 const Message::PropertyHash &properties = Message::PropertyHash(),
                  int publishOptions = poNoOptions);
 
 Q_SIGNALS:

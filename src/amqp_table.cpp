@@ -3,7 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 
-#include "amqp_frame.h"
+#include "amqp_frame_p.h"
 #include "amqp_table.h"
 using namespace QAMQP;
 
@@ -137,7 +137,7 @@ void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
         type = Void;
         break;
     default:
-        if (value.userType() == qMetaTypeId<Frame::decimal>()) {
+        if (value.userType() == qMetaTypeId<QAMQP::decimal>()) {
             type = Decimal;
             break;
         } else if (!value.isValid()) {
@@ -200,7 +200,7 @@ void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant 
         break;
     case Decimal:
     {
-        Frame::decimal v(value.value<Frame::decimal>());
+        QAMQP::decimal v(value.value<QAMQP::decimal>());
         stream << v.scale;
         stream << v.value;
     }
@@ -294,10 +294,10 @@ QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
     }
     case Decimal:
     {
-        Frame::decimal v;
+        QAMQP::decimal v;
         stream >> v.scale;
         stream >> v.value;
-        return QVariant::fromValue<Frame::decimal>(v);
+        return QVariant::fromValue<QAMQP::decimal>(v);
     }
     case Array:
     {

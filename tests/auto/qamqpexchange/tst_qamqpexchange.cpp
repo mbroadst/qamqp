@@ -155,7 +155,7 @@ void tst_QAMQPExchange::removeIfUnused()
 void tst_QAMQPExchange::invalidMandatoryRouting()
 {
     Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poMandatory);
+    defaultExchange->publish("some message", "unroutable-key", Message::PropertyHash(), Exchange::poMandatory);
     QVERIFY(waitForSignal(defaultExchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(defaultExchange->error(), QAMQP::UnroutableKey);
 }
@@ -163,7 +163,7 @@ void tst_QAMQPExchange::invalidMandatoryRouting()
 void tst_QAMQPExchange::invalidImmediateRouting()
 {
     Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("some message", "unroutable-key", MessageProperties(), Exchange::poImmediate);
+    defaultExchange->publish("some message", "unroutable-key", Message::PropertyHash(), Exchange::poImmediate);
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::NotImplementedError);
 }

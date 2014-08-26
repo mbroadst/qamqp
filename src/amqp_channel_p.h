@@ -2,7 +2,7 @@
 #define amqp_channel_p_h__
 
 #include <QPointer>
-#include "amqp_frame.h"
+#include "amqp_frame_p.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 

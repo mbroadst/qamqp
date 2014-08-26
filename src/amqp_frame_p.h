@@ -59,12 +59,6 @@ namespace Frame
         fcTx = 90,
     };
 
-    struct decimal
-    {
-        qint8 scale;
-        quint32 value;
-    };
-
     QVariant readAmqpField(QDataStream &s, QAMQP::ValueType type);
     void writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant &value);
 
@@ -383,12 +377,6 @@ namespace Frame
 
 } // namespace Frame
 
-typedef QHash<Frame::Content::Property, QVariant> MessageProperties;
-typedef Frame::Content::Property MessageProperty;
-
 } // namespace QAMQP
-
-Q_DECLARE_METATYPE(QAMQP::Frame::decimal)
-//Q_DECLARE_METATYPE(QAMQP::Frame::TableField)
 
 #endif // amqp_frame_h__

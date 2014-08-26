@@ -4,7 +4,7 @@
 #include <QHash>
 #include <QSharedData>
 
-#include "amqp_frame.h"
+#include "amqp_frame_p.h"
 #include "amqp_message.h"
 
 namespace QAMQP {

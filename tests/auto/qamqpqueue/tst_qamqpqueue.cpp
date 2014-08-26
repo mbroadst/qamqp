@@ -436,8 +436,8 @@ void tst_QAMQPQueue::verifyContentEncodingIssue33()
     declareQueueAndVerifyConsuming(queue);
 
     Exchange *defaultExchange = client->createExchange();
-    MessageProperties properties;
-    properties.insert(Frame::Content::cpContentEncoding, "fakeContentEncoding");
+    Message::PropertyHash properties;
+    properties.insert(Message::ContentEncoding, "fakeContentEncoding");
     defaultExchange->publish("some data", "test-issue-33", properties);
 
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
@@ -525,10 +525,10 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     Queue *queue = client->createQueue("test-table-field-data-types");
     declareQueueAndVerifyConsuming(queue);
 
-    Frame::decimal decimal;
+    QAMQP::decimal decimal;
     decimal.scale = 2;
     decimal.value = 12345;
-    QVariant decimalVariant = QVariant::fromValue<Frame::decimal>(decimal);
+    QVariant decimalVariant = QVariant::fromValue<QAMQP::decimal>(decimal);
 
     Table nestedTable;
     nestedTable.insert("boolean", true);
@@ -593,7 +593,7 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     QVariantList compareArray = message.header("array").toList();
     QCOMPARE(array, compareArray);
 
-    Frame::decimal receivedDecimal = message.header("decimal-value").value<Frame::decimal>();
+    QAMQP::decimal receivedDecimal = message.header("decimal-value").value<QAMQP::decimal>();
     QCOMPARE(receivedDecimal.scale, qint8(2));
     QCOMPARE(receivedDecimal.value, quint32(12345));
 }
@@ -604,20 +604,20 @@ void tst_QAMQPQueue::messageProperties()
     declareQueueAndVerifyConsuming(queue);
 
     QDateTime timestamp = QDateTime::currentDateTime();
-    MessageProperties properties;
-    properties.insert(Frame::Content::cpContentType, "some-content-type");
-    properties.insert(Frame::Content::cpContentEncoding, "some-content-encoding");
-    properties.insert(Frame::Content::cpDeliveryMode, 2);
-    properties.insert(Frame::Content::cpPriority, 5);
-    properties.insert(Frame::Content::cpCorrelationId, 42);
-    properties.insert(Frame::Content::cpReplyTo, "another-queue");
-    properties.insert(Frame::Content::cpMessageId, "some-message-id");
-    properties.insert(Frame::Content::cpExpiration, "60000");
-    properties.insert(Frame::Content::cpTimestamp, timestamp);
-    properties.insert(Frame::Content::cpType, "some-message-type");
-    properties.insert(Frame::Content::cpUserId, "guest");
-    properties.insert(Frame::Content::cpAppId, "some-app-id");
-    properties.insert(Frame::Content::cpClusterID, "some-cluster-id");
+    Message::PropertyHash properties;
+    properties.insert(Message::ContentType, "some-content-type");
+    properties.insert(Message::ContentEncoding, "some-content-encoding");
+    properties.insert(Message::DeliveryMode, 2);
+    properties.insert(Message::Priority, 5);
+    properties.insert(Message::CorrelationId, 42);
+    properties.insert(Message::ReplyTo, "another-queue");
+    properties.insert(Message::MessageId, "some-message-id");
+    properties.insert(Message::Expiration, "60000");
+    properties.insert(Message::Timestamp, timestamp);
+    properties.insert(Message::Type, "some-message-type");
+    properties.insert(Message::UserId, "guest");
+    properties.insert(Message::AppId, "some-app-id");
+    properties.insert(Message::ClusterID, "some-cluster-id");
 
     Exchange *defaultExchange = client->createExchange();
     defaultExchange->publish("dummy", "test-message-properties", properties);

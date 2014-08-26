@@ -2,7 +2,7 @@
 #define amqp_channel_h__
 
 #include <QObject>
-#include "amqp_frame.h"
+#include "amqp_global.h"
 
 namespace QAMQP
 {

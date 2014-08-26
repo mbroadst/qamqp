@@ -4,8 +4,8 @@
 #include <QByteArray>
 #include <QHash>
 #include <QSharedDataPointer>
+#include <QVariant>
 
-#include "amqp_frame.h"
 #include "amqp_global.h"
 
 namespace QAMQP
@@ -37,18 +37,18 @@ public:
         ClusterID = AMQP_BASIC_CLUSTER_ID_FLAG
     };
     Q_DECLARE_FLAGS(Properties, Property)
+    typedef QHash<Property, QVariant> PropertyHash;
 
     bool hasProperty(Property property) const;
     void setProperty(Property property, const QVariant &value);
-    QVariant property(Property property, const QVariant &defaultValue = QString()) const;
+    QVariant property(Property property, const QVariant &defaultValue = QVariant()) const;
 
     bool hasHeader(const QString &header) const;
     void setHeader(const QString &header, const QVariant &value);
-    QVariant header(const QString &header, const QVariant &defaultValue = QString()) const;
+    QVariant header(const QString &header, const QVariant &defaultValue = QVariant()) const;
 
     bool isValid() const;
     bool isRedelivered() const;
-
     qlonglong deliveryTag() const;
     QString exchangeName() const;
     QString routingKey() const;
@@ -62,5 +62,7 @@ private:
 };
 
 } // namespace QAMQP
+
+Q_DECLARE_METATYPE(QAMQP::Message::PropertyHash)
 
 #endif // amqp_message_h__

@@ -216,22 +216,22 @@ void Exchange::remove(int options)
 }
 
 void Exchange::publish(const QString &message, const QString &routingKey,
-                       const MessageProperties &properties, int publishOptions)
+                       const Message::PropertyHash &properties, int publishOptions)
 {
     publish(message.toUtf8(), routingKey, QLatin1String("text.plain"),
-            QVariantHash(), properties, publishOptions);
+            Table(), properties, publishOptions);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &routingKey,
-                       const QString &mimeType, const MessageProperties &properties,
+                       const QString &mimeType, const Message::PropertyHash &properties,
                        int publishOptions)
 {
-    publish(message, routingKey, mimeType, QVariantHash(), properties, publishOptions);
+    publish(message, routingKey, mimeType, Table(), properties, publishOptions);
 }
 
 void Exchange::publish(const QByteArray &message, const QString &routingKey,
                        const QString &mimeType, const Table &headers,
-                       const MessageProperties &properties, int publishOptions)
+                       const Message::PropertyHash &properties, int publishOptions)
 {
     Q_D(Exchange);
     Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
@@ -255,10 +255,10 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
     content.setProperty(Frame::Content::cpHeaders, headers);
     content.setProperty(Frame::Content::cpMessageId, "0");
 
-    MessageProperties::ConstIterator it;
-    MessageProperties::ConstIterator itEnd = properties.constEnd();
+    Message::PropertyHash::ConstIterator it;
+    Message::PropertyHash::ConstIterator itEnd = properties.constEnd();
     for (it = properties.constBegin(); it != itEnd; ++it)
-        content.setProperty(it.key(), it.value());
+        content.setProperty(static_cast<Frame::Content::Property>(it.key()), it.value());
     content.setBodySize(message.size());
     d->sendFrame(content);
 

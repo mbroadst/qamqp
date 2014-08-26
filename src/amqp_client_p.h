@@ -12,7 +12,7 @@
 #endif
 
 #include "amqp_table.h"
-#include "amqp_frame.h"
+#include "amqp_frame_p.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
