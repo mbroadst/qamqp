@@ -1,9 +1,9 @@
-#ifndef amqp_exchange_p_h__
-#define amqp_exchange_p_h__
+#ifndef QAMQPEXCHANGE_P_H
+#define QAMQPEXCHANGE_P_H
 
-#include "amqp_table.h"
-#include "amqp_exchange.h"
-#include "amqp_channel_p.h"
+#include "qamqptable.h"
+#include "qamqpexchange.h"
+#include "qamqpchannel_p.h"
 
 namespace QAMQP
 {
@@ -39,4 +39,4 @@ public:
 
 } // namespace QAMQP
 
-#endif // amqp_exchange_p_h__
+#endif // QAMQPEXCHANGE_P_H

@@ -1,8 +1,8 @@
-#ifndef amqp_channel_p_h__
-#define amqp_channel_p_h__
+#ifndef QAMQPCHANNEL_P_H
+#define QAMQPCHANNEL_P_H
 
 #include <QPointer>
-#include "amqp_frame_p.h"
+#include "qamqpframe_p.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
@@ -81,4 +81,4 @@ public:
 
 } // namespace QAMQP
 
-#endif // amqp_channel_p_h__
+#endif // QAMQPCHANNEL_P_H

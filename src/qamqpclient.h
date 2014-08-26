@@ -1,5 +1,5 @@
-#ifndef amqp_client_h__
-#define amqp_client_h__
+#ifndef QAMQPCLIENT_H
+#define QAMQPCLIENT_H
 
 #include <QObject>
 #include <QUrl>
@@ -10,7 +10,7 @@
 #include <QSslError>
 #endif
 
-#include "amqp_global.h"
+#include "qamqpglobal.h"
 
 namespace QAMQP
 {
@@ -136,4 +136,4 @@ private:
 
 } // namespace QAMQP
 
-#endif // amqp_client_h__
+#endif // QAMQPCLIENT_H

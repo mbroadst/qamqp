@@ -1,5 +1,5 @@
-#ifndef amqp_client_p_h__
-#define amqp_client_p_h__
+#ifndef QAMQPCLIENT_P_H
+#define QAMQPCLIENT_P_H
 
 #include <QHash>
 #include <QSharedPointer>
@@ -11,8 +11,8 @@
 #   include <QSslError>
 #endif
 
-#include "amqp_table.h"
-#include "amqp_frame_p.h"
+#include "qamqptable.h"
+#include "qamqpframe_p.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
@@ -130,4 +130,4 @@ public:
 
 } // namespace QAMQP
 
-#endif // amqp_client_p_h__
+#endif // QAMQPCLIENT_P_H

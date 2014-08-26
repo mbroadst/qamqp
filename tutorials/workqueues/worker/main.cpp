@@ -2,8 +2,8 @@
 #include <QTimer>
 #include <QDebug>
 
-#include "amqp_client.h"
-#include "amqp_queue.h"
+#include "qamqpclient.h"
+#include "qamqpqueue.h"
 using namespace QAMQP;
 
 class Worker : public QObject

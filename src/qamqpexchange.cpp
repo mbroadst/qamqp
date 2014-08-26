@@ -1,14 +1,12 @@
-#include "amqp_exchange.h"
-#include "amqp_exchange_p.h"
-#include "amqp_queue.h"
-#include "amqp_global.h"
-#include "amqp_client.h"
-
 #include <QDataStream>
 #include <QDebug>
 
+#include "qamqpexchange.h"
+#include "qamqpexchange_p.h"
+#include "qamqpqueue.h"
+#include "qamqpglobal.h"
+#include "qamqpclient.h"
 using namespace QAMQP;
-
 
 QString ExchangePrivate::typeToString(Exchange::ExchangeType type)
 {

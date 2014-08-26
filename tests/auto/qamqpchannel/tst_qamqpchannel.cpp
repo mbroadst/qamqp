@@ -1,11 +1,11 @@
 #include <QtTest/QtTest>
 
 #include "signalspy.h"
-#include "amqp_testcase.h"
+#include "qamqptestcase.h"
 
-#include "amqp_client.h"
-#include "amqp_exchange.h"
-#include "amqp_queue.h"
+#include "qamqpclient.h"
+#include "qamqpexchange.h"
+#include "qamqpqueue.h"
 using namespace QAMQP;
 
 class tst_QAMQPChannel : public TestCase

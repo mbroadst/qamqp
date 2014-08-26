@@ -1,10 +1,10 @@
-#ifndef amqp_testcase_h__
-#define amqp_testcase_h__
+#ifndef QAMQPTESTCASE_H
+#define QAMQPTESTCASE_H
 
 #include <QObject>
 #include <QTestEventLoop>
 
-#include "amqp_queue.h"
+#include "qamqpqueue.h"
 
 namespace QAMQP {
 
@@ -52,4 +52,4 @@ protected:
 
 }   // namespace QAMQP
 
-#endif  // amqp_testcase_h__
+#endif  // QAMQPTESTCASE_H

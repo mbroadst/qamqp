@@ -1,10 +1,10 @@
-#ifndef amqp_queue_p_h__
-#define amqp_queue_p_h__
+#ifndef QAMQPQUEUE_P_H
+#define QAMQPQUEUE_P_H
 
 #include <QQueue>
 #include <QStringList>
 
-#include "amqp_channel_p.h"
+#include "qamqpchannel_p.h"
 
 namespace QAMQP
 {
@@ -60,4 +60,4 @@ public:
 
 } // namespace QAMQP
 
-#endif // amqp_queue_p_h__
+#endif // QAMQPQUEUE_P_H

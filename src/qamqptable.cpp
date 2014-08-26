@@ -3,8 +3,8 @@
 #include <QDateTime>
 #include <QDebug>
 
-#include "amqp_frame_p.h"
-#include "amqp_table.h"
+#include "qamqpframe_p.h"
+#include "qamqptable.h"
 using namespace QAMQP;
 
 /*

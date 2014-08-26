@@ -1,14 +1,14 @@
-#include "amqp_queue.h"
-#include "amqp_queue_p.h"
-#include "amqp_exchange.h"
-#include "amqp_message_p.h"
-#include "amqp_table.h"
-using namespace QAMQP;
-
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDataStream>
 #include <QFile>
+
+#include "qamqpqueue.h"
+#include "qamqpqueue_p.h"
+#include "qamqpexchange.h"
+#include "qamqpmessage_p.h"
+#include "qamqptable.h"
+using namespace QAMQP;
 
 QueuePrivate::QueuePrivate(Queue *q)
     : ChannelPrivate(q),

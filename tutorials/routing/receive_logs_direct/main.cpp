@@ -2,9 +2,9 @@
 #include <QStringList>
 #include <QDebug>
 
-#include "amqp_client.h"
-#include "amqp_exchange.h"
-#include "amqp_queue.h"
+#include "qamqpclient.h"
+#include "qamqpexchange.h"
+#include "qamqpqueue.h"
 using namespace QAMQP;
 
 class DirectLogReceiver : public QObject

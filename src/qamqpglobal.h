@@ -1,5 +1,5 @@
-#ifndef qamqp_global_h__
-#define qamqp_global_h__
+#ifndef QAMQPGLOBAL_H
+#define QAMQPGLOBAL_H
 
 #include <QMetaType>
 
@@ -113,4 +113,4 @@ struct Decimal
 Q_DECLARE_METATYPE(QAMQP::Error)
 Q_DECLARE_METATYPE(QAMQP::Decimal)
 
-#endif // qamqp_global_h__
+#endif // QAMQPGLOBAL_H

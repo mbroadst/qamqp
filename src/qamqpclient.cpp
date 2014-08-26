@@ -4,15 +4,15 @@
 #include <QStringList>
 #include <QtEndian>
 
-#include "amqp_global.h"
-#include "amqp_exchange.h"
-#include "amqp_exchange_p.h"
-#include "amqp_queue.h"
-#include "amqp_queue_p.h"
-#include "amqp_authenticator.h"
-#include "amqp_table.h"
-#include "amqp_client_p.h"
-#include "amqp_client.h"
+#include "qamqpglobal.h"
+#include "qamqpexchange.h"
+#include "qamqpexchange_p.h"
+#include "qamqpqueue.h"
+#include "qamqpqueue_p.h"
+#include "qamqpauthenticator.h"
+#include "qamqptable.h"
+#include "qamqpclient_p.h"
+#include "qamqpclient.h"
 using namespace QAMQP;
 
 ClientPrivate::ClientPrivate(Client *q)
@@ -844,4 +844,4 @@ SslClient::~SslClient()
 
 #endif
 
-#include "moc_amqp_client.cpp"
+#include "moc_qamqpclient.cpp"

@@ -1,8 +1,8 @@
-#ifndef amqp_channel_h__
-#define amqp_channel_h__
+#ifndef QAMQPCHANNEL_H
+#define QAMQPCHANNEL_H
 
 #include <QObject>
-#include "amqp_global.h"
+#include "qamqpglobal.h"
 
 namespace QAMQP
 {
@@ -65,4 +65,4 @@ protected:
 
 } // namespace QAMQP
 
-#endif
+#endif  // QAMQPCHANNEL_H

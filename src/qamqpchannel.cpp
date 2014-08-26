@@ -1,7 +1,7 @@
-#include "amqp_channel.h"
-#include "amqp_channel_p.h"
-#include "amqp_client.h"
-#include "amqp_client_p.h"
+#include "qamqpchannel.h"
+#include "qamqpchannel_p.h"
+#include "qamqpclient.h"
+#include "qamqpclient_p.h"
 
 #include <QDebug>
 #include <QDataStream>
@@ -337,4 +337,4 @@ void Channel::resume()
     d->flow(true);
 }
 
-#include "moc_amqp_channel.cpp"
+#include "moc_qamqpchannel.cpp"

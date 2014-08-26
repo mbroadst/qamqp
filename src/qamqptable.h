@@ -1,8 +1,9 @@
-#ifndef amqp_table_h__
-#define amqp_table_h__
+#ifndef QAMQPTABLE_H
+#define QAMQPTABLE_H
 
-#include "amqp_global.h"
 #include <QVariantHash>
+
+#include "qamqpglobal.h"
 
 namespace QAMQP {
 
@@ -26,4 +27,4 @@ QAMQP_EXPORT QDataStream &operator<<(QDataStream &, const QAMQP::Table &table);
 QAMQP_EXPORT QDataStream &operator>>(QDataStream &, QAMQP::Table &table);
 Q_DECLARE_METATYPE(QAMQP::Table)
 
-#endif  // amqp_table_h__
+#endif  // QAMQPTABLE_H

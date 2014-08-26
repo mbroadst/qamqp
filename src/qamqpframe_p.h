@@ -1,12 +1,12 @@
-#ifndef amqp_frame_h__
-#define amqp_frame_h__
+#ifndef QAMQPFRAME_P_H
+#define QAMQPFRAME_P_H
 
 #include <QDataStream>
 #include <QHash>
 #include <QVariant>
 
-#include "amqp_global.h"
-#include "amqp_message.h"
+#include "qamqpglobal.h"
+#include "qamqpmessage.h"
 
 /**
  *  Library namespace
@@ -358,4 +358,4 @@ namespace Frame
 
 } // namespace QAMQP
 
-#endif // amqp_frame_h__
+#endif // QAMQPFRAME_P_H

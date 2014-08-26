@@ -1,12 +1,12 @@
-#ifndef amqp_message_h__
-#define amqp_message_h__
+#ifndef QAMQPMESSAGE_H
+#define QAMQPMESSAGE_H
 
 #include <QByteArray>
 #include <QHash>
 #include <QSharedDataPointer>
 #include <QVariant>
 
-#include "amqp_global.h"
+#include "qamqpglobal.h"
 
 namespace QAMQP
 {
@@ -65,4 +65,4 @@ private:
 
 Q_DECLARE_METATYPE(QAMQP::Message::PropertyHash)
 
-#endif // amqp_message_h__
+#endif // QAMQPMESSAGE_H

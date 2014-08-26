@@ -2,9 +2,9 @@
 #include <QList>
 #include <QDebug>
 
-#include "amqp_table.h"
-#include "amqp_global.h"
-#include "amqp_frame_p.h"
+#include "qamqptable.h"
+#include "qamqpglobal.h"
+#include "qamqpframe_p.h"
 
 using namespace QAMQP;
 using namespace QAMQP::Frame;

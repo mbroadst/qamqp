@@ -1,6 +1,6 @@
-#include "amqp_table.h"
-#include "amqp_frame_p.h"
-#include "amqp_authenticator.h"
+#include "qamqptable.h"
+#include "qamqpframe_p.h"
+#include "qamqpauthenticator.h"
 using namespace QAMQP;
 
 AMQPlainAuthenticator::AMQPlainAuthenticator(const QString &l, const QString &p)

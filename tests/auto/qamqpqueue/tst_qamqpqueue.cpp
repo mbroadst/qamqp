@@ -3,11 +3,11 @@
 #include <QScopedPointer>
 
 #include <QtTest/QtTest>
-#include "amqp_testcase.h"
+#include "qamqptestcase.h"
 
-#include "amqp_client.h"
-#include "amqp_queue.h"
-#include "amqp_exchange.h"
+#include "qamqpclient.h"
+#include "qamqpqueue.h"
+#include "qamqpexchange.h"
 
 using namespace QAMQP;
 class tst_QAMQPQueue : public TestCase

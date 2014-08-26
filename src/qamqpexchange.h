@@ -1,9 +1,9 @@
-#ifndef amqp_exchange_h__
-#define amqp_exchange_h__
+#ifndef QAMQPEXCHANGE_H
+#define QAMQPEXCHANGE_H
 
-#include "amqp_table.h"
-#include "amqp_channel.h"
-#include "amqp_message.h"
+#include "qamqptable.h"
+#include "qamqpchannel.h"
+#include "qamqpmessage.h"
 
 namespace QAMQP
 {
@@ -99,4 +99,4 @@ private:
 Q_DECLARE_OPERATORS_FOR_FLAGS(QAMQP::Exchange::ExchangeOptions)
 Q_DECLARE_METATYPE(QAMQP::Exchange::ExchangeType)
 
-#endif // amqp_exchange_h__
+#endif // QAMQPEXCHANGE_H

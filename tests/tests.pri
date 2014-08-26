@@ -7,5 +7,5 @@ CONFIG += testcase
 
 HEADERS += \
     $${PWD}/common/signalspy.h \
-    $${PWD}/common/amqp_testcase.h
+    $${PWD}/common/qamqptestcase.h
 

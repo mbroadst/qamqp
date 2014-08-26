@@ -11,36 +11,36 @@ VERSION = $${QAMQP_VERSION}
 win32:DESTDIR = $$OUT_PWD
 
 PRIVATE_HEADERS += \
-    amqp_channel_p.h \
-    amqp_client_p.h \
-    amqp_exchange_p.h \
-    amqp_frame_p.h \
-    amqp_message_p.h \
-    amqp_queue_p.h
+    qamqpchannel_p.h \
+    qamqpclient_p.h \
+    qamqpexchange_p.h \
+    qamqpframe_p.h \
+    qamqpmessage_p.h \
+    qamqpqueue_p.h
 
 INSTALL_HEADERS += \
-    amqp_authenticator.h \
-    amqp_channel.h \
-    amqp_client.h \
-    amqp_exchange.h \
-    amqp_global.h \
-    amqp_message.h \
-    amqp_queue.h \
-    amqp_table.h
+    qamqpauthenticator.h \
+    qamqpchannel.h \
+    qamqpclient.h \
+    qamqpexchange.h \
+    qamqpglobal.h \
+    qamqpmessage.h \
+    qamqpqueue.h \
+    qamqptable.h
 
 HEADERS += \
     $${INSTALL_HEADERS} \
     $${PRIVATE_HEADERS}
 
 SOURCES += \
-    amqp_authenticator.cpp \
-    amqp_channel.cpp \
-    amqp_client.cpp \
-    amqp_exchange.cpp \
-    amqp_frame.cpp \
-    amqp_message.cpp \
-    amqp_queue.cpp \
-    amqp_table.cpp
+    qamqpauthenticator.cpp \
+    qamqpchannel.cpp \
+    qamqpclient.cpp \
+    qamqpexchange.cpp \
+    qamqpframe.cpp \
+    qamqpmessage.cpp \
+    qamqpqueue.cpp \
+    qamqptable.cpp
 
 # install
 headers.files = $${INSTALL_HEADERS}

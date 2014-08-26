@@ -1,7 +1,7 @@
-#include "amqp_message.h"
-#include "amqp_message_p.h"
-
+#include "qamqpmessage.h"
+#include "qamqpmessage_p.h"
 using namespace QAMQP;
+
 MessagePrivate::MessagePrivate()
     : deliveryTag(0),
       leftSize(0)

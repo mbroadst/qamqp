@@ -1,11 +1,11 @@
-#ifndef amqp_queue_h__
-#define amqp_queue_h__
+#ifndef QAMQPQUEUE_H
+#define QAMQPQUEUE_H
 
 #include <QQueue>
 
-#include "amqp_channel.h"
-#include "amqp_message.h"
-#include "amqp_global.h"
+#include "qamqpchannel.h"
+#include "qamqpmessage.h"
+#include "qamqpglobal.h"
 
 namespace QAMQP
 {
@@ -101,4 +101,4 @@ private:
 
 } // namespace QAMQP
 
-#endif
+#endif  // QAMQPQUEUE_H

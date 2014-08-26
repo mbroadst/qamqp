@@ -1,10 +1,10 @@
 #include <QtTest/QtTest>
-#include "amqp_testcase.h"
+#include "qamqptestcase.h"
 
 #include <QProcess>
-#include "amqp_client.h"
-#include "amqp_client_p.h"
-#include "amqp_authenticator.h"
+#include "qamqpclient.h"
+#include "qamqpclient_p.h"
+#include "qamqpauthenticator.h"
 
 using namespace QAMQP;
 class tst_QAMQPClient : public TestCase

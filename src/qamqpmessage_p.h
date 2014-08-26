@@ -1,11 +1,11 @@
-#ifndef amqp_message_p_h__
-#define amqp_message_p_h__
+#ifndef QAMQPMESSAGE_P_H
+#define QAMQPMESSAGE_P_H
 
 #include <QHash>
 #include <QSharedData>
 
-#include "amqp_frame_p.h"
-#include "amqp_message.h"
+#include "qamqpframe_p.h"
+#include "qamqpmessage.h"
 
 namespace QAMQP {
 
@@ -27,4 +27,4 @@ public:
 
 }   // namespace QAMQP
 
-#endif  // amqp_message_p_h__
+#endif  // QAMQPMESSAGE_P_H

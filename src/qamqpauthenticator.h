@@ -1,10 +1,10 @@
-#ifndef amqp_authenticator_h__
-#define amqp_authenticator_h__
+#ifndef QAMQPAUTHENTICATOR_H
+#define QAMQPAUTHENTICATOR_H
 
 #include <QString>
 #include <QDataStream>
 
-#include "amqp_global.h"
+#include "qamqpglobal.h"
 
 namespace QAMQP
 {
@@ -40,4 +40,4 @@ private:
 
 } // namespace QAMQP
 
-#endif // amqp_authenticator_h__
+#endif // QAMQPAUTHENTICATOR_H
