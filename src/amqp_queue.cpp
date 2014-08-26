@@ -88,10 +88,10 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
     }
 
     currentMessage.d->leftSize = frame.bodySize();
-    QHash<int, QVariant>::ConstIterator it;
-    QHash<int, QVariant>::ConstIterator itEnd = frame.properties_.constEnd();
+    Message::PropertyHash::ConstIterator it;
+    Message::PropertyHash::ConstIterator itEnd = frame.properties_.constEnd();
     for (it = frame.properties_.constBegin(); it != itEnd; ++it) {
-        Message::Property property = static_cast<Message::Property>(it.key());
+        Message::Property property = (it.key());
         if (property == Message::Headers)
             currentMessage.d->headers = (it.value()).toHash();
         currentMessage.d->properties[property] = it.value();

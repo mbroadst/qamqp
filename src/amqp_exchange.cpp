@@ -250,15 +250,15 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
 
     Frame::Content content(Frame::fcBasic);
     content.setChannel(d->channelNumber);
-    content.setProperty(Frame::Content::cpContentType, mimeType);
-    content.setProperty(Frame::Content::cpContentEncoding, "utf-8");
-    content.setProperty(Frame::Content::cpHeaders, headers);
-    content.setProperty(Frame::Content::cpMessageId, "0");
+    content.setProperty(Message::ContentType, mimeType);
+    content.setProperty(Message::ContentEncoding, "utf-8");
+    content.setProperty(Message::Headers, headers);
+    content.setProperty(Message::MessageId, "0");
 
     Message::PropertyHash::ConstIterator it;
     Message::PropertyHash::ConstIterator itEnd = properties.constEnd();
     for (it = properties.constBegin(); it != itEnd; ++it)
-        content.setProperty(static_cast<Frame::Content::Property>(it.key()), it.value());
+        content.setProperty(it.key(), it.value());
     content.setBodySize(message.size());
     d->sendFrame(content);
 

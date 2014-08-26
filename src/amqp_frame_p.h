@@ -6,6 +6,7 @@
 #include <QVariant>
 
 #include "amqp_global.h"
+#include "amqp_message.h"
 
 /**
  *  Library namespace
@@ -219,22 +220,22 @@ namespace Frame
      *     short     short   long long       short          remainder...
      * @endcode
      *
-     * | Property           | Description                            |
-     * | ------------------ | -------------------------------------- |
-     * | cpContentType      | MIME content type                      |
-     * | cpContentEncoding  | MIME content encoding                  |
-     * | cpHeaders          | message header field table             |
-     * | cpDeliveryMode     | nonpersistent (1) or persistent (2)    |
-     * | cpPriority         | message priority, 0 to 9               |
-     * | cpCorrelationId    | application correlation identifier     |
-     * | cpReplyTo          | address to reply to                    |
-     * | cpExpiration       | message expiration specification       |
-     * | cpMessageId        | application message identifier         |
-     * | cpTimestamp        | message timestamp                      |
-     * | cpType             | message type name                      |
-     * | cpUserId           | creating user id                       |
-     * | cpAppId            | creating application id                |
-     * | cpClusterID        | cluster ID                             |
+     * | Property         | Description                            |
+     * | ---------------- | -------------------------------------- |
+     * | ContentType      | MIME content type                      |
+     * | ContentEncoding  | MIME content encoding                  |
+     * | Headers          | message header field table             |
+     * | DeliveryMode     | nonpersistent (1) or persistent (2)    |
+     * | Priority         | message priority, 0 to 9               |
+     * | CorrelationId    | application correlation identifier     |
+     * | ReplyTo          | address to reply to                    |
+     * | Expiration       | message expiration specification       |
+     * | MessageId        | application message identifier         |
+     * | Timestamp        | message timestamp                      |
+     * | Type             | message type name                      |
+     * | UserId           | creating user id                       |
+     * | AppId            | creating application id                |
+     * | ClusterID        | cluster ID                             |
      *
      * Default property:
      * @sa setProperty
@@ -243,28 +244,6 @@ namespace Frame
     class QAMQP_EXPORT Content : public Base
     {
     public:
-        /*
-         *  Default content frame property
-         */
-        enum Property
-        {
-            cpContentType = AMQP_BASIC_CONTENT_TYPE_FLAG,
-            cpContentEncoding = AMQP_BASIC_CONTENT_ENCODING_FLAG,
-            cpHeaders = AMQP_BASIC_HEADERS_FLAG,
-            cpDeliveryMode = AMQP_BASIC_DELIVERY_MODE_FLAG,
-            cpPriority = AMQP_BASIC_PRIORITY_FLAG,
-            cpCorrelationId = AMQP_BASIC_CORRELATION_ID_FLAG,
-            cpReplyTo = AMQP_BASIC_REPLY_TO_FLAG,
-            cpExpiration = AMQP_BASIC_EXPIRATION_FLAG,
-            cpMessageId = AMQP_BASIC_MESSAGE_ID_FLAG,
-            cpTimestamp = AMQP_BASIC_TIMESTAMP_FLAG,
-            cpType = AMQP_BASIC_TYPE_FLAG,
-            cpUserId = AMQP_BASIC_USER_ID_FLAG,
-            cpAppId = AMQP_BASIC_APP_ID_FLAG,
-            cpClusterID = AMQP_BASIC_CLUSTER_ID_FLAG
-        };
-        Q_DECLARE_FLAGS(Properties, Property)
-
         /*
          * Content class constructor.
          * @detailed Construct frame content header class for sending.
@@ -296,13 +275,13 @@ namespace Frame
          * @param prop Any default content header property
          * @param value Associated data
          */
-        void setProperty(Property prop, const QVariant &value);
+        void setProperty(Message::Property prop, const QVariant &value);
 
         /*
          * Return associated with property value
          * @param prop Any default content header property
          */
-        QVariant property(Property prop) const;
+        QVariant property(Message::Property prop) const;
 
         qlonglong bodySize() const;
         void setBodySize(qlonglong size);
@@ -313,7 +292,7 @@ namespace Frame
         short methodClass_;
         qint16 id_;
         mutable QByteArray buffer_;
-        QHash<int, QVariant> properties_;
+        Message::PropertyHash properties_;
         qlonglong bodySize_;
 
     private:

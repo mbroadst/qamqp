@@ -300,47 +300,47 @@ qint32 Content::size() const
         prop_ |= p;
     out << prop_;
 
-    if (prop_ & cpContentType)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpContentType]);
+    if (prop_ & Message::ContentType)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::ContentType]);
 
-    if (prop_ & cpContentEncoding)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpContentEncoding]);
+    if (prop_ & Message::ContentEncoding)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::ContentEncoding]);
 
-    if (prop_ & cpHeaders)
-        writeAmqpField(out, MetaType::Hash, properties_[cpHeaders]);
+    if (prop_ & Message::Headers)
+        writeAmqpField(out, MetaType::Hash, properties_[Message::Headers]);
 
-    if (prop_ & cpDeliveryMode)
-        writeAmqpField(out, MetaType::ShortShortUint, properties_[cpDeliveryMode]);
+    if (prop_ & Message::DeliveryMode)
+        writeAmqpField(out, MetaType::ShortShortUint, properties_[Message::DeliveryMode]);
 
-    if (prop_ & cpPriority)
-        writeAmqpField(out, MetaType::ShortShortUint, properties_[cpPriority]);
+    if (prop_ & Message::Priority)
+        writeAmqpField(out, MetaType::ShortShortUint, properties_[Message::Priority]);
 
-    if (prop_ & cpCorrelationId)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpCorrelationId]);
+    if (prop_ & Message::CorrelationId)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::CorrelationId]);
 
-    if (prop_ & cpReplyTo)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpReplyTo]);
+    if (prop_ & Message::ReplyTo)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::ReplyTo]);
 
-    if (prop_ & cpExpiration)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpExpiration]);
+    if (prop_ & Message::Expiration)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::Expiration]);
 
-    if (prop_ & cpMessageId)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpMessageId]);
+    if (prop_ & Message::MessageId)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::MessageId]);
 
-    if (prop_ & cpTimestamp)
-        writeAmqpField(out, MetaType::Timestamp, properties_[cpTimestamp]);
+    if (prop_ & Message::Timestamp)
+        writeAmqpField(out, MetaType::Timestamp, properties_[Message::Timestamp]);
 
-    if (prop_ & cpType)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpType]);
+    if (prop_ & Message::Type)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::Type]);
 
-    if (prop_ & cpUserId)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpUserId]);
+    if (prop_ & Message::UserId)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::UserId]);
 
-    if (prop_ & cpAppId)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpAppId]);
+    if (prop_ & Message::AppId)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::AppId]);
 
-    if (prop_ & cpClusterID)
-        writeAmqpField(out, MetaType::ShortString, properties_[cpClusterID]);
+    if (prop_ & Message::ClusterID)
+        writeAmqpField(out, MetaType::ShortString, properties_[Message::ClusterID]);
 
     return buffer_.size();
 }
@@ -355,12 +355,12 @@ void Content::setBodySize(qlonglong size)
     bodySize_ = size;
 }
 
-void Content::setProperty(Property prop, const QVariant &value)
+void Content::setProperty(Message::Property prop, const QVariant &value)
 {
     properties_[prop] = value;
 }
 
-QVariant Content::property(Property prop) const
+QVariant Content::property(Message::Property prop) const
 {
     return properties_.value(prop);
 }
@@ -377,47 +377,47 @@ void Content::readPayload(QDataStream &in)
     in >> bodySize_;
     qint16 flags_ = 0;
     in >> flags_;
-    if (flags_ & cpContentType)
-        properties_[cpContentType] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::ContentType)
+        properties_[Message::ContentType] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpContentEncoding)
-        properties_[cpContentEncoding] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::ContentEncoding)
+        properties_[Message::ContentEncoding] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpHeaders)
-        properties_[cpHeaders] = readAmqpField(in, MetaType::Hash);
+    if (flags_ & Message::Headers)
+        properties_[Message::Headers] = readAmqpField(in, MetaType::Hash);
 
-    if (flags_ & cpDeliveryMode)
-        properties_[cpDeliveryMode] = readAmqpField(in, MetaType::ShortShortUint);
+    if (flags_ & Message::DeliveryMode)
+        properties_[Message::DeliveryMode] = readAmqpField(in, MetaType::ShortShortUint);
 
-    if (flags_ & cpPriority)
-        properties_[cpPriority] = readAmqpField(in, MetaType::ShortShortUint);
+    if (flags_ & Message::Priority)
+        properties_[Message::Priority] = readAmqpField(in, MetaType::ShortShortUint);
 
-    if (flags_ & cpCorrelationId)
-        properties_[cpCorrelationId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::CorrelationId)
+        properties_[Message::CorrelationId] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpReplyTo)
-        properties_[cpReplyTo] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::ReplyTo)
+        properties_[Message::ReplyTo] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpExpiration)
-        properties_[cpExpiration] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::Expiration)
+        properties_[Message::Expiration] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpMessageId)
-        properties_[cpMessageId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::MessageId)
+        properties_[Message::MessageId] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpTimestamp)
-        properties_[cpTimestamp] = readAmqpField(in, MetaType::Timestamp);
+    if (flags_ & Message::Timestamp)
+        properties_[Message::Timestamp] = readAmqpField(in, MetaType::Timestamp);
 
-    if (flags_ & cpType)
-        properties_[cpType] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::Type)
+        properties_[Message::Type] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpUserId)
-        properties_[cpUserId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::UserId)
+        properties_[Message::UserId] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpAppId)
-        properties_[cpAppId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::AppId)
+        properties_[Message::AppId] = readAmqpField(in, MetaType::ShortString);
 
-    if (flags_ & cpClusterID)
-        properties_[cpClusterID] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & Message::ClusterID)
+        properties_[Message::ClusterID] = readAmqpField(in, MetaType::ShortString);
 }
 
 //////////////////////////////////////////////////////////////////////////
