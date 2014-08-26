@@ -59,8 +59,8 @@ namespace Frame
         fcTx = 90,
     };
 
-    QVariant readAmqpField(QDataStream &s, QAMQP::ValueType type);
-    void writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant &value);
+    QVariant readAmqpField(QDataStream &s, MetaType::ValueType type);
+    void writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVariant &value);
 
     /*
      * @brief Base class for any frames.

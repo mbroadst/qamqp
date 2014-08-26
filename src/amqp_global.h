@@ -47,6 +47,8 @@
 
 namespace QAMQP {
 
+namespace MetaType {
+
 enum ValueType
 {
     Invalid = -1,
@@ -75,6 +77,8 @@ enum ValueType
     Void
 };
 
+}   // namespace MetaType
+
 enum Error
 {
     NoError = 0,
@@ -98,7 +102,7 @@ enum Error
     InternalError = 541
 };
 
-struct decimal
+struct Decimal
 {
     qint8 scale;
     quint32 value;
@@ -107,6 +111,6 @@ struct decimal
 }   // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Error)
-Q_DECLARE_METATYPE(QAMQP::decimal)
+Q_DECLARE_METATYPE(QAMQP::Decimal)
 
 #endif // qamqp_global_h__

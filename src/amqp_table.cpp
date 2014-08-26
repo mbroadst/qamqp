@@ -29,47 +29,47 @@ V - Void
 x - Byte array
 */
 
-ValueType valueTypeForOctet(qint8 octet)
+MetaType::ValueType valueTypeForOctet(qint8 octet)
 {
     switch (octet) {
-    case 't': return Boolean;
-    case 'b': return ShortShortInt;
-    case 's': return ShortInt;
-    case 'I': return LongInt;
-    case 'l': return LongLongInt;
-    case 'f': return Float;
-    case 'd': return Double;
-    case 'D': return Decimal;
-    case 'S': return LongString;
-    case 'A': return Array;
-    case 'T': return Timestamp;
-    case 'F': return Hash;
-    case 'V': return Void;
-    case 'x': return Bytes;
+    case 't': return MetaType::Boolean;
+    case 'b': return MetaType::ShortShortInt;
+    case 's': return MetaType::ShortInt;
+    case 'I': return MetaType::LongInt;
+    case 'l': return MetaType::LongLongInt;
+    case 'f': return MetaType::Float;
+    case 'd': return MetaType::Double;
+    case 'D': return MetaType::Decimal;
+    case 'S': return MetaType::LongString;
+    case 'A': return MetaType::Array;
+    case 'T': return MetaType::Timestamp;
+    case 'F': return MetaType::Hash;
+    case 'V': return MetaType::Void;
+    case 'x': return MetaType::Bytes;
     default:
         qAmqpDebug() << Q_FUNC_INFO << "invalid octet received: " << char(octet);
     }
 
-    return Invalid;
+    return MetaType::Invalid;
 }
 
-qint8 valueTypeToOctet(ValueType type)
+qint8 valueTypeToOctet(MetaType::ValueType type)
 {
     switch (type) {
-    case Boolean: return 't';
-    case ShortShortInt: return 'b';
-    case ShortInt: return 's';
-    case LongInt: return 'I';
-    case LongLongInt: return 'l';
-    case Float: return 'f';
-    case Double: return 'd';
-    case Decimal: return 'D';
-    case LongString: return 'S';
-    case Array: return 'A';
-    case Timestamp: return 'T';
-    case Hash: return 'F';
-    case Void: return 'V';
-    case Bytes: return 'x';
+    case MetaType::Boolean: return 't';
+    case MetaType::ShortShortInt: return 'b';
+    case MetaType::ShortInt: return 's';
+    case MetaType::LongInt: return 'I';
+    case MetaType::LongLongInt: return 'l';
+    case MetaType::Float: return 'f';
+    case MetaType::Double: return 'd';
+    case MetaType::Decimal: return 'D';
+    case MetaType::LongString: return 'S';
+    case MetaType::Array: return 'A';
+    case MetaType::Timestamp: return 'T';
+    case MetaType::Hash: return 'F';
+    case MetaType::Void: return 'V';
+    case MetaType::Bytes: return 'x';
     default:
         qAmqpDebug() << Q_FUNC_INFO << "invalid type received: " << char(type);
     }
@@ -79,69 +79,69 @@ qint8 valueTypeToOctet(ValueType type)
 
 void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
 {
-    ValueType type;
+    MetaType::ValueType type;
     switch (value.userType()) {
     case QMetaType::Bool:
-        type = Boolean;
+        type = MetaType::Boolean;
         break;
     case QMetaType::QByteArray:
-        type = Bytes;
+        type = MetaType::Bytes;
         break;
     case QMetaType::Int:
     {
         int i = qAbs(value.toInt());
         if (i <= qint8(SCHAR_MAX)) {
-            type = ShortShortInt;
+            type = MetaType::ShortShortInt;
         } else if (i <= qint16(SHRT_MAX)) {
-            type = ShortInt;
+            type = MetaType::ShortInt;
         } else {
-            type = LongInt;
+            type = MetaType::LongInt;
         }
     }
         break;
     case QMetaType::UShort:
-        type = ShortInt;
+        type = MetaType::ShortInt;
         break;
     case QMetaType::UInt:
     {
         int i = value.toInt();
         if (i <= qint8(SCHAR_MAX)) {
-            type = ShortShortInt;
+            type = MetaType::ShortShortInt;
         } else if (i <= qint16(SHRT_MAX)) {
-            type = ShortInt;
+            type = MetaType::ShortInt;
         } else {
-            type = LongInt;
+            type = MetaType::LongInt;
         }
     }
         break;
     case QMetaType::LongLong:
     case QMetaType::ULongLong:
-        type = LongLongInt;
+        type = MetaType::LongLongInt;
         break;
     case QMetaType::QString:
-        type = LongString;
+        type = MetaType::LongString;
         break;
     case QMetaType::QDateTime:
-        type = Timestamp;
+        type = MetaType::Timestamp;
         break;
     case QMetaType::Double:
-        type = value.toDouble() > FLT_MAX ? Double : Float;
+        type = value.toDouble() > FLT_MAX ? MetaType::Double : MetaType::Float;
         break;
     case QMetaType::QVariantHash:
-        type = Hash;
+        type = MetaType::Hash;
         break;
     case QMetaType::QVariantList:
-        type = Array;
+        type = MetaType::Array;
         break;
     case QMetaType::Void:
-        type = Void;
+        type = MetaType::Void;
         break;
     default:
-        if (value.userType() == qMetaTypeId<QAMQP::decimal>()) {
-            type = Decimal;
+        if (value.userType() == qMetaTypeId<QAMQP::Decimal>()) {
+            type = MetaType::Decimal;
             break;
         } else if (!value.isValid()) {
-            type = Void;
+            type = MetaType::Void;
             break;
         }
 
@@ -154,33 +154,33 @@ void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
     writeFieldValue(stream, type, value);
 }
 
-void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant &value)
+void Table::writeFieldValue(QDataStream &stream, MetaType::ValueType type, const QVariant &value)
 {
     switch (type) {
-    case Boolean:
-    case ShortShortUint:
-    case ShortUint:
-    case LongUint:
-    case LongLongUint:
-    case ShortString:
-    case LongString:
-    case Timestamp:
-    case Hash:
+    case MetaType::Boolean:
+    case MetaType::ShortShortUint:
+    case MetaType::ShortUint:
+    case MetaType::LongUint:
+    case MetaType::LongLongUint:
+    case MetaType::ShortString:
+    case MetaType::LongString:
+    case MetaType::Timestamp:
+    case MetaType::Hash:
         return Frame::writeAmqpField(stream, type, value);
 
-    case ShortShortInt:
+    case MetaType::ShortShortInt:
         stream << qint8(value.toInt());
         break;
-    case ShortInt:
+    case MetaType::ShortInt:
         stream << qint16(value.toInt());
         break;
-    case LongInt:
+    case MetaType::LongInt:
         stream << qint32(value.toInt());
         break;
-    case LongLongInt:
+    case MetaType::LongLongInt:
         stream << qlonglong(value.toLongLong());
         break;
-    case Float:
+    case MetaType::Float:
     {
         float g = value.toFloat();
         QDataStream::FloatingPointPrecision oldPrecision = stream.floatingPointPrecision();
@@ -189,7 +189,7 @@ void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant 
         stream.setFloatingPointPrecision(oldPrecision);
     }
         break;
-    case Double:
+    case MetaType::Double:
     {
         double g = value.toDouble();
         QDataStream::FloatingPointPrecision oldPrecision = stream.floatingPointPrecision();
@@ -198,14 +198,14 @@ void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant 
         stream.setFloatingPointPrecision(oldPrecision);
     }
         break;
-    case Decimal:
+    case MetaType::Decimal:
     {
-        QAMQP::decimal v(value.value<QAMQP::decimal>());
+        QAMQP::Decimal v(value.value<QAMQP::Decimal>());
         stream << v.scale;
         stream << v.value;
     }
         break;
-    case Array:
+    case MetaType::Array:
     {
         QByteArray buffer;
         QDataStream arrayStream(&buffer, QIODevice::WriteOnly);
@@ -220,14 +220,14 @@ void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant 
         }
     }
         break;
-    case Bytes:
+    case MetaType::Bytes:
     {
         QByteArray ba = value.toByteArray();
         stream << quint32(ba.length());
         stream.writeRawData(ba.data(), ba.length());
     }
         break;
-    case Void:
+    case MetaType::Void:
         stream << qint32(0);
         break;
 
@@ -236,45 +236,45 @@ void Table::writeFieldValue(QDataStream &stream, ValueType type, const QVariant 
     }
 }
 
-QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
+QVariant Table::readFieldValue(QDataStream &stream, MetaType::ValueType type)
 {
     switch (type) {
-    case Boolean:
-    case ShortShortUint:
-    case ShortUint:
-    case LongUint:
-    case LongLongUint:
-    case ShortString:
-    case LongString:
-    case Timestamp:
-    case Hash:
+    case MetaType::Boolean:
+    case MetaType::ShortShortUint:
+    case MetaType::ShortUint:
+    case MetaType::LongUint:
+    case MetaType::LongLongUint:
+    case MetaType::ShortString:
+    case MetaType::LongString:
+    case MetaType::Timestamp:
+    case MetaType::Hash:
         return Frame::readAmqpField(stream, type);
 
-    case ShortShortInt:
+    case MetaType::ShortShortInt:
     {
         char octet;
         stream.readRawData(&octet, sizeof(octet));
         return QVariant::fromValue<int>(octet);
     }
-    case ShortInt:
+    case MetaType::ShortInt:
     {
         qint16 tmp_value = 0;
         stream >> tmp_value;
         return QVariant::fromValue<int>(tmp_value);
     }
-    case LongInt:
+    case MetaType::LongInt:
     {
         qint32 tmp_value = 0;
         stream >> tmp_value;
         return QVariant::fromValue<int>(tmp_value);
     }
-    case LongLongInt:
+    case MetaType::LongLongInt:
     {
         qlonglong v = 0 ;
         stream >> v;
         return v;
     }
-    case Float:
+    case MetaType::Float:
     {
         float tmp_value;
         QDataStream::FloatingPointPrecision precision = stream.floatingPointPrecision();
@@ -283,7 +283,7 @@ QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
         stream.setFloatingPointPrecision(precision);
         return QVariant::fromValue<float>(tmp_value);
     }
-    case Double:
+    case MetaType::Double:
     {
         double tmp_value;
         QDataStream::FloatingPointPrecision precision = stream.floatingPointPrecision();
@@ -292,14 +292,14 @@ QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
         stream.setFloatingPointPrecision(precision);
         return QVariant::fromValue<double>(tmp_value);
     }
-    case Decimal:
+    case MetaType::Decimal:
     {
-        QAMQP::decimal v;
+        QAMQP::Decimal v;
         stream >> v.scale;
         stream >> v.value;
-        return QVariant::fromValue<QAMQP::decimal>(v);
+        return QVariant::fromValue<QAMQP::Decimal>(v);
     }
-    case Array:
+    case MetaType::Array:
     {
         QByteArray data;
         quint32 size = 0;
@@ -317,7 +317,7 @@ QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
 
         return result;
     }
-    case Bytes:
+    case MetaType::Bytes:
     {
         QByteArray bytes;
         quint32 length = 0;
@@ -326,7 +326,7 @@ QVariant Table::readFieldValue(QDataStream &stream, ValueType type)
         stream.readRawData(bytes.data(), bytes.size());
         return bytes;
     }
-    case Void:
+    case MetaType::Void:
         break;
     default:
         qAmqpDebug() << Q_FUNC_INFO << "unhandled type: " << type;
@@ -342,7 +342,7 @@ QDataStream &operator<<(QDataStream &stream, const Table &table)
     Table::ConstIterator it;
     Table::ConstIterator itEnd = table.constEnd();
     for (it = table.constBegin(); it != itEnd; ++it) {
-        Table::writeFieldValue(s, ShortString, it.key());
+        Table::writeFieldValue(s, MetaType::ShortString, it.key());
         Table::writeFieldValue(s, it.value());
     }
 
@@ -362,7 +362,7 @@ QDataStream &operator>>(QDataStream &stream, Table &table)
     QDataStream tableStream(&data, QIODevice::ReadOnly);
     while (!tableStream.atEnd()) {
         qint8 octet = 0;
-        QString field = Frame::readAmqpField(tableStream, ShortString).toString();
+        QString field = Frame::readAmqpField(tableStream, MetaType::ShortString).toString();
         tableStream >> octet;
         table[field] = Table::readFieldValue(tableStream, valueTypeForOctet(octet));
     }

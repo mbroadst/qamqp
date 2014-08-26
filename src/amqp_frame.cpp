@@ -139,40 +139,40 @@ void Method::writePayload(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
+QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
 {
     switch (type) {
-    case Boolean:
+    case MetaType::Boolean:
     {
         quint8 octet = 0;
         s >> octet;
         return QVariant::fromValue<bool>(octet > 0);
     }
-    case ShortShortUint:
+    case MetaType::ShortShortUint:
     {
         quint8 octet = 0;
         s >> octet;
         return QVariant::fromValue<int>(octet);
     }
-    case ShortUint:
+    case MetaType::ShortUint:
     {
         quint16 tmp_value = 0;
         s >> tmp_value;
         return QVariant::fromValue<uint>(tmp_value);
     }
-    case LongUint:
+    case MetaType::LongUint:
     {
         quint32 tmp_value = 0;
         s >> tmp_value;
         return QVariant::fromValue<uint>(tmp_value);
     }
-    case LongLongUint:
+    case MetaType::LongLongUint:
     {
         qulonglong v = 0 ;
         s >> v;
         return v;
     }
-    case ShortString:
+    case MetaType::ShortString:
     {
         qint8 size = 0;
         QByteArray buffer;
@@ -182,7 +182,7 @@ QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
         s.readRawData(buffer.data(), buffer.size());
         return QString::fromLatin1(buffer.data(), size);
     }
-    case LongString:
+    case MetaType::LongString:
     {
         quint32 size = 0;
         QByteArray buffer;
@@ -192,19 +192,19 @@ QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
         s.readRawData(buffer.data(), buffer.size());
         return QString::fromUtf8(buffer.data(), buffer.size());
     }
-    case Timestamp:
+    case MetaType::Timestamp:
     {
         qulonglong tmp_value;
         s >> tmp_value;
         return QDateTime::fromMSecsSinceEpoch(tmp_value);
     }
-    case Hash:
+    case MetaType::Hash:
     {
         Table table;
         s >> table;
         return table;
     }
-    case Void:
+    case MetaType::Void:
         return QVariant();
     default:
         qAmqpDebug() << Q_FUNC_INFO << "unsupported value type: " << type;
@@ -213,25 +213,25 @@ QVariant Frame::readAmqpField(QDataStream &s, QAMQP::ValueType type)
     return QVariant();
 }
 
-void Frame::writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant &value)
+void Frame::writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVariant &value)
 {
     switch (type) {
-    case Boolean:
+    case MetaType::Boolean:
         s << (value.toBool() ? qint8(1) : qint8(0));
         break;
-    case ShortShortUint:
+    case MetaType::ShortShortUint:
         s << qint8(value.toUInt());
         break;
-    case ShortUint:
+    case MetaType::ShortUint:
         s << quint16(value.toUInt());
         break;
-    case LongUint:
+    case MetaType::LongUint:
         s << quint32(value.toUInt());
         break;
-    case LongLongUint:
+    case MetaType::LongLongUint:
         s << qulonglong(value.toULongLong());
         break;
-    case ShortString:
+    case MetaType::ShortString:
     {
         QString str = value.toString();
         if (str.length() >= 256) {
@@ -242,17 +242,17 @@ void Frame::writeAmqpField(QDataStream &s, QAMQP::ValueType type, const QVariant
         s.writeRawData(str.toUtf8().data(), str.length());
     }
         break;
-    case LongString:
+    case MetaType::LongString:
     {
         QString str = value.toString();
         s << quint32(str.length());
         s.writeRawData(str.toLatin1().data(), str.length());
     }
         break;
-    case Timestamp:
+    case MetaType::Timestamp:
         s << qulonglong(value.toDateTime().toMSecsSinceEpoch());
         break;
-    case Hash:
+    case MetaType::Hash:
     {
         Table table(value.toHash());
         s << table;
@@ -301,46 +301,46 @@ qint32 Content::size() const
     out << prop_;
 
     if (prop_ & cpContentType)
-        writeAmqpField(out, ShortString, properties_[cpContentType]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpContentType]);
 
     if (prop_ & cpContentEncoding)
-        writeAmqpField(out, ShortString, properties_[cpContentEncoding]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpContentEncoding]);
 
     if (prop_ & cpHeaders)
-        writeAmqpField(out, Hash, properties_[cpHeaders]);
+        writeAmqpField(out, MetaType::Hash, properties_[cpHeaders]);
 
     if (prop_ & cpDeliveryMode)
-        writeAmqpField(out, ShortShortUint, properties_[cpDeliveryMode]);
+        writeAmqpField(out, MetaType::ShortShortUint, properties_[cpDeliveryMode]);
 
     if (prop_ & cpPriority)
-        writeAmqpField(out, ShortShortUint, properties_[cpPriority]);
+        writeAmqpField(out, MetaType::ShortShortUint, properties_[cpPriority]);
 
     if (prop_ & cpCorrelationId)
-        writeAmqpField(out, ShortString, properties_[cpCorrelationId]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpCorrelationId]);
 
     if (prop_ & cpReplyTo)
-        writeAmqpField(out, ShortString, properties_[cpReplyTo]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpReplyTo]);
 
     if (prop_ & cpExpiration)
-        writeAmqpField(out, ShortString, properties_[cpExpiration]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpExpiration]);
 
     if (prop_ & cpMessageId)
-        writeAmqpField(out, ShortString, properties_[cpMessageId]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpMessageId]);
 
     if (prop_ & cpTimestamp)
-        writeAmqpField(out, Timestamp, properties_[cpTimestamp]);
+        writeAmqpField(out, MetaType::Timestamp, properties_[cpTimestamp]);
 
     if (prop_ & cpType)
-        writeAmqpField(out, ShortString, properties_[cpType]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpType]);
 
     if (prop_ & cpUserId)
-        writeAmqpField(out, ShortString, properties_[cpUserId]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpUserId]);
 
     if (prop_ & cpAppId)
-        writeAmqpField(out, ShortString, properties_[cpAppId]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpAppId]);
 
     if (prop_ & cpClusterID)
-        writeAmqpField(out, ShortString, properties_[cpClusterID]);
+        writeAmqpField(out, MetaType::ShortString, properties_[cpClusterID]);
 
     return buffer_.size();
 }
@@ -378,46 +378,46 @@ void Content::readPayload(QDataStream &in)
     qint16 flags_ = 0;
     in >> flags_;
     if (flags_ & cpContentType)
-        properties_[cpContentType] = readAmqpField(in, ShortString);
+        properties_[cpContentType] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpContentEncoding)
-        properties_[cpContentEncoding] = readAmqpField(in, ShortString);
+        properties_[cpContentEncoding] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpHeaders)
-        properties_[cpHeaders] = readAmqpField(in, Hash);
+        properties_[cpHeaders] = readAmqpField(in, MetaType::Hash);
 
     if (flags_ & cpDeliveryMode)
-        properties_[cpDeliveryMode] = readAmqpField(in, ShortShortUint);
+        properties_[cpDeliveryMode] = readAmqpField(in, MetaType::ShortShortUint);
 
     if (flags_ & cpPriority)
-        properties_[cpPriority] = readAmqpField(in, ShortShortUint);
+        properties_[cpPriority] = readAmqpField(in, MetaType::ShortShortUint);
 
     if (flags_ & cpCorrelationId)
-        properties_[cpCorrelationId] = readAmqpField(in, ShortString);
+        properties_[cpCorrelationId] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpReplyTo)
-        properties_[cpReplyTo] = readAmqpField(in, ShortString);
+        properties_[cpReplyTo] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpExpiration)
-        properties_[cpExpiration] = readAmqpField(in, ShortString);
+        properties_[cpExpiration] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpMessageId)
-        properties_[cpMessageId] = readAmqpField(in, ShortString);
+        properties_[cpMessageId] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpTimestamp)
-        properties_[cpTimestamp] = readAmqpField(in, Timestamp);
+        properties_[cpTimestamp] = readAmqpField(in, MetaType::Timestamp);
 
     if (flags_ & cpType)
-        properties_[cpType] = readAmqpField(in, ShortString);
+        properties_[cpType] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpUserId)
-        properties_[cpUserId] = readAmqpField(in, ShortString);
+        properties_[cpUserId] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpAppId)
-        properties_[cpAppId] = readAmqpField(in, ShortString);
+        properties_[cpAppId] = readAmqpField(in, MetaType::ShortString);
 
     if (flags_ & cpClusterID)
-        properties_[cpClusterID] = readAmqpField(in, ShortString);
+        properties_[cpClusterID] = readAmqpField(in, MetaType::ShortString);
 }
 
 //////////////////////////////////////////////////////////////////////////

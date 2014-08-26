@@ -339,8 +339,9 @@ void ClientPrivate::start(const Frame::Method &frame)
     Table table;
     stream >> table;
 
-    QStringList mechanisms = Frame::readAmqpField(stream, LongString).toString().split(' ');
-    QString locales = Frame::readAmqpField(stream, LongString).toString();
+    QStringList mechanisms =
+        Frame::readAmqpField(stream, MetaType::LongString).toString().split(' ');
+    QString locales = Frame::readAmqpField(stream, MetaType::LongString).toString();
 
     qAmqpDebug(">> version_major: %d", version_major);
     qAmqpDebug(">> version_minor: %d", version_minor);
@@ -430,7 +431,7 @@ void ClientPrivate::close(const Frame::Method &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
-    QString text = Frame::readAmqpField(stream, ShortString).toString();
+    QString text = Frame::readAmqpField(stream, MetaType::ShortString).toString();
     stream >> classId;
     stream >> methodId;
 
@@ -467,7 +468,7 @@ void ClientPrivate::startOk()
     stream << clientProperties;
 
     authenticator->write(stream);
-    Frame::writeAmqpField(stream, ShortString, QLatin1String("en_US"));
+    Frame::writeAmqpField(stream, MetaType::ShortString, QLatin1String("en_US"));
 
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -498,7 +499,7 @@ void ClientPrivate::open()
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
-    Frame::writeAmqpField(stream, ShortString, virtualHost);
+    Frame::writeAmqpField(stream, MetaType::ShortString, virtualHost);
 
     stream << qint8(0);
     stream << qint8(0);
@@ -512,7 +513,7 @@ void ClientPrivate::close(int code, const QString &text, int classId, int method
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
     stream << qint16(code);
-    Frame::writeAmqpField(stream, ShortString, text);
+    Frame::writeAmqpField(stream, MetaType::ShortString, text);
     stream << qint16(classId);
     stream << qint16(methodId);
 

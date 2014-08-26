@@ -525,10 +525,10 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     Queue *queue = client->createQueue("test-table-field-data-types");
     declareQueueAndVerifyConsuming(queue);
 
-    QAMQP::decimal decimal;
+    QAMQP::Decimal decimal;
     decimal.scale = 2;
     decimal.value = 12345;
-    QVariant decimalVariant = QVariant::fromValue<QAMQP::decimal>(decimal);
+    QVariant decimalVariant = QVariant::fromValue<QAMQP::Decimal>(decimal);
 
     Table nestedTable;
     nestedTable.insert("boolean", true);
@@ -593,7 +593,7 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     QVariantList compareArray = message.header("array").toList();
     QCOMPARE(array, compareArray);
 
-    QAMQP::decimal receivedDecimal = message.header("decimal-value").value<QAMQP::decimal>();
+    QAMQP::Decimal receivedDecimal = message.header("decimal-value").value<QAMQP::Decimal>();
     QCOMPARE(receivedDecimal.scale, qint8(2));
     QCOMPARE(receivedDecimal.value, quint32(12345));
 }

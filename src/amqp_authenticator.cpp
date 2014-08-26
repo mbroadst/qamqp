@@ -40,7 +40,7 @@ void AMQPlainAuthenticator::setPassword(const QString &p)
 
 void AMQPlainAuthenticator::write(QDataStream &out)
 {
-    Frame::writeAmqpField(out, ShortString, type());
+    Frame::writeAmqpField(out, MetaType::ShortString, type());
     Table response;
     response["LOGIN"] = login_;
     response["PASSWORD"] = password_;

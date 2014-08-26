@@ -48,11 +48,11 @@ void ExchangePrivate::declare()
     QDataStream stream(&args, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeAmqpField(stream, ShortString, name);
-    Frame::writeAmqpField(stream, ShortString, type);
+    Frame::writeAmqpField(stream, MetaType::ShortString, name);
+    Frame::writeAmqpField(stream, MetaType::ShortString, type);
 
     stream << qint8(options);
-    Frame::writeAmqpField(stream, Hash, arguments);
+    Frame::writeAmqpField(stream, MetaType::Hash, arguments);
 
     frame.setArguments(args);
     sendFrame(frame);
@@ -131,9 +131,9 @@ void ExchangePrivate::basicReturn(const Frame::Method &frame)
 
     quint16 replyCode;
     stream >> replyCode;
-    QString replyText = Frame::readAmqpField(stream, ShortString).toString();
-    QString exchangeName = Frame::readAmqpField(stream, ShortString).toString();
-    QString routingKey = Frame::readAmqpField(stream, ShortString).toString();
+    QString replyText = Frame::readAmqpField(stream, MetaType::ShortString).toString();
+    QString exchangeName = Frame::readAmqpField(stream, MetaType::ShortString).toString();
+    QString routingKey = Frame::readAmqpField(stream, MetaType::ShortString).toString();
 
     Error checkError = static_cast<Error>(replyCode);
     if (checkError != QAMQP::NoError) {
@@ -208,7 +208,7 @@ void Exchange::remove(int options)
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeAmqpField(stream, ShortString, d->name);
+    Frame::writeAmqpField(stream, MetaType::ShortString, d->name);
     stream << qint8(options);
 
     frame.setArguments(arguments);
@@ -241,8 +241,8 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeAmqpField(out, ShortString, d->name);
-    Frame::writeAmqpField(out, ShortString, routingKey);
+    Frame::writeAmqpField(out, MetaType::ShortString, d->name);
+    Frame::writeAmqpField(out, MetaType::ShortString, routingKey);
     out << qint8(publishOptions);
 
     frame.setArguments(arguments);

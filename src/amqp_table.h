@@ -16,8 +16,8 @@ public:
     }
 
     static void writeFieldValue(QDataStream &stream, const QVariant &value);
-    static void writeFieldValue(QDataStream &stream, ValueType type, const QVariant &value);
-    static QVariant readFieldValue(QDataStream &stream, ValueType type);
+    static void writeFieldValue(QDataStream &stream, MetaType::ValueType type, const QVariant &value);
+    static QVariant readFieldValue(QDataStream &stream, MetaType::ValueType type);
 };
 
 }   // namespace QAMQP

@@ -114,7 +114,7 @@ void ChannelPrivate::flow(bool active)
 {
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
-    Frame::writeAmqpField(stream, ShortShortUint, (active ? 1 : 0));
+    Frame::writeAmqpField(stream, MetaType::ShortShortUint, (active ? 1 : 0));
 
     Frame::Method frame(Frame::fcChannel, miFlow);
     frame.setChannel(channelNumber);
@@ -141,7 +141,7 @@ void ChannelPrivate::flowOk(const Frame::Method &frame)
     Q_Q(Channel);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
-    bool active = Frame::readAmqpField(stream, Boolean).toBool();
+    bool active = Frame::readAmqpField(stream, MetaType::Boolean).toBool();
     if (active)
         Q_EMIT q->resumed();
     else
@@ -154,15 +154,15 @@ void ChannelPrivate::close(int code, const QString &text, int classId, int metho
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     if (!code) code = 200;
-    Frame::writeAmqpField(stream, ShortUint, code);
+    Frame::writeAmqpField(stream, MetaType::ShortUint, code);
     if (!text.isEmpty()) {
-      Frame::writeAmqpField(stream, ShortString, text);
+      Frame::writeAmqpField(stream, MetaType::ShortString, text);
     } else {
-      Frame::writeAmqpField(stream, ShortString, QLatin1String("OK"));
+      Frame::writeAmqpField(stream, MetaType::ShortString, QLatin1String("OK"));
     }
 
-    Frame::writeAmqpField(stream, ShortUint, classId);
-    Frame::writeAmqpField(stream, ShortUint, methodId);
+    Frame::writeAmqpField(stream, MetaType::ShortUint, classId);
+    Frame::writeAmqpField(stream, MetaType::ShortUint, methodId);
 
     Frame::Method frame(Frame::fcChannel, miClose);
     frame.setChannel(channelNumber);
@@ -178,7 +178,7 @@ void ChannelPrivate::close(const Frame::Method &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
-    QString text = Frame::readAmqpField(stream, ShortString).toString();
+    QString text = Frame::readAmqpField(stream, MetaType::ShortString).toString();
 
     stream >> classId;
     stream >> methodId;
