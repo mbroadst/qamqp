@@ -20,6 +20,9 @@ public:
     Message &operator=(const Message &other);
     ~Message();
 
+    bool operator==(const Message &message) const;
+    inline bool operator!=(const Message &message) const { return !(operator==(message)); }
+
     enum Property {
         ContentType = AMQP_BASIC_CONTENT_TYPE_FLAG,
         ContentEncoding = AMQP_BASIC_CONTENT_ENCODING_FLAG,
@@ -64,5 +67,8 @@ private:
 } // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Message::PropertyHash)
+
+// NOTE: needed only for MSVC support, don't depend on this hash
+QAMQP_EXPORT uint qHash(const QAMQP::Message &key, uint seed = 0);
 
 #endif // QAMQPMESSAGE_H

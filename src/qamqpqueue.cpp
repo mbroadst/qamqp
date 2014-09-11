@@ -548,3 +548,5 @@ bool Queue::cancel(bool noWait)
     d->sendFrame(frame);
     return true;
 }
+
+#include "moc_qamqpqueue.cpp"

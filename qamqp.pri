@@ -11,7 +11,7 @@ contains(QAMQP_LIBRARY_TYPE, staticlib) {
     DEFINES += QAMQP_STATIC
 } else {
     DEFINES += QAMQP_SHARED
-    win32:QAMQP_LIBS = -lqamqp1
+    win32:QAMQP_LIBS = -lqamqp0
 }
 
 isEmpty(PREFIX) {

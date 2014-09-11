@@ -1,3 +1,5 @@
+#include <QHash>
+
 #include "qamqpmessage.h"
 #include "qamqpmessage_p.h"
 using namespace QAMQP;
@@ -28,6 +30,21 @@ Message &Message::operator=(const Message &other)
 {
     d = other.d;
     return *this;
+}
+
+bool Message::operator==(const Message &message) const
+{
+    if (message.d == d)
+        return true;
+
+    return (message.d->deliveryTag == d->deliveryTag &&
+            message.d->redelivered == d->redelivered &&
+            message.d->exchangeName == d->exchangeName &&
+            message.d->routingKey == d->routingKey &&
+            message.d->payload == d->payload &&
+            message.d->properties == d->properties &&
+            message.d->headers == d->headers &&
+            message.d->leftSize == d->leftSize);
 }
 
 bool Message::isValid() const
@@ -90,4 +107,14 @@ void Message::setHeader(const QString &header, const QVariant &value)
 QVariant Message::header(const QString &header, const QVariant &defaultValue) const
 {
     return d->headers.value(header, defaultValue);
+}
+
+uint qHash(const QAMQP::Message &message, uint seed)
+{
+    Q_UNUSED(seed);
+    return qHash(message.deliveryTag()) ^
+           qHash(message.isRedelivered()) ^
+           qHash(message.exchangeName()) ^
+           qHash(message.routingKey()) ^
+           qHash(message.payload());
 }

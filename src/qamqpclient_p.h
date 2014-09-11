@@ -11,6 +11,8 @@
 #   include <QSslError>
 #endif
 
+#include "qamqpglobal.h"
+#include "qamqpauthenticator.h"
 #include "qamqptable.h"
 #include "qamqpframe_p.h"
 
@@ -27,7 +29,7 @@ class Exchange;
 class Network;
 class Connection;
 class Authenticator;
-class ClientPrivate : public Frame::MethodHandler
+class QAMQP_EXPORT ClientPrivate : public Frame::MethodHandler
 {
 public:
     enum MethodId {
