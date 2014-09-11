@@ -20,6 +20,10 @@ public:
     Message &operator=(const Message &other);
     ~Message();
 
+#if QT_VERSION >= 0x050000
+    inline void swap(Message &other) { qSwap(d, other.d); }
+#endif
+
     bool operator==(const Message &message) const;
     inline bool operator!=(const Message &message) const { return !(operator==(message)); }
 
@@ -62,11 +66,24 @@ private:
     friend class QueuePrivate;
     friend class Queue;
 
+#if QT_VERSION < 0x050000
+public:
+    typedef QSharedDataPointer<MessagePrivate> DataPtr;
+    inline DataPtr &data_ptr() { return d; }
+
+    // internal
+    bool isDetached() const;
+#endif
 };
 
 } // namespace QAMQP
 
 Q_DECLARE_METATYPE(QAMQP::Message::PropertyHash)
+
+#if QT_VERSION < 0x050000
+Q_DECLARE_TYPEINFO(QAMQP::Message, Q_MOVABLE_TYPE);
+#endif
+Q_DECLARE_SHARED(QAMQP::Message)
 
 // NOTE: needed only for MSVC support, don't depend on this hash
 QAMQP_EXPORT uint qHash(const QAMQP::Message &key, uint seed = 0);

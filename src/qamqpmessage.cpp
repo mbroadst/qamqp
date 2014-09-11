@@ -109,6 +109,13 @@ QVariant Message::header(const QString &header, const QVariant &defaultValue) co
     return d->headers.value(header, defaultValue);
 }
 
+#if QT_VERSION < 0x050000
+bool Message::isDetached() const
+{
+    return d && d->ref == 1;
+}
+#endif
+
 uint qHash(const QAMQP::Message &message, uint seed)
 {
     Q_UNUSED(seed);
