@@ -78,6 +78,7 @@ bool QueuePrivate::_q_method(const Frame::Method &frame)
 
 void QueuePrivate::_q_content(const Frame::Content &frame)
 {
+    Q_Q(Queue);
     Q_ASSERT(frame.channel() == channelNumber);
     if (frame.channel() != channelNumber)
         return;
@@ -95,6 +96,12 @@ void QueuePrivate::_q_content(const Frame::Content &frame)
         if (property == Message::Headers)
             currentMessage.d->headers = (it.value()).toHash();
         currentMessage.d->properties[property] = it.value();
+    }
+
+    if (currentMessage.d->leftSize == 0) {
+        // message with an empty body
+        q->enqueue(currentMessage);
+        Q_EMIT q->messageReceived();
     }
 }
 

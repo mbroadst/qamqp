@@ -46,6 +46,7 @@ private Q_SLOTS:
     void invalidRoutingKey();
     void tableFieldDataTypes();
     void messageProperties();
+    void emptyMessage();
 
 private:
     QScopedPointer<Client> client;
@@ -637,6 +638,20 @@ void tst_QAMQPQueue::messageProperties()
     QCOMPARE(message.property(Message::UserId).toString(), QLatin1String("guest"));
     QCOMPARE(message.property(Message::AppId).toString(), QLatin1String("some-app-id"));
     QCOMPARE(message.property(Message::ClusterID).toString(), QLatin1String("some-cluster-id"));
+}
+
+void tst_QAMQPQueue::emptyMessage()
+{
+    Queue *queue = client->createQueue("test-issue-43");
+    declareQueueAndVerifyConsuming(queue);
+
+    Exchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("", "test-issue-43");
+
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    Message message = queue->dequeue();
+    verifyStandardMessageHeaders(message, "test-issue-43");
+    QVERIFY(message.payload().isEmpty());
 }
 
 QTEST_MAIN(tst_QAMQPQueue)
