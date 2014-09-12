@@ -31,7 +31,6 @@ ClientPrivate::ClientPrivate(Client *q)
       error(QAMQP::NoError),
       q_ptr(q)
 {
-    buffer.reserve(Frame::HEADER_SIZE);
 }
 
 ClientPrivate::~ClientPrivate()
@@ -190,8 +189,10 @@ void ClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 void ClientPrivate::_q_readyRead()
 {
     while (socket->bytesAvailable() >= Frame::HEADER_SIZE) {
-        char *headerData = buffer.data();
+        char headerData[Frame::HEADER_SIZE];
         socket->peek(headerData, Frame::HEADER_SIZE);
+        // FIXME: This is not the correct way of reading payloadSize
+        // gcc: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
         const quint32 payloadSize = qFromBigEndian<quint32>(*(quint32*)&headerData[3]);
         const qint64 readSize = Frame::HEADER_SIZE + payloadSize + Frame::FRAME_END_SIZE;
 
