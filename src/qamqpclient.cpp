@@ -113,11 +113,10 @@ bool ClientPrivate::processAvailableFrame()
     if (socket->bytesAvailable() < Frame::HEADER_SIZE)
         return false;
 
-    char headerData[Frame::HEADER_SIZE];
-    socket->peek(headerData, Frame::HEADER_SIZE);
-    // FIXME: This is not the correct way of reading payloadSize
-    // gcc: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-    const quint32 payloadSize = qFromBigEndian<quint32>(*(quint32*)&headerData[3]);
+    unsigned char headerData[Frame::HEADER_SIZE];
+    socket->peek((char*)headerData, Frame::HEADER_SIZE);
+
+    const quint32 payloadSize = qFromBigEndian<quint32>(headerData + 3);
     const qint64 readSize = Frame::HEADER_SIZE + payloadSize + Frame::FRAME_END_SIZE;
 
     if (socket->bytesAvailable() < readSize)
