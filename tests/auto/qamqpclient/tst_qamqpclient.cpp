@@ -134,6 +134,8 @@ void tst_QAMQPClient::validateUri_data()
     QTest::addColumn<quint16>("expectedPort");
     QTest::addColumn<QString>("expectedVirtualHost");
 
+    QTest::newRow("default vhost") << "amqp://guest:guest@192.168.1.10:5672/"
+        << "guest" << "guest" << "192.168.1.10" << quint16(5672) << "/";
     QTest::newRow("standard") << "amqp://user:pass@host:10000/vhost"
         << "user" << "pass" << "host" << quint16(10000) << "vhost";
 #if QT_VERSION >= 0x040806
@@ -141,7 +143,7 @@ void tst_QAMQPClient::validateUri_data()
         << "usera" << "apass" << "hoast" << quint16(10000) << "v/host";
 #endif
     QTest::newRow("empty") << "amqp://" << "" << "" << "" << quint16(AMQP_PORT) << "";
-    QTest::newRow("empty2") << "amqp://:@/" << "" << "" << "" << quint16(AMQP_PORT) << "";
+    QTest::newRow("empty2") << "amqp://:@/" << "" << "" << "" << quint16(AMQP_PORT) << "/";
     QTest::newRow("onlyuser") << "amqp://user@" << "user" << "" << "" << quint16(AMQP_PORT) << "";
     QTest::newRow("userpass") << "amqp://user:pass@" << "user" << "pass" << "" << quint16(AMQP_PORT) << "";
     QTest::newRow("onlyhost") << "amqp://host" << "" << "" << "host" << quint16(AMQP_PORT) << "";

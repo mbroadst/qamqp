@@ -95,7 +95,7 @@ void ClientPrivate::parseConnectionString(const QString &uri)
     host = connectionString.host();
 
     QString vhost = connectionString.path();
-    if (vhost.startsWith("/"))
+    if (vhost.startsWith("/") && vhost.size() > 1)
         vhost = vhost.mid(1);
 #if QT_VERSION <= 0x050200
     virtualHost = QUrl::fromPercentEncoding(vhost.toUtf8());
