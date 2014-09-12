@@ -31,6 +31,7 @@ ClientPrivate::ClientPrivate(Client *q)
       error(QAMQP::NoError),
       q_ptr(q)
 {
+    buffer.reserve(Frame::HEADER_SIZE);
 }
 
 ClientPrivate::~ClientPrivate()
