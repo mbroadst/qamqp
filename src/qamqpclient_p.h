@@ -50,6 +50,11 @@ public:
     void parseConnectionString(const QString &uri);
     void sendFrame(const Frame::Base &frame);
 
+    // reads and processes 1 frame from network
+    // returns true on success data fetch from network or
+    //         false if insufficient data
+    bool processAvailableFrame();
+
     // private slots
     void _q_socketConnected();
     void _q_socketDisconnected();

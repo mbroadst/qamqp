@@ -108,6 +108,98 @@ void ClientPrivate::parseConnectionString(const QString &uri)
 #endif
 }
 
+bool ClientPrivate::processAvailableFrame()
+{
+    if (socket->bytesAvailable() < Frame::HEADER_SIZE)
+        return false;
+
+    unsigned char headerData[Frame::HEADER_SIZE];
+    socket->peek((char*)headerData, Frame::HEADER_SIZE);
+
+    const quint32 payloadSize = qFromBigEndian<quint32>(headerData + 3);
+    const qint64 readSize = Frame::HEADER_SIZE + payloadSize + Frame::FRAME_END_SIZE;
+
+    if (socket->bytesAvailable() < readSize)
+        return false;
+
+    buffer.resize(readSize);
+    socket->read(buffer.data(), readSize);
+    const char *bufferData = buffer.constData();
+    const quint8 type = *(quint8*)&bufferData[0];
+    const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
+    if (magic != Frame::FRAME_END) {
+        close(UnexpectedFrameError, "wrong end of frame");
+        return false;
+    }
+
+    QDataStream streamB(&buffer, QIODevice::ReadOnly);
+    switch(Frame::Type(type)) {
+    case Frame::ftMethod:
+        {
+            Frame::Method frame(streamB);
+            if (frame.size() > frameMax) {
+                close(FrameError, "frame size too large");
+                return false;
+            }
+
+            if (frame.methodClass() == Frame::fcConnection) {
+                _q_method(frame);
+            } else {
+                foreach (Frame::MethodHandler *methodHandler, methodHandlersByChannel[frame.channel()])
+                    methodHandler->_q_method(frame);
+            }
+        }
+        break;
+    case Frame::ftHeader:
+        {
+            Frame::Content frame(streamB);
+            if (frame.size() > frameMax) {
+                close(FrameError, "frame size too large");
+                return false;
+            } else if (frame.channel() <= 0) {
+                close(ChannelError, "channel number must be greater than zero");
+                return false;
+            }
+
+            foreach (Frame::ContentHandler *methodHandler, contentHandlerByChannel[frame.channel()])
+                methodHandler->_q_content(frame);
+        }
+        break;
+    case Frame::ftBody:
+        {
+            Frame::ContentBody frame(streamB);
+            if (frame.size() > frameMax) {
+                close(FrameError, "frame size too large");
+                return false;
+            } else if (frame.channel() <= 0) {
+                close(ChannelError, "channel number must be greater than zero");
+                return false;
+            }
+
+            foreach (Frame::ContentBodyHandler *methodHandler, bodyHandlersByChannel[frame.channel()])
+                methodHandler->_q_body(frame);
+        }
+        break;
+    case Frame::ftHeartbeat:
+        {
+            Frame::Method frame(streamB);
+            if (frame.channel() != 0) {
+                close(FrameError, "heartbeat must have channel id zero");
+                return false;
+            }
+
+            qAmqpDebug("AMQP: Heartbeat");
+        }
+        break;
+    default:
+        qAmqpDebug() << "AMQP: Unknown frame type: " << type;
+        close(FrameError, "invalid frame type");
+        return false;
+    }
+
+    return true;
+}
+
 void ClientPrivate::_q_connect()
 {
     if (socket->state() != QAbstractSocket::UnconnectedState) {
@@ -188,93 +280,7 @@ void ClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 
 void ClientPrivate::_q_readyRead()
 {
-    while (socket->bytesAvailable() >= Frame::HEADER_SIZE) {
-        char headerData[Frame::HEADER_SIZE];
-        socket->peek(headerData, Frame::HEADER_SIZE);
-        // FIXME: This is not the correct way of reading payloadSize
-        // gcc: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
-        const quint32 payloadSize = qFromBigEndian<quint32>(*(quint32*)&headerData[3]);
-        const qint64 readSize = Frame::HEADER_SIZE + payloadSize + Frame::FRAME_END_SIZE;
-
-        if (socket->bytesAvailable() >= readSize) {
-            buffer.resize(readSize);
-            socket->read(buffer.data(), readSize);
-            const char *bufferData = buffer.constData();
-            const quint8 type = *(quint8*)&bufferData[0];
-            const quint8 magic = *(quint8*)&bufferData[Frame::HEADER_SIZE + payloadSize];
-            if (magic != Frame::FRAME_END) {
-                close(UnexpectedFrameError, "wrong end of frame");
-                return;
-            }
-
-            QDataStream streamB(&buffer, QIODevice::ReadOnly);
-            switch(Frame::Type(type)) {
-            case Frame::ftMethod:
-            {
-                Frame::Method frame(streamB);
-                if (frame.size() > frameMax) {
-                    close(FrameError, "frame size too large");
-                    return;
-                }
-
-                if (frame.methodClass() == Frame::fcConnection) {
-                    _q_method(frame);
-                } else {
-                    foreach (Frame::MethodHandler *methodHandler, methodHandlersByChannel[frame.channel()])
-                        methodHandler->_q_method(frame);
-                }
-            }
-                break;
-            case Frame::ftHeader:
-            {
-                Frame::Content frame(streamB);
-                if (frame.size() > frameMax) {
-                    close(FrameError, "frame size too large");
-                    return;
-                } else if (frame.channel() <= 0) {
-                    close(ChannelError, "channel number must be greater than zero");
-                    return;
-                }
-
-                foreach (Frame::ContentHandler *methodHandler, contentHandlerByChannel[frame.channel()])
-                    methodHandler->_q_content(frame);
-            }
-                break;
-            case Frame::ftBody:
-            {
-                Frame::ContentBody frame(streamB);
-                if (frame.size() > frameMax) {
-                    close(FrameError, "frame size too large");
-                    return;
-                } else if (frame.channel() <= 0) {
-                    close(ChannelError, "channel number must be greater than zero");
-                    return;
-                }
-
-                foreach (Frame::ContentBodyHandler *methodHandler, bodyHandlersByChannel[frame.channel()])
-                    methodHandler->_q_body(frame);
-            }
-                break;
-            case Frame::ftHeartbeat:
-            {
-                Frame::Method frame(streamB);
-                if (frame.channel() != 0) {
-                    close(FrameError, "heartbeat must have channel id zero");
-                    return;
-                }
-
-                qAmqpDebug("AMQP: Heartbeat");
-            }
-                break;
-            default:
-                qAmqpDebug() << "AMQP: Unknown frame type: " << type;
-                close(FrameError, "invalid frame type");
-                return;
-            }
-        } else {
-            break;
-        }
-    }
+    while (processAvailableFrame());
 }
 
 void ClientPrivate::sendFrame(const Frame::Base &frame)
