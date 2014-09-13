@@ -1,7 +1,11 @@
 INCLUDEPATH += $${QAMQP_INCLUDEPATH} $${PWD}/common
 LIBS += -L$${DEPTH}/src $${QAMQP_LIBS}
 
-QMAKE_RPATHDIR += $${DEPTH}/src
+unix:!macx:QMAKE_RPATHDIR += $${OUT_PWD}/$${DEPTH}/src
+macx {
+    QMAKE_RPATHDIR += @loader_path/$${DEPTH}/src
+    QMAKE_LFLAGS += -Wl,-rpath,@loader_path/$${DEPTH}/src
+}
 
 QT = core network testlib
 QT -= gui

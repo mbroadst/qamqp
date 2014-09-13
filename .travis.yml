@@ -11,5 +11,4 @@ script:
   - cd build
   - qmake ..
   - make
-  - export LD_LIBRARY_PATH=$PWD/src
   - make check

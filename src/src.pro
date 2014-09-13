@@ -9,6 +9,7 @@ DEFINES += QAMQP_BUILD
 CONFIG += $${QAMQP_LIBRARY_TYPE}
 VERSION = $${QAMQP_VERSION}
 win32:DESTDIR = $$OUT_PWD
+macx:QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 
 PRIVATE_HEADERS += \
     qamqpchannel_p.h \
