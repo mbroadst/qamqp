@@ -6,8 +6,8 @@
 #include "qamqpglobal.h"
 #include "qamqpframe_p.h"
 
-using namespace QAMQP;
-using namespace QAMQP::Frame;
+namespace QAMQP {
+namespace Frame {
 
 Base::Base(Type type)
     : size_(0),
@@ -139,7 +139,7 @@ void Method::writePayload(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
+QVariant readAmqpField(QDataStream &s, MetaType::ValueType type)
 {
     switch (type) {
     case MetaType::Boolean:
@@ -213,7 +213,7 @@ QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
     return QVariant();
 }
 
-void Frame::writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVariant &value)
+void writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVariant &value)
 {
     switch (type) {
     case MetaType::Boolean:
@@ -475,3 +475,6 @@ void Heartbeat::writePayload(QDataStream &stream) const
 {
     Q_UNUSED(stream)
 }
+
+} // namespace Frame
+} // namespace QAMQP

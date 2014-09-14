@@ -8,7 +8,8 @@
 #include "qamqpexchange.h"
 #include "qamqpmessage_p.h"
 #include "qamqptable.h"
-using namespace QAMQP;
+
+namespace QAMQP {
 
 QueuePrivate::QueuePrivate(Queue *q)
     : ChannelPrivate(q),
@@ -549,4 +550,4 @@ bool Queue::cancel(bool noWait)
     return true;
 }
 
-#include "moc_qamqpqueue.cpp"
+} // namespace QAMQP

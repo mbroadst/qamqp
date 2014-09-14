@@ -6,7 +6,7 @@
 #include <QDebug>
 #include <QDataStream>
 
-using namespace QAMQP;
+namespace QAMQP {
 
 int ChannelPrivate::nextChannelNumber = 0;
 ChannelPrivate::ChannelPrivate(Channel *q)
@@ -336,5 +336,7 @@ void Channel::resume()
     Q_D(Channel);
     d->flow(true);
 }
+
+} // namespace QAMQP
 
 #include "moc_qamqpchannel.cpp"

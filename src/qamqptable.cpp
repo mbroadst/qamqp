@@ -5,7 +5,9 @@
 
 #include "qamqpframe_p.h"
 #include "qamqptable.h"
-using namespace QAMQP;
+
+namespace QAMQP {
+namespace {
 
 /*
  * field value types according to: https://www.rabbitmq.com/amqp-0-9-1-errata.html
@@ -76,6 +78,8 @@ qint8 valueTypeToOctet(MetaType::ValueType type)
 
     return 'V';
 }
+
+} // namespace
 
 void Table::writeFieldValue(QDataStream &stream, const QVariant &value)
 {
@@ -335,15 +339,17 @@ QVariant Table::readFieldValue(QDataStream &stream, MetaType::ValueType type)
     return QVariant();
 }
 
-QDataStream &operator<<(QDataStream &stream, const Table &table)
+} // namespace QAMQP
+
+QDataStream &operator<<(QDataStream &stream, const QAMQP::Table &table)
 {
     QByteArray data;
     QDataStream s(&data, QIODevice::WriteOnly);
-    Table::ConstIterator it;
-    Table::ConstIterator itEnd = table.constEnd();
+    QAMQP::Table::ConstIterator it;
+    QAMQP::Table::ConstIterator itEnd = table.constEnd();
     for (it = table.constBegin(); it != itEnd; ++it) {
-        Table::writeFieldValue(s, MetaType::ShortString, it.key());
-        Table::writeFieldValue(s, it.value());
+        QAMQP::Table::writeFieldValue(s, QAMQP::MetaType::ShortString, it.key());
+        QAMQP::Table::writeFieldValue(s, it.value());
     }
 
     if (data.isEmpty()) {
@@ -355,16 +361,16 @@ QDataStream &operator<<(QDataStream &stream, const Table &table)
     return stream;
 }
 
-QDataStream &operator>>(QDataStream &stream, Table &table)
+QDataStream &operator>>(QDataStream &stream, QAMQP::Table &table)
 {
     QByteArray data;
     stream >> data;
     QDataStream tableStream(&data, QIODevice::ReadOnly);
     while (!tableStream.atEnd()) {
         qint8 octet = 0;
-        QString field = Frame::readAmqpField(tableStream, MetaType::ShortString).toString();
+        QString field = QAMQP::Frame::readAmqpField(tableStream, QAMQP::MetaType::ShortString).toString();
         tableStream >> octet;
-        table[field] = Table::readFieldValue(tableStream, valueTypeForOctet(octet));
+        table[field] = QAMQP::Table::readFieldValue(tableStream, QAMQP::valueTypeForOctet(octet));
     }
 
     return stream;

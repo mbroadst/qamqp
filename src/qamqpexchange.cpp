@@ -6,7 +6,8 @@
 #include "qamqpqueue.h"
 #include "qamqpglobal.h"
 #include "qamqpclient.h"
-using namespace QAMQP;
+
+namespace QAMQP {
 
 QString ExchangePrivate::typeToString(Exchange::ExchangeType type)
 {
@@ -269,3 +270,5 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
         d->sendFrame(body);
     }
 }
+
+} // namespace QAMQP

@@ -13,7 +13,8 @@
 #include "qamqptable.h"
 #include "qamqpclient_p.h"
 #include "qamqpclient.h"
-using namespace QAMQP;
+
+namespace QAMQP {
 
 ClientPrivate::ClientPrivate(Client *q)
     : port(AMQP_PORT),
@@ -841,6 +842,8 @@ SslClient::~SslClient()
 {
 }
 
-#endif
+#endif // QT_NO_SSL
+
+} // namespace QAMQP
 
 #include "moc_qamqpclient.cpp"
