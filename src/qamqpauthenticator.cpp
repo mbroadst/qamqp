@@ -1,7 +1,8 @@
 #include "qamqptable.h"
 #include "qamqpframe_p.h"
 #include "qamqpauthenticator.h"
-using namespace QAMQP;
+
+namespace QAMQP {
 
 AMQPlainAuthenticator::AMQPlainAuthenticator(const QString &l, const QString &p)
     : login_(l),
@@ -46,3 +47,5 @@ void AMQPlainAuthenticator::write(QDataStream &out)
     response["PASSWORD"] = password_;
     out << response;
 }
+
+} // namespace QAMQP

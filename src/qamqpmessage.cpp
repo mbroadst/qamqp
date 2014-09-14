@@ -2,7 +2,8 @@
 
 #include "qamqpmessage.h"
 #include "qamqpmessage_p.h"
-using namespace QAMQP;
+
+namespace QAMQP {
 
 MessagePrivate::MessagePrivate()
     : deliveryTag(0),
@@ -115,6 +116,8 @@ bool Message::isDetached() const
     return d && d->ref == 1;
 }
 #endif
+
+} // namespace QAMQP
 
 uint qHash(const QAMQP::Message &message, uint seed)
 {
