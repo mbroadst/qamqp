@@ -8,7 +8,6 @@
 #include "qamqpexchange.h"
 #include "qamqpmessage_p.h"
 #include "qamqptable.h"
-using namespace QAMQP;
 
 QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
     : QAmqpChannelPrivate(q),
