@@ -12,14 +12,11 @@
 
 #include "qamqpglobal.h"
 
-namespace QAMQP
-{
-
-class Exchange;
-class Queue;
-class Authenticator;
-class ClientPrivate;
-class QAMQP_EXPORT Client : public QObject
+class QAmqpExchange;
+class QAmqpQueue;
+class QAmqpAuthenticator;
+class QAmqpClientPrivate;
+class QAMQP_EXPORT QAmqpClient : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(quint32 port READ port WRITE setPort)
@@ -33,8 +30,8 @@ class QAMQP_EXPORT Client : public QObject
     Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay)
 
 public:
-    explicit Client(QObject *parent = 0);
-    ~Client();
+    explicit QAmqpClient(QObject *parent = 0);
+    ~QAmqpClient();
 
     // properties
     quint16 port() const;
@@ -52,8 +49,8 @@ public:
     QString password() const;
     void setPassword(const QString &password);
 
-    void setAuth(Authenticator *auth);
-    Authenticator *auth() const;
+    void setAuth(QAmqpAuthenticator *auth);
+    QAmqpAuthenticator *auth() const;
 
     bool autoReconnect() const;
     void setAutoReconnect(bool value);
@@ -72,15 +69,15 @@ public:
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 
-    Error error() const;
+    QAMQP::Error error() const;
     QString errorString() const;
 
     // channels
-    Exchange *createExchange(int channelNumber = -1);
-    Exchange *createExchange(const QString &name, int channelNumber = -1);
+    QAmqpExchange *createExchange(int channelNumber = -1);
+    QAmqpExchange *createExchange(const QString &name, int channelNumber = -1);
 
-    Queue *createQueue(int channelNumber = -1);
-    Queue *createQueue(const QString &name, int channelNumber = -1);
+    QAmqpQueue *createQueue(int channelNumber = -1);
+    QAmqpQueue *createQueue(const QString &name, int channelNumber = -1);
 
     // methods
     void connectToHost(const QString &uri = QString());
@@ -93,11 +90,11 @@ Q_SIGNALS:
     void error(QAMQP::Error error);
 
 protected:
-    Client(ClientPrivate *dd, QObject *parent = 0);
+    QAmqpClient(QAmqpClientPrivate *dd, QObject *parent = 0);
 
-    Q_DISABLE_COPY(Client)
-    Q_DECLARE_PRIVATE(Client)
-    QScopedPointer<ClientPrivate> d_ptr;
+    Q_DISABLE_COPY(QAmqpClient)
+    Q_DECLARE_PRIVATE(QAmqpClient)
+    QScopedPointer<QAmqpClientPrivate> d_ptr;
 
 private:
     Q_PRIVATE_SLOT(d_func(), void _q_socketConnected())
@@ -108,32 +105,30 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_connect())
     Q_PRIVATE_SLOT(d_func(), void _q_disconnect())
 
-    friend class ChannelPrivate;
+    friend class QAmqpChannelPrivate;
 
 };
 
 #ifndef QT_NO_SSL
-class SslClientPrivate;
-class SslClient : public Client
+class QAmqpSslClientPrivate;
+class QAmqpSslClient : public QAmqpClient
 {
     Q_OBJECT
 public:
-    SslClient(QObject *parent = 0);
-    SslClient(const QUrl &connectionString, QObject *parent = 0);
-    ~SslClient();
+    QAmqpSslClient(QObject *parent = 0);
+    QAmqpSslClient(const QUrl &connectionString, QObject *parent = 0);
+    ~QAmqpSslClient();
 
     QSslConfiguration sslConfiguration() const;
     void setSslConfiguration(const QSslConfiguration &config);
 
 private:
-    Q_DISABLE_COPY(SslClient)
-    Q_DECLARE_PRIVATE(SslClient)
+    Q_DISABLE_COPY(QAmqpSslClient)
+    Q_DECLARE_PRIVATE(QAmqpSslClient)
 
     Q_PRIVATE_SLOT(d_func(), void _q_sslErrors(const QList<QSslError> &errors))
 
 };
 #endif
-
-} // namespace QAMQP
 
 #endif // QAMQPCLIENT_H

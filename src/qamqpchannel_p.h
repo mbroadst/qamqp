@@ -6,13 +6,9 @@
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
-namespace QAMQP
-{
-
-class Client;
-class Network;
-class ClientPrivate;
-class ChannelPrivate : public Frame::MethodHandler
+class QAmqpClient;
+class QAmqpClientPrivate;
+class QAmqpChannelPrivate : public QAmqpMethodFrameHandler
 {
 public:
     enum MethodId {
@@ -36,11 +32,11 @@ public:
         METHOD_ID_ENUM(bmRecover, 110)
     };
 
-    ChannelPrivate(Channel *q);
-    virtual ~ChannelPrivate();
+    QAmqpChannelPrivate(QAmqpChannel *q);
+    virtual ~QAmqpChannelPrivate();
 
-    void init(int channel, Client *client);
-    void sendFrame(const Frame::Base &frame);
+    void init(int channel, QAmqpClient *client);
+    void sendFrame(const QAmqpFrame &frame);
 
     void open();
     void flow(bool active);
@@ -48,19 +44,19 @@ public:
     void close(int code, const QString &text, int classId, int methodId);
 
     // reimp MethodHandler
-    virtual bool _q_method(const Frame::Method &frame);
-    void openOk(const Frame::Method &frame);
-    void flow(const Frame::Method &frame);
-    void flowOk(const Frame::Method &frame);
-    void close(const Frame::Method &frame);
-    void closeOk(const Frame::Method &frame);
-    void qosOk(const Frame::Method &frame);
+    virtual bool _q_method(const QAmqpMethodFrame &frame);
+    void openOk(const QAmqpMethodFrame &frame);
+    void flow(const QAmqpMethodFrame &frame);
+    void flowOk(const QAmqpMethodFrame &frame);
+    void close(const QAmqpMethodFrame &frame);
+    void closeOk(const QAmqpMethodFrame &frame);
+    void qosOk(const QAmqpMethodFrame &frame);
 
     // private slots
     virtual void _q_disconnected();
     void _q_open();
 
-    QPointer<Client> client;
+    QPointer<QAmqpClient> client;
     QString name;
     int channelNumber;
     static int nextChannelNumber;
@@ -72,13 +68,11 @@ public:
     qint16 prefetchCount;
     qint16 requestedPrefetchCount;
 
-    Error error;
+    QAMQP::Error error;
     QString errorString;
 
-    Q_DECLARE_PUBLIC(Channel)
-    Channel * const q_ptr;
+    Q_DECLARE_PUBLIC(QAmqpChannel)
+    QAmqpChannel * const q_ptr;
 };
-
-} // namespace QAMQP
 
 #endif // QAMQPCHANNEL_P_H

@@ -2,9 +2,8 @@
 
 #include "qamqpmessage.h"
 #include "qamqpmessage_p.h"
-using namespace QAMQP;
 
-MessagePrivate::MessagePrivate()
+QAmqpMessagePrivate::QAmqpMessagePrivate()
     : deliveryTag(0),
       leftSize(0)
 {
@@ -12,27 +11,27 @@ MessagePrivate::MessagePrivate()
 
 //////////////////////////////////////////////////////////////////////////
 
-Message::Message()
-    : d(new MessagePrivate)
+QAmqpMessage::QAmqpMessage()
+    : d(new QAmqpMessagePrivate)
 {
 }
 
-Message::Message(const Message &other)
+QAmqpMessage::QAmqpMessage(const QAmqpMessage &other)
     : d(other.d)
 {
 }
 
-Message::~Message()
+QAmqpMessage::~QAmqpMessage()
 {
 }
 
-Message &Message::operator=(const Message &other)
+QAmqpMessage &QAmqpMessage::operator=(const QAmqpMessage &other)
 {
     d = other.d;
     return *this;
 }
 
-bool Message::operator==(const Message &message) const
+bool QAmqpMessage::operator==(const QAmqpMessage &message) const
 {
     if (message.d == d)
         return true;
@@ -47,76 +46,76 @@ bool Message::operator==(const Message &message) const
             message.d->leftSize == d->leftSize);
 }
 
-bool Message::isValid() const
+bool QAmqpMessage::isValid() const
 {
     return d->deliveryTag != 0 &&
            !d->exchangeName.isNull() &&
            !d->routingKey.isNull();
 }
 
-qlonglong Message::deliveryTag() const
+qlonglong QAmqpMessage::deliveryTag() const
 {
     return d->deliveryTag;
 }
 
-bool Message::isRedelivered() const
+bool QAmqpMessage::isRedelivered() const
 {
     return d->redelivered;
 }
 
-QString Message::exchangeName() const
+QString QAmqpMessage::exchangeName() const
 {
     return d->exchangeName;
 }
 
-QString Message::routingKey() const
+QString QAmqpMessage::routingKey() const
 {
     return d->routingKey;
 }
 
-QByteArray Message::payload() const
+QByteArray QAmqpMessage::payload() const
 {
     return d->payload;
 }
 
-bool Message::hasProperty(Property property) const
+bool QAmqpMessage::hasProperty(Property property) const
 {
     return d->properties.contains(property);
 }
 
-void Message::setProperty(Property property, const QVariant &value)
+void QAmqpMessage::setProperty(Property property, const QVariant &value)
 {
     d->properties.insert(property, value);
 }
 
-QVariant Message::property(Property property, const QVariant &defaultValue) const
+QVariant QAmqpMessage::property(Property property, const QVariant &defaultValue) const
 {
     return d->properties.value(property, defaultValue);
 }
 
-bool Message::hasHeader(const QString &header) const
+bool QAmqpMessage::hasHeader(const QString &header) const
 {
     return d->headers.contains(header);
 }
 
-void Message::setHeader(const QString &header, const QVariant &value)
+void QAmqpMessage::setHeader(const QString &header, const QVariant &value)
 {
     d->headers.insert(header, value);
 }
 
-QVariant Message::header(const QString &header, const QVariant &defaultValue) const
+QVariant QAmqpMessage::header(const QString &header, const QVariant &defaultValue) const
 {
     return d->headers.value(header, defaultValue);
 }
 
 #if QT_VERSION < 0x050000
-bool Message::isDetached() const
+bool QAmqpMessage::isDetached() const
 {
     return d && d->ref == 1;
 }
 #endif
 
-uint qHash(const QAMQP::Message &message, uint seed)
+uint qHash(const QAmqpMessage &message, uint seed)
 {
     Q_UNUSED(seed);
     return qHash(message.deliveryTag()) ^

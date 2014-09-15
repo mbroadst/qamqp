@@ -6,22 +6,19 @@
 
 #include "qamqpglobal.h"
 
-namespace QAMQP
-{
-
-class QAMQP_EXPORT Authenticator
+class QAMQP_EXPORT QAmqpAuthenticator
 {
 public:
-    virtual ~Authenticator() {}
+    virtual ~QAmqpAuthenticator() {}
     virtual QString type() const = 0;
     virtual void write(QDataStream &out) = 0;
 };
 
-class QAMQP_EXPORT AMQPlainAuthenticator : public Authenticator
+class QAMQP_EXPORT QAmqpPlainAuthenticator : public QAmqpAuthenticator
 {
 public:
-    AMQPlainAuthenticator(const QString &login = QString(), const QString &password = QString());
-    virtual ~AMQPlainAuthenticator();
+    QAmqpPlainAuthenticator(const QString &login = QString(), const QString &password = QString());
+    virtual ~QAmqpPlainAuthenticator();
 
     QString login() const;
     void setLogin(const QString &l);
@@ -37,7 +34,5 @@ private:
     QString password_;
 
 };
-
-} // namespace QAMQP
 
 #endif // QAMQPAUTHENTICATOR_H

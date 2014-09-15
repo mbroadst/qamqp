@@ -1,47 +1,46 @@
 #include "qamqptable.h"
 #include "qamqpframe_p.h"
 #include "qamqpauthenticator.h"
-using namespace QAMQP;
 
-AMQPlainAuthenticator::AMQPlainAuthenticator(const QString &l, const QString &p)
+QAmqpPlainAuthenticator::QAmqpPlainAuthenticator(const QString &l, const QString &p)
     : login_(l),
       password_(p)
 {
 }
 
-AMQPlainAuthenticator::~AMQPlainAuthenticator()
+QAmqpPlainAuthenticator::~QAmqpPlainAuthenticator()
 {
 }
 
-QString AMQPlainAuthenticator::login() const
+QString QAmqpPlainAuthenticator::login() const
 {
     return login_;
 }
 
-QString AMQPlainAuthenticator::password() const
+QString QAmqpPlainAuthenticator::password() const
 {
     return password_;
 }
 
-QString AMQPlainAuthenticator::type() const
+QString QAmqpPlainAuthenticator::type() const
 {
     return "AMQPLAIN";
 }
 
-void AMQPlainAuthenticator::setLogin(const QString &l)
+void QAmqpPlainAuthenticator::setLogin(const QString &l)
 {
     login_ = l;
 }
 
-void AMQPlainAuthenticator::setPassword(const QString &p)
+void QAmqpPlainAuthenticator::setPassword(const QString &p)
 {
     password_ = p;
 }
 
-void AMQPlainAuthenticator::write(QDataStream &out)
+void QAmqpPlainAuthenticator::write(QDataStream &out)
 {
-    Frame::writeAmqpField(out, MetaType::ShortString, type());
-    Table response;
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, type());
+    QAmqpTable response;
     response["LOGIN"] = login_;
     response["PASSWORD"] = password_;
     out << response;

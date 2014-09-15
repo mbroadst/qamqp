@@ -5,14 +5,11 @@
 #include "qamqpchannel.h"
 #include "qamqpmessage.h"
 
-namespace QAMQP
-{
-
-class Client;
-class Queue;
-class ClientPrivate;
-class ExchangePrivate;
-class QAMQP_EXPORT Exchange : public Channel
+class QAmqpClient;
+class QAmqpQueue;
+class QAmqpClientPrivate;
+class QAmqpExchangePrivate;
+class QAMQP_EXPORT QAmqpExchange : public QAmqpChannel
 {
     Q_OBJECT
     Q_PROPERTY(QString type READ type CONSTANT)
@@ -53,27 +50,27 @@ public:
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
     ExchangeOptions options() const;
 
-    virtual ~Exchange();
+    virtual ~QAmqpExchange();
 
     // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
-                 const Table &args = Table());
+                 const QAmqpTable &args = QAmqpTable());
     void declare(const QString &type = QLatin1String("direct"),
                  ExchangeOptions options = NoOptions,
-                 const Table &args = Table());
+                 const QAmqpTable &args = QAmqpTable());
     void remove(int options = roIfUnused|roNoWait);
 
     // AMQP Basic
     void publish(const QString &message, const QString &routingKey,
-                 const Message::PropertyHash &properties = Message::PropertyHash(),
+                 const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey, const QString &mimeType,
-                 const Message::PropertyHash &properties = Message::PropertyHash(),
+                 const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
     void publish(const QByteArray &message, const QString &routingKey,
-                 const QString &mimeType, const Table &headers,
-                 const Message::PropertyHash &properties = Message::PropertyHash(),
+                 const QString &mimeType, const QAmqpTable &headers,
+                 const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
 
 Q_SIGNALS:
@@ -85,18 +82,16 @@ protected:
     virtual void channelClosed();
 
 private:
-    explicit Exchange(int channelNumber = -1, Client *parent = 0);
+    explicit QAmqpExchange(int channelNumber = -1, QAmqpClient *parent = 0);
 
-    Q_DISABLE_COPY(Exchange)
-    Q_DECLARE_PRIVATE(Exchange)
+    Q_DISABLE_COPY(QAmqpExchange)
+    Q_DECLARE_PRIVATE(QAmqpExchange)
 
-    friend class Client;
+    friend class QAmqpClient;
 
 };
 
-} // namespace QAMQP
-
-Q_DECLARE_OPERATORS_FOR_FLAGS(QAMQP::Exchange::ExchangeOptions)
-Q_DECLARE_METATYPE(QAMQP::Exchange::ExchangeType)
+Q_DECLARE_OPERATORS_FOR_FLAGS(QAmqpExchange::ExchangeOptions)
+Q_DECLARE_METATYPE(QAmqpExchange::ExchangeType)
 
 #endif // QAMQPEXCHANGE_H

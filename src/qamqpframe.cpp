@@ -6,59 +6,56 @@
 #include "qamqpglobal.h"
 #include "qamqpframe_p.h"
 
-using namespace QAMQP;
-using namespace QAMQP::Frame;
-
-Base::Base(Type type)
+QAmqpFrame::QAmqpFrame(Type type)
     : size_(0),
       type_(type),
       channel_(0)
 {
 }
 
-Base::Base(QDataStream &raw)
+QAmqpFrame::QAmqpFrame(QDataStream &raw)
 {
     readHeader(raw);
 }
 
-Type Base::type() const
+QAmqpFrame::Type QAmqpFrame::type() const
 {
     return Type(type_);
 }
 
-Base::~Base()
+QAmqpFrame::~QAmqpFrame()
 {
 }
 
-void Base::setChannel(qint16 channel)
+void QAmqpFrame::setChannel(qint16 channel)
 {
     channel_ = channel;
 }
 
-qint16 Base::channel() const
+qint16 QAmqpFrame::channel() const
 {
     return channel_;
 }
 
-qint32 Base::size() const
+qint32 QAmqpFrame::size() const
 {
     return 0;
 }
 
-void Base::writeHeader(QDataStream &stream) const
+void QAmqpFrame::writeHeader(QDataStream &stream) const
 {
     stream << type_;
     stream << channel_;
     stream << qint32(size());
 }
 
-void Base::writeEnd(QDataStream &stream) const
+void QAmqpFrame::writeEnd(QDataStream &stream) const
 {
     stream << qint8(FRAME_END);
     stream.device()->waitForBytesWritten(1000);
 }
 
-void Base::readHeader(QDataStream &stream)
+void QAmqpFrame::readHeader(QDataStream &stream)
 {
     stream >> type_;
     stream >> channel_;
@@ -66,7 +63,7 @@ void Base::readHeader(QDataStream &stream)
 }
 
 /*
-void Base::readEnd(QDataStream &stream)
+void QAmqpFrame::readEnd(QDataStream &stream)
 {
     unsigned char end_  = 0;
     stream.readRawData(reinterpret_cast<char*>(&end_), sizeof(end_));
@@ -74,7 +71,8 @@ void Base::readEnd(QDataStream &stream)
         qAmqpDebug("Wrong end of frame");
 }
 */
-void Base::toStream(QDataStream &stream) const
+
+void QAmqpFrame::toStream(QDataStream &stream) const
 {
     writeHeader(stream);
     writePayload(stream);
@@ -83,45 +81,45 @@ void Base::toStream(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-Method::Method(MethodClass methodClass, qint16 id)
-    : Base(ftMethod),
+QAmqpMethodFrame::QAmqpMethodFrame(MethodClass methodClass, qint16 id)
+    : QAmqpFrame(QAmqpFrame::ftMethod),
       methodClass_(methodClass),
       id_(id)
 {
 }
 
-Method::Method(QDataStream &raw)
-    : Base(raw)
+QAmqpMethodFrame::QAmqpMethodFrame(QDataStream &raw)
+    : QAmqpFrame(raw)
 {
     readPayload(raw);
 }
 
-MethodClass Method::methodClass() const
+QAmqpFrame::MethodClass QAmqpMethodFrame::methodClass() const
 {
     return MethodClass(methodClass_);
 }
 
-qint16 Method::id() const
+qint16 QAmqpMethodFrame::id() const
 {
     return id_;
 }
 
-qint32 Method::size() const
+qint32 QAmqpMethodFrame::size() const
 {
     return sizeof(id_) + sizeof(methodClass_) + arguments_.size();
 }
 
-void Method::setArguments(const QByteArray &data)
+void QAmqpMethodFrame::setArguments(const QByteArray &data)
 {
     arguments_ = data;
 }
 
-QByteArray Method::arguments() const
+QByteArray QAmqpMethodFrame::arguments() const
 {
     return arguments_;
 }
 
-void Method::readPayload(QDataStream &stream)
+void QAmqpMethodFrame::readPayload(QDataStream &stream)
 {
     stream >> methodClass_;
     stream >> id_;
@@ -130,7 +128,7 @@ void Method::readPayload(QDataStream &stream)
     stream.readRawData(arguments_.data(), arguments_.size());
 }
 
-void Method::writePayload(QDataStream &stream) const
+void QAmqpMethodFrame::writePayload(QDataStream &stream) const
 {
     stream << quint16(methodClass_);
     stream << quint16(id_);
@@ -139,40 +137,40 @@ void Method::writePayload(QDataStream &stream) const
 
 //////////////////////////////////////////////////////////////////////////
 
-QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
+QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type)
 {
     switch (type) {
-    case MetaType::Boolean:
+    case QAmqpMetaType::Boolean:
     {
         quint8 octet = 0;
         s >> octet;
         return QVariant::fromValue<bool>(octet > 0);
     }
-    case MetaType::ShortShortUint:
+    case QAmqpMetaType::ShortShortUint:
     {
         quint8 octet = 0;
         s >> octet;
         return QVariant::fromValue<int>(octet);
     }
-    case MetaType::ShortUint:
+    case QAmqpMetaType::ShortUint:
     {
         quint16 tmp_value = 0;
         s >> tmp_value;
         return QVariant::fromValue<uint>(tmp_value);
     }
-    case MetaType::LongUint:
+    case QAmqpMetaType::LongUint:
     {
         quint32 tmp_value = 0;
         s >> tmp_value;
         return QVariant::fromValue<uint>(tmp_value);
     }
-    case MetaType::LongLongUint:
+    case QAmqpMetaType::LongLongUint:
     {
         qulonglong v = 0 ;
         s >> v;
         return v;
     }
-    case MetaType::ShortString:
+    case QAmqpMetaType::ShortString:
     {
         qint8 size = 0;
         QByteArray buffer;
@@ -182,7 +180,7 @@ QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
         s.readRawData(buffer.data(), buffer.size());
         return QString::fromLatin1(buffer.data(), size);
     }
-    case MetaType::LongString:
+    case QAmqpMetaType::LongString:
     {
         quint32 size = 0;
         QByteArray buffer;
@@ -192,19 +190,19 @@ QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
         s.readRawData(buffer.data(), buffer.size());
         return QString::fromUtf8(buffer.data(), buffer.size());
     }
-    case MetaType::Timestamp:
+    case QAmqpMetaType::Timestamp:
     {
         qulonglong tmp_value;
         s >> tmp_value;
         return QDateTime::fromMSecsSinceEpoch(tmp_value);
     }
-    case MetaType::Hash:
+    case QAmqpMetaType::Hash:
     {
-        Table table;
+        QAmqpTable table;
         s >> table;
         return table;
     }
-    case MetaType::Void:
+    case QAmqpMetaType::Void:
         return QVariant();
     default:
         qAmqpDebug() << Q_FUNC_INFO << "unsupported value type: " << type;
@@ -213,25 +211,25 @@ QVariant Frame::readAmqpField(QDataStream &s, MetaType::ValueType type)
     return QVariant();
 }
 
-void Frame::writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVariant &value)
+void QAmqpFrame::writeAmqpField(QDataStream &s, QAmqpMetaType::ValueType type, const QVariant &value)
 {
     switch (type) {
-    case MetaType::Boolean:
+    case QAmqpMetaType::Boolean:
         s << (value.toBool() ? qint8(1) : qint8(0));
         break;
-    case MetaType::ShortShortUint:
+    case QAmqpMetaType::ShortShortUint:
         s << qint8(value.toUInt());
         break;
-    case MetaType::ShortUint:
+    case QAmqpMetaType::ShortUint:
         s << quint16(value.toUInt());
         break;
-    case MetaType::LongUint:
+    case QAmqpMetaType::LongUint:
         s << quint32(value.toUInt());
         break;
-    case MetaType::LongLongUint:
+    case QAmqpMetaType::LongLongUint:
         s << qulonglong(value.toULongLong());
         break;
-    case MetaType::ShortString:
+    case QAmqpMetaType::ShortString:
     {
         QString str = value.toString();
         if (str.length() >= 256) {
@@ -242,19 +240,19 @@ void Frame::writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVari
         s.writeRawData(str.toUtf8().data(), str.length());
     }
         break;
-    case MetaType::LongString:
+    case QAmqpMetaType::LongString:
     {
         QString str = value.toString();
         s << quint32(str.length());
         s.writeRawData(str.toLatin1().data(), str.length());
     }
         break;
-    case MetaType::Timestamp:
+    case QAmqpMetaType::Timestamp:
         s << qulonglong(value.toDateTime().toMSecsSinceEpoch());
         break;
-    case MetaType::Hash:
+    case QAmqpMetaType::Hash:
     {
-        Table table(value.toHash());
+        QAmqpTable table(value.toHash());
         s << table;
     }
         break;
@@ -265,29 +263,29 @@ void Frame::writeAmqpField(QDataStream &s, MetaType::ValueType type, const QVari
 
 //////////////////////////////////////////////////////////////////////////
 
-Content::Content()
-    : Base(ftHeader)
+QAmqpContentFrame::QAmqpContentFrame()
+    : QAmqpFrame(QAmqpFrame::ftHeader)
 {
 }
 
-Content::Content(MethodClass methodClass)
-    : Base(ftHeader)
+QAmqpContentFrame::QAmqpContentFrame(QAmqpFrame::MethodClass methodClass)
+    : QAmqpFrame(QAmqpFrame::ftHeader)
 {
     methodClass_ = methodClass;
 }
 
-Content::Content(QDataStream &raw)
-    : Base(raw)
+QAmqpContentFrame::QAmqpContentFrame(QDataStream &raw)
+    : QAmqpFrame(raw)
 {
     readPayload(raw);
 }
 
-MethodClass Content::methodClass() const
+QAmqpFrame::MethodClass QAmqpContentFrame::methodClass() const
 {
     return MethodClass(methodClass_);
 }
 
-qint32 Content::size() const
+qint32 QAmqpContentFrame::size() const
 {
     QDataStream out(&buffer_, QIODevice::WriteOnly);
     buffer_.clear();
@@ -300,178 +298,178 @@ qint32 Content::size() const
         prop_ |= p;
     out << prop_;
 
-    if (prop_ & Message::ContentType)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::ContentType]);
+    if (prop_ & QAmqpMessage::ContentType)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::ContentType]);
 
-    if (prop_ & Message::ContentEncoding)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::ContentEncoding]);
+    if (prop_ & QAmqpMessage::ContentEncoding)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::ContentEncoding]);
 
-    if (prop_ & Message::Headers)
-        writeAmqpField(out, MetaType::Hash, properties_[Message::Headers]);
+    if (prop_ & QAmqpMessage::Headers)
+        writeAmqpField(out, QAmqpMetaType::Hash, properties_[QAmqpMessage::Headers]);
 
-    if (prop_ & Message::DeliveryMode)
-        writeAmqpField(out, MetaType::ShortShortUint, properties_[Message::DeliveryMode]);
+    if (prop_ & QAmqpMessage::DeliveryMode)
+        writeAmqpField(out, QAmqpMetaType::ShortShortUint, properties_[QAmqpMessage::DeliveryMode]);
 
-    if (prop_ & Message::Priority)
-        writeAmqpField(out, MetaType::ShortShortUint, properties_[Message::Priority]);
+    if (prop_ & QAmqpMessage::Priority)
+        writeAmqpField(out, QAmqpMetaType::ShortShortUint, properties_[QAmqpMessage::Priority]);
 
-    if (prop_ & Message::CorrelationId)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::CorrelationId]);
+    if (prop_ & QAmqpMessage::CorrelationId)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::CorrelationId]);
 
-    if (prop_ & Message::ReplyTo)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::ReplyTo]);
+    if (prop_ & QAmqpMessage::ReplyTo)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::ReplyTo]);
 
-    if (prop_ & Message::Expiration)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::Expiration]);
+    if (prop_ & QAmqpMessage::Expiration)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::Expiration]);
 
-    if (prop_ & Message::MessageId)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::MessageId]);
+    if (prop_ & QAmqpMessage::MessageId)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::MessageId]);
 
-    if (prop_ & Message::Timestamp)
-        writeAmqpField(out, MetaType::Timestamp, properties_[Message::Timestamp]);
+    if (prop_ & QAmqpMessage::Timestamp)
+        writeAmqpField(out, QAmqpMetaType::Timestamp, properties_[QAmqpMessage::Timestamp]);
 
-    if (prop_ & Message::Type)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::Type]);
+    if (prop_ & QAmqpMessage::Type)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::Type]);
 
-    if (prop_ & Message::UserId)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::UserId]);
+    if (prop_ & QAmqpMessage::UserId)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::UserId]);
 
-    if (prop_ & Message::AppId)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::AppId]);
+    if (prop_ & QAmqpMessage::AppId)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::AppId]);
 
-    if (prop_ & Message::ClusterID)
-        writeAmqpField(out, MetaType::ShortString, properties_[Message::ClusterID]);
+    if (prop_ & QAmqpMessage::ClusterID)
+        writeAmqpField(out, QAmqpMetaType::ShortString, properties_[QAmqpMessage::ClusterID]);
 
     return buffer_.size();
 }
 
-qlonglong Content::bodySize() const
+qlonglong QAmqpContentFrame::bodySize() const
 {
     return bodySize_;
 }
 
-void Content::setBodySize(qlonglong size)
+void QAmqpContentFrame::setBodySize(qlonglong size)
 {
     bodySize_ = size;
 }
 
-void Content::setProperty(Message::Property prop, const QVariant &value)
+void QAmqpContentFrame::setProperty(QAmqpMessage::Property prop, const QVariant &value)
 {
     properties_[prop] = value;
 }
 
-QVariant Content::property(Message::Property prop) const
+QVariant QAmqpContentFrame::property(QAmqpMessage::Property prop) const
 {
     return properties_.value(prop);
 }
 
-void Content::writePayload(QDataStream &out) const
+void QAmqpContentFrame::writePayload(QDataStream &out) const
 {
     out.writeRawData(buffer_.data(), buffer_.size());
 }
 
-void Content::readPayload(QDataStream &in)
+void QAmqpContentFrame::readPayload(QDataStream &in)
 {
     in >> methodClass_;
     in.skipRawData(2); //weight
     in >> bodySize_;
     qint16 flags_ = 0;
     in >> flags_;
-    if (flags_ & Message::ContentType)
-        properties_[Message::ContentType] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::ContentType)
+        properties_[QAmqpMessage::ContentType] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::ContentEncoding)
-        properties_[Message::ContentEncoding] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::ContentEncoding)
+        properties_[QAmqpMessage::ContentEncoding] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::Headers)
-        properties_[Message::Headers] = readAmqpField(in, MetaType::Hash);
+    if (flags_ & QAmqpMessage::Headers)
+        properties_[QAmqpMessage::Headers] = readAmqpField(in, QAmqpMetaType::Hash);
 
-    if (flags_ & Message::DeliveryMode)
-        properties_[Message::DeliveryMode] = readAmqpField(in, MetaType::ShortShortUint);
+    if (flags_ & QAmqpMessage::DeliveryMode)
+        properties_[QAmqpMessage::DeliveryMode] = readAmqpField(in, QAmqpMetaType::ShortShortUint);
 
-    if (flags_ & Message::Priority)
-        properties_[Message::Priority] = readAmqpField(in, MetaType::ShortShortUint);
+    if (flags_ & QAmqpMessage::Priority)
+        properties_[QAmqpMessage::Priority] = readAmqpField(in, QAmqpMetaType::ShortShortUint);
 
-    if (flags_ & Message::CorrelationId)
-        properties_[Message::CorrelationId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::CorrelationId)
+        properties_[QAmqpMessage::CorrelationId] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::ReplyTo)
-        properties_[Message::ReplyTo] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::ReplyTo)
+        properties_[QAmqpMessage::ReplyTo] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::Expiration)
-        properties_[Message::Expiration] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::Expiration)
+        properties_[QAmqpMessage::Expiration] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::MessageId)
-        properties_[Message::MessageId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::MessageId)
+        properties_[QAmqpMessage::MessageId] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::Timestamp)
-        properties_[Message::Timestamp] = readAmqpField(in, MetaType::Timestamp);
+    if (flags_ & QAmqpMessage::Timestamp)
+        properties_[QAmqpMessage::Timestamp] = readAmqpField(in, QAmqpMetaType::Timestamp);
 
-    if (flags_ & Message::Type)
-        properties_[Message::Type] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::Type)
+        properties_[QAmqpMessage::Type] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::UserId)
-        properties_[Message::UserId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::UserId)
+        properties_[QAmqpMessage::UserId] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::AppId)
-        properties_[Message::AppId] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::AppId)
+        properties_[QAmqpMessage::AppId] = readAmqpField(in, QAmqpMetaType::ShortString);
 
-    if (flags_ & Message::ClusterID)
-        properties_[Message::ClusterID] = readAmqpField(in, MetaType::ShortString);
+    if (flags_ & QAmqpMessage::ClusterID)
+        properties_[QAmqpMessage::ClusterID] = readAmqpField(in, QAmqpMetaType::ShortString);
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-ContentBody::ContentBody()
-    : Base(ftBody)
+QAmqpContentBodyFrame::QAmqpContentBodyFrame()
+    : QAmqpFrame(QAmqpFrame::ftBody)
 {
 }
 
-ContentBody::ContentBody(QDataStream &raw)
-    : Base(raw)
+QAmqpContentBodyFrame::QAmqpContentBodyFrame(QDataStream &raw)
+    : QAmqpFrame(raw)
 {
     readPayload(raw);
 }
 
-void ContentBody::setBody(const QByteArray &data)
+void QAmqpContentBodyFrame::setBody(const QByteArray &data)
 {
     body_ = data;
 }
 
-QByteArray ContentBody::body() const
+QByteArray QAmqpContentBodyFrame::body() const
 {
     return body_;
 }
 
-void ContentBody::writePayload(QDataStream &out) const
+void QAmqpContentBodyFrame::writePayload(QDataStream &out) const
 {
     out.writeRawData(body_.data(), body_.size());
 }
 
-void ContentBody::readPayload(QDataStream &in)
+void QAmqpContentBodyFrame::readPayload(QDataStream &in)
 {
     body_.resize(size_);
     in.readRawData(body_.data(), body_.size());
 }
 
-qint32 ContentBody::size() const
+qint32 QAmqpContentBodyFrame::size() const
 {
     return body_.size();
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-Heartbeat::Heartbeat()
-    : Base(ftHeartbeat)
+QAmqpHeartbeatFrame::QAmqpHeartbeatFrame()
+    : QAmqpFrame(QAmqpFrame::ftHeartbeat)
 {
 }
 
-void Heartbeat::readPayload(QDataStream &stream)
+void QAmqpHeartbeatFrame::readPayload(QDataStream &stream)
 {
     Q_UNUSED(stream)
 }
 
-void Heartbeat::writePayload(QDataStream &stream) const
+void QAmqpHeartbeatFrame::writePayload(QDataStream &stream) const
 {
     Q_UNUSED(stream)
 }

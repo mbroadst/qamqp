@@ -4,7 +4,6 @@
 
 #include "qamqpclient.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class Worker : public QObject
 {
@@ -46,9 +45,9 @@ private Q_SLOTS:
     }
 
 private:
-    Client m_client;
-    Queue *m_queue;
-    Message m_currentMessage;
+    QAmqpClient m_client;
+    QAmqpQueue *m_queue;
+    QAmqpMessage m_currentMessage;
 
 };
 

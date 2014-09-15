@@ -20,16 +20,12 @@
 
 class QTimer;
 class QTcpSocket;
-namespace QAMQP
-{
-
-class Client;
-class Queue;
-class Exchange;
-class Network;
-class Connection;
-class Authenticator;
-class QAMQP_EXPORT ClientPrivate : public Frame::MethodHandler
+class QAmqpClient;
+class QAmqpQueue;
+class QAmqpExchange;
+class QAmqpConnection;
+class QAmqpAuthenticator;
+class QAMQP_EXPORT QAmqpClientPrivate : public QAmqpMethodFrameHandler
 {
 public:
     enum MethodId {
@@ -40,15 +36,15 @@ public:
         METHOD_ID_ENUM(miClose, 50)
     };
 
-    ClientPrivate(Client *q);
-    virtual ~ClientPrivate();
+    QAmqpClientPrivate(QAmqpClient *q);
+    virtual ~QAmqpClientPrivate();
 
     virtual void init();
     virtual void initSocket();
     void setUsername(const QString &username);
     void setPassword(const QString &password);
     void parseConnectionString(const QString &uri);
-    void sendFrame(const Frame::Base &frame);
+    void sendFrame(const QAmqpFrame &frame);
 
     // private slots
     void _q_socketConnected();
@@ -59,14 +55,14 @@ public:
     virtual void _q_connect();
     void _q_disconnect();
 
-    virtual bool _q_method(const Frame::Method &frame);
+    virtual bool _q_method(const QAmqpMethodFrame &frame);
 
     // method handlers, FROM server
-    void start(const Frame::Method &frame);
-    void secure(const Frame::Method &frame);
-    void tune(const Frame::Method &frame);
-    void openOk(const Frame::Method &frame);
-    void closeOk(const Frame::Method &frame);
+    void start(const QAmqpMethodFrame &frame);
+    void secure(const QAmqpMethodFrame &frame);
+    void tune(const QAmqpMethodFrame &frame);
+    void openOk(const QAmqpMethodFrame &frame);
+    void closeOk(const QAmqpMethodFrame &frame);
 
     // method handlers, TO server
     void startOk();
@@ -76,13 +72,13 @@ public:
 
     // method handlers, BOTH ways
     void close(int code, const QString &text, int classId = 0, int methodId = 0);
-    void close(const Frame::Method &frame);
+    void close(const QAmqpMethodFrame &frame);
 
     quint16 port;
     QString host;
     QString virtualHost;
 
-    QSharedPointer<Authenticator> authenticator;
+    QSharedPointer<QAmqpAuthenticator> authenticator;
 
     // Network
     QByteArray buffer;
@@ -91,33 +87,33 @@ public:
     bool connecting;
     QTcpSocket *socket;
 
-    QHash<quint16, QList<Frame::MethodHandler*> > methodHandlersByChannel;
-    QHash<quint16, QList<Frame::ContentHandler*> > contentHandlerByChannel;
-    QHash<quint16, QList<Frame::ContentBodyHandler*> > bodyHandlersByChannel;
+    QHash<quint16, QList<QAmqpMethodFrameHandler*> > methodHandlersByChannel;
+    QHash<quint16, QList<QAmqpContentFrameHandler*> > contentHandlerByChannel;
+    QHash<quint16, QList<QAmqpContentBodyFrameHandler*> > bodyHandlersByChannel;
 
     // Connection
     bool closed;
     bool connected;
     QPointer<QTimer> heartbeatTimer;
-    Table customProperties;
+    QAmqpTable customProperties;
     qint16 channelMax;
     qint16 heartbeatDelay;
     qint32 frameMax;
 
-    Error error;
+    QAMQP::Error error;
     QString errorString;
 
-    Client * const q_ptr;
-    Q_DECLARE_PUBLIC(Client)
+    QAmqpClient * const q_ptr;
+    Q_DECLARE_PUBLIC(QAmqpClient)
 
 };
 
 #ifndef QT_NO_SSL
-class SslClient;
-class SslClientPrivate : public ClientPrivate
+class QAmqpSslClient;
+class QAmqpSslClientPrivate : public QAmqpClientPrivate
 {
 public:
-    SslClientPrivate(SslClient *q);
+    QAmqpSslClientPrivate(QAmqpSslClient *q);
 
     virtual void initSocket();
     virtual void _q_connect();
@@ -129,7 +125,5 @@ public:
 
 };
 #endif
-
-} // namespace QAMQP
 
 #endif // QAMQPCLIENT_P_H

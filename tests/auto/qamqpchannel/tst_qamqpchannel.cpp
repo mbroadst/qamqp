@@ -6,7 +6,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class tst_QAMQPChannel : public TestCase
 {
@@ -20,13 +19,13 @@ private Q_SLOTS:
     void sharedChannel();
 
 private:
-    QScopedPointer<Client> client;
+    QScopedPointer<QAmqpClient> client;
 
 };
 
 void tst_QAMQPChannel::init()
 {
-    client.reset(new Client);
+    client.reset(new QAmqpClient);
     client->connectToHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
 }
@@ -42,19 +41,19 @@ void tst_QAMQPChannel::cleanup()
 void tst_QAMQPChannel::close()
 {
     // exchange
-    Exchange *exchange = client->createExchange("test-close-channel");
+    QAmqpExchange *exchange = client->createExchange("test-close-channel");
     QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
-    exchange->declare(Exchange::Direct);
+    exchange->declare(QAmqpExchange::Direct);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->close();
     QVERIFY(waitForSignal(exchange, SIGNAL(closed())));
     exchange->reopen();
     QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
-    exchange->remove(Exchange::roForce);
+    exchange->remove(QAmqpExchange::roForce);
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 
     // queue
-    Queue *queue = client->createQueue("test-close-channel");
+    QAmqpQueue *queue = client->createQueue("test-close-channel");
     QVERIFY(waitForSignal(queue, SIGNAL(opened())));
     declareQueueAndVerifyConsuming(queue);
     queue->close();
@@ -63,7 +62,7 @@ void tst_QAMQPChannel::close()
 
 void tst_QAMQPChannel::resume()
 {
-    Queue *queue = client->createQueue("test-resume");
+    QAmqpQueue *queue = client->createQueue("test-resume");
     QVERIFY(waitForSignal(queue, SIGNAL(opened())));
     declareQueueAndVerifyConsuming(queue);
 
@@ -74,13 +73,13 @@ void tst_QAMQPChannel::resume()
 void tst_QAMQPChannel::sharedChannel()
 {
     QString routingKey = "test-shared-channel";
-    Queue *queue = client->createQueue(routingKey);
+    QAmqpQueue *queue = client->createQueue(routingKey);
     declareQueueAndVerifyConsuming(queue);
 
-    Exchange *defaultExchange = client->createExchange("", queue->channelNumber());
+    QAmqpExchange *defaultExchange = client->createExchange("", queue->channelNumber());
     defaultExchange->publish("first message", routingKey);
     QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
-    Message message = queue->dequeue();
+    QAmqpMessage message = queue->dequeue();
     verifyStandardMessageHeaders(message, routingKey);
     QCOMPARE(message.payload(), QByteArray("first message"));
 }

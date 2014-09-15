@@ -45,9 +45,7 @@
 
 #define qAmqpDebug if (qgetenv("QAMQP_DEBUG").isEmpty()); else qDebug
 
-namespace QAMQP {
-
-namespace MetaType {
+namespace QAmqpMetaType {
 
 enum ValueType
 {
@@ -77,7 +75,9 @@ enum ValueType
     Void
 };
 
-}   // namespace MetaType
+}   // namespace QAmqpMetaType
+
+namespace QAMQP {
 
 enum Error
 {

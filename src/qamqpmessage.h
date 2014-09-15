@@ -8,24 +8,21 @@
 
 #include "qamqpglobal.h"
 
-namespace QAMQP
-{
-
-class MessagePrivate;
-class QAMQP_EXPORT Message
+class QAmqpMessagePrivate;
+class QAMQP_EXPORT QAmqpMessage
 {
 public:
-    Message();
-    Message(const Message &other);
-    Message &operator=(const Message &other);
-    ~Message();
+    QAmqpMessage();
+    QAmqpMessage(const QAmqpMessage &other);
+    QAmqpMessage &operator=(const QAmqpMessage &other);
+    ~QAmqpMessage();
 
 #if QT_VERSION >= 0x050000
-    inline void swap(Message &other) { qSwap(d, other.d); }
+    inline void swap(QAmqpMessage &other) { qSwap(d, other.d); }
 #endif
 
-    bool operator==(const Message &message) const;
-    inline bool operator!=(const Message &message) const { return !(operator==(message)); }
+    bool operator==(const QAmqpMessage &message) const;
+    inline bool operator!=(const QAmqpMessage &message) const { return !(operator==(message)); }
 
     enum Property {
         ContentType = AMQP_BASIC_CONTENT_TYPE_FLAG,
@@ -62,13 +59,13 @@ public:
     QByteArray payload() const;
 
 private:
-    QSharedDataPointer<MessagePrivate> d;
-    friend class QueuePrivate;
-    friend class Queue;
+    QSharedDataPointer<QAmqpMessagePrivate> d;
+    friend class QAmqpQueuePrivate;
+    friend class QAmqpQueue;
 
 #if QT_VERSION < 0x050000
 public:
-    typedef QSharedDataPointer<MessagePrivate> DataPtr;
+    typedef QSharedDataPointer<QAmqpMessagePrivate> DataPtr;
     inline DataPtr &data_ptr() { return d; }
 
     // internal
@@ -76,16 +73,14 @@ public:
 #endif
 };
 
-} // namespace QAMQP
-
-Q_DECLARE_METATYPE(QAMQP::Message::PropertyHash)
+Q_DECLARE_METATYPE(QAmqpMessage::PropertyHash)
 
 #if QT_VERSION < 0x050000
-Q_DECLARE_TYPEINFO(QAMQP::Message, Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(QAmqpMessage, Q_MOVABLE_TYPE);
 #endif
-Q_DECLARE_SHARED(QAMQP::Message)
+Q_DECLARE_SHARED(QAmqpMessage)
 
 // NOTE: needed only for MSVC support, don't depend on this hash
-QAMQP_EXPORT uint qHash(const QAMQP::Message &key, uint seed = 0);
+QAMQP_EXPORT uint qHash(const QAmqpMessage &key, uint seed = 0);
 
 #endif // QAMQPMESSAGE_H

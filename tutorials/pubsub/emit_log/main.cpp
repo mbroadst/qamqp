@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class LogEmitter : public QObject
 {
@@ -22,13 +21,13 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Exchange *exchange = m_client.createExchange("logs");
+        QAmqpExchange *exchange = m_client.createExchange("logs");
         connect(exchange, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
-        exchange->declare(Exchange::FanOut);
+        exchange->declare(QAmqpExchange::FanOut);
     }
 
     void exchangeDeclared() {
-        Exchange *exchange = qobject_cast<Exchange*>(sender());
+        QAmqpExchange *exchange = qobject_cast<QAmqpExchange*>(sender());
         if (!exchange)
             return;
 
@@ -43,7 +42,7 @@ private Q_SLOTS:
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
 
 };
 
