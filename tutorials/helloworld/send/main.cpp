@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class Sender : public QObject
 {
@@ -22,23 +21,23 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Queue *queue = m_client.createQueue("hello");
+        QAmqpQueue *queue = m_client.createQueue("hello");
         connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         queue->declare();
     }
 
     void queueDeclared() {
-        Queue *queue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *queue = qobject_cast<QAmqpQueue*>(sender());
         if (!queue)
             return;
-        Exchange *defaultExchange = m_client.createExchange();
+        QAmqpExchange *defaultExchange = m_client.createExchange();
         defaultExchange->publish("Hello World!", "hello");
         qDebug() << " [x] Sent 'Hello World!'";
         m_client.disconnectFromHost();
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
 
 };
 

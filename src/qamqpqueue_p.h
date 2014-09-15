@@ -6,12 +6,9 @@
 
 #include "qamqpchannel_p.h"
 
-namespace QAMQP
-{
-
-class QueuePrivate: public ChannelPrivate,
-                    public Frame::ContentHandler,
-                    public Frame::ContentBodyHandler
+class QAmqpQueuePrivate: public QAmqpChannelPrivate,
+                         public QAmqpContentFrameHandler,
+                         public QAmqpContentBodyFrameHandler
 {
 public:
     enum MethodId {
@@ -22,26 +19,26 @@ public:
         METHOD_ID_ENUM(miDelete, 40)
     };
 
-    QueuePrivate(Queue *q);
-    ~QueuePrivate();
+    QAmqpQueuePrivate(QAmqpQueue *q);
+    ~QAmqpQueuePrivate();
 
     void declare();
-    virtual bool _q_method(const Frame::Method &frame);
+    virtual bool _q_method(const QAmqpMethodFrame &frame);
 
     // AMQP Queue method handlers
-    void declareOk(const Frame::Method &frame);
-    void deleteOk(const Frame::Method &frame);
-    void purgeOk(const Frame::Method &frame);
-    void bindOk(const Frame::Method &frame);
-    void unbindOk(const Frame::Method &frame);
-    void consumeOk(const Frame::Method &frame);
+    void declareOk(const QAmqpMethodFrame &frame);
+    void deleteOk(const QAmqpMethodFrame &frame);
+    void purgeOk(const QAmqpMethodFrame &frame);
+    void bindOk(const QAmqpMethodFrame &frame);
+    void unbindOk(const QAmqpMethodFrame &frame);
+    void consumeOk(const QAmqpMethodFrame &frame);
 
     // AMQP Basic method handlers
-    virtual void _q_content(const Frame::Content &frame);
-    virtual void _q_body(const Frame::ContentBody &frame);
-    void deliver(const Frame::Method &frame);
-    void getOk(const Frame::Method &frame);
-    void cancelOk(const Frame::Method &frame);
+    virtual void _q_content(const QAmqpContentFrame &frame);
+    virtual void _q_body(const QAmqpContentBodyFrame &frame);
+    void deliver(const QAmqpMethodFrame &frame);
+    void getOk(const QAmqpMethodFrame &frame);
+    void cancelOk(const QAmqpMethodFrame &frame);
 
     QString type;
     int options;
@@ -51,13 +48,11 @@ public:
 
     QString consumerTag;
     bool recievingMessage;
-    Message currentMessage;
+    QAmqpMessage currentMessage;
     bool consuming;
 
-    Q_DECLARE_PUBLIC(Queue)
+    Q_DECLARE_PUBLIC(QAmqpQueue)
 
 };
-
-} // namespace QAMQP
 
 #endif // QAMQPQUEUE_P_H

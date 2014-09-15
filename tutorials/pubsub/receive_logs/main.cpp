@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class LogReceiver : public QObject
 {
@@ -21,21 +20,21 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Exchange *exchange = m_client.createExchange("logs");
+        QAmqpExchange *exchange = m_client.createExchange("logs");
         connect(exchange, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
-        exchange->declare(Exchange::FanOut);
+        exchange->declare(QAmqpExchange::FanOut);
     }
 
     void exchangeDeclared() {
-        Queue *temporaryQueue = m_client.createQueue();
+        QAmqpQueue *temporaryQueue = m_client.createQueue();
         connect(temporaryQueue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         connect(temporaryQueue, SIGNAL(bound()), this, SLOT(queueBound()));
         connect(temporaryQueue, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
-        temporaryQueue->declare(Queue::Exclusive);
+        temporaryQueue->declare(QAmqpQueue::Exclusive);
     }
 
     void queueDeclared() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
@@ -43,25 +42,25 @@ private Q_SLOTS:
     }
 
     void queueBound() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
         qDebug() << " [*] Waiting for logs. To exit press CTRL+C";
-        temporaryQueue->consume(Queue::coNoAck);
+        temporaryQueue->consume(QAmqpQueue::coNoAck);
     }
 
     void messageReceived() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
-        Message message = temporaryQueue->dequeue();
+        QAmqpMessage message = temporaryQueue->dequeue();
         qDebug() << " [x] " << message.payload();
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
 
 };
 

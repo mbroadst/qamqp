@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class DirectLogReceiver : public QObject
 {
@@ -22,25 +21,25 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Exchange *exchange = m_client.createExchange("direct_logs");
+        QAmqpExchange *exchange = m_client.createExchange("direct_logs");
         connect(exchange, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
-        exchange->declare(Exchange::Direct);
+        exchange->declare(QAmqpExchange::Direct);
     }
 
     void exchangeDeclared() {
-        Queue *temporaryQueue = m_client.createQueue();
+        QAmqpQueue *temporaryQueue = m_client.createQueue();
         connect(temporaryQueue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         connect(temporaryQueue, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
-        temporaryQueue->declare(Queue::Exclusive);
+        temporaryQueue->declare(QAmqpQueue::Exclusive);
     }
 
     void queueDeclared() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
         // start consuming
-        temporaryQueue->consume(Queue::coNoAck);
+        temporaryQueue->consume(QAmqpQueue::coNoAck);
 
         foreach (QString severity, m_severities)
             temporaryQueue->bind("direct_logs", severity);
@@ -48,16 +47,16 @@ private Q_SLOTS:
     }
 
     void messageReceived() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
-        Message message = temporaryQueue->dequeue();
+        QAmqpMessage message = temporaryQueue->dequeue();
         qDebug() << " [x] " << message.routingKey() << ":" << message.payload();
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
     QStringList m_severities;
 
 };

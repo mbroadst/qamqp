@@ -6,7 +6,6 @@
 #include "qamqpclient_p.h"
 #include "qamqpauthenticator.h"
 
-using namespace QAMQP;
 class tst_QAMQPClient : public TestCase
 {
     Q_OBJECT
@@ -28,7 +27,7 @@ private:
 
 void tst_QAMQPClient::connect()
 {
-    Client client;
+    QAmqpClient client;
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
 
@@ -45,7 +44,7 @@ void tst_QAMQPClient::connect()
 
 void tst_QAMQPClient::connectProperties()
 {
-    Client client;
+    QAmqpClient client;
     client.setHost("localhost");
     client.setPort(5672);
     client.setVirtualHost("/");
@@ -60,7 +59,7 @@ void tst_QAMQPClient::connectProperties()
 
 void tst_QAMQPClient::connectHostAddress()
 {
-    Client client;
+    QAmqpClient client;
     client.connectToHost(QHostAddress::LocalHost, 5672);
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
     client.disconnectFromHost();
@@ -69,14 +68,14 @@ void tst_QAMQPClient::connectHostAddress()
 
 void tst_QAMQPClient::connectDisconnect()
 {
-    Client client;
+    QAmqpClient client;
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
 }
 
-class InvalidAuthenticator : public Authenticator
+class InvalidAuthenticator : public QAmqpAuthenticator
 {
 public:
     virtual QString type() const { return "CRAZYAUTH"; }
@@ -87,7 +86,7 @@ public:
 
 void tst_QAMQPClient::invalidAuthenticationMechanism()
 {
-    Client client;
+    QAmqpClient client;
     client.setAuth(new InvalidAuthenticator);
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
@@ -98,7 +97,7 @@ void tst_QAMQPClient::autoReconnect()
     // TODO: this is a fairly crude way of testing this, research
     //       better alternatives
 
-    Client client;
+    QAmqpClient client;
     client.setAutoReconnect(true);
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
@@ -110,7 +109,7 @@ void tst_QAMQPClient::autoReconnect()
 
 void tst_QAMQPClient::tune()
 {
-    Client client;
+    QAmqpClient client;
     client.setChannelMax(15);
     client.setFrameMax(5000);
     client.setHeartbeatDelay(600);
@@ -163,15 +162,15 @@ void tst_QAMQPClient::validateUri()
     QFETCH(quint16, expectedPort);
     QFETCH(QString, expectedVirtualHost);
 
-    ClientPrivate clientPrivate(0);
+    QAmqpClientPrivate clientPrivate(0);
     // fake init
-    clientPrivate.authenticator = QSharedPointer<Authenticator>(
-        new AMQPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
+    clientPrivate.authenticator = QSharedPointer<QAmqpAuthenticator>(
+        new QAmqpPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
 
     // test parsing
     clientPrivate.parseConnectionString(uri);
-    AMQPlainAuthenticator *auth =
-        static_cast<AMQPlainAuthenticator*>(clientPrivate.authenticator.data());
+    QAmqpPlainAuthenticator *auth =
+        static_cast<QAmqpPlainAuthenticator*>(clientPrivate.authenticator.data());
 
     QCOMPARE(auth->login(), expectedUsername);
     QCOMPARE(auth->password(), expectedPassword);

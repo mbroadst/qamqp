@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class TopicLogReceiver : public QObject
 {
@@ -22,21 +21,21 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Exchange *topic_logs = m_client.createExchange("topic_logs");
+        QAmqpExchange *topic_logs = m_client.createExchange("topic_logs");
         connect(topic_logs, SIGNAL(declared()), this, SLOT(exchangeDeclared()));
-        topic_logs->declare(Exchange::Topic);
+        topic_logs->declare(QAmqpExchange::Topic);
     }
 
     void exchangeDeclared() {
-        Queue *temporaryQueue = m_client.createQueue();
+        QAmqpQueue *temporaryQueue = m_client.createQueue();
         connect(temporaryQueue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         connect(temporaryQueue, SIGNAL(bound()), this, SLOT(queueBound()));
         connect(temporaryQueue, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
-        temporaryQueue->declare(Queue::Exclusive);
+        temporaryQueue->declare(QAmqpQueue::Exclusive);
     }
 
     void queueDeclared() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
@@ -46,23 +45,23 @@ private Q_SLOTS:
     }
 
     void queueBound() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
-        temporaryQueue->consume(Queue::coNoAck);
+        temporaryQueue->consume(QAmqpQueue::coNoAck);
     }
 
     void messageReceived() {
-        Queue *temporaryQueue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *temporaryQueue = qobject_cast<QAmqpQueue*>(sender());
         if (!temporaryQueue)
             return;
 
-        Message message = temporaryQueue->dequeue();
+        QAmqpMessage message = temporaryQueue->dequeue();
         qDebug() << " [x] " << message.routingKey() << ":" << message.payload();
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
     QStringList m_bindingKeys;
 
 };

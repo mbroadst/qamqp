@@ -6,8 +6,6 @@
 
 #include "qamqpqueue.h"
 
-namespace QAMQP {
-
 class TestCase : public QObject
 {
 public:
@@ -26,7 +24,7 @@ protected:
         return !QTestEventLoop::instance().timeout();
     }
 
-    void declareQueueAndVerifyConsuming(Queue *queue)
+    void declareQueueAndVerifyConsuming(QAmqpQueue *queue)
     {
         queue->declare();
         QVERIFY(waitForSignal(queue, SIGNAL(declared())));
@@ -39,7 +37,7 @@ protected:
         QCOMPARE(arguments.at(0).toString(), queue->consumerTag());
     }
 
-    void verifyStandardMessageHeaders(const Message &message, const QString &routingKey,
+    void verifyStandardMessageHeaders(const QAmqpMessage &message, const QString &routingKey,
                                       const QString &exchangeName = QLatin1String(""),
                                       bool redelivered = false)
     {
@@ -47,9 +45,6 @@ protected:
         QCOMPARE(message.exchangeName(), exchangeName);
         QCOMPARE(message.isRedelivered(), redelivered);
     }
-
 };
-
-}   // namespace QAMQP
 
 #endif  // QAMQPTESTCASE_H

@@ -6,28 +6,27 @@
 #include "qamqpqueue.h"
 #include "qamqpglobal.h"
 #include "qamqpclient.h"
-using namespace QAMQP;
 
-QString ExchangePrivate::typeToString(Exchange::ExchangeType type)
+QString QAmqpExchangePrivate::typeToString(QAmqpExchange::ExchangeType type)
 {
     switch (type) {
-    case Exchange::Direct: return QLatin1String("direct");
-    case Exchange::FanOut: return QLatin1String("fanout");
-    case Exchange::Topic: return QLatin1String("topic");
-    case Exchange::Headers: return QLatin1String("headers");
+    case QAmqpExchange::Direct: return QLatin1String("direct");
+    case QAmqpExchange::FanOut: return QLatin1String("fanout");
+    case QAmqpExchange::Topic: return QLatin1String("topic");
+    case QAmqpExchange::Headers: return QLatin1String("headers");
     }
 
     return QLatin1String("direct");
 }
 
-ExchangePrivate::ExchangePrivate(Exchange *q)
-    : ChannelPrivate(q),
+QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
+    : QAmqpChannelPrivate(q),
       delayedDeclare(false),
       declared(false)
 {
 }
 
-void ExchangePrivate::declare()
+void QAmqpExchangePrivate::declare()
 {
     if (!opened) {
         delayedDeclare = true;
@@ -39,30 +38,30 @@ void ExchangePrivate::declare()
         return;
     }
 
-    Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDeclare);
+    QAmqpMethodFrame frame(QAmqpFrame::fcExchange, QAmqpExchangePrivate::miDeclare);
     frame.setChannel(channelNumber);
 
     QByteArray args;
     QDataStream stream(&args, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeAmqpField(stream, MetaType::ShortString, name);
-    Frame::writeAmqpField(stream, MetaType::ShortString, type);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortString, name);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortString, type);
 
     stream << qint8(options);
-    Frame::writeAmqpField(stream, MetaType::Hash, arguments);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::Hash, arguments);
 
     frame.setArguments(args);
     sendFrame(frame);
     delayedDeclare = false;
 }
 
-bool ExchangePrivate::_q_method(const Frame::Method &frame)
+bool QAmqpExchangePrivate::_q_method(const QAmqpMethodFrame &frame)
 {
-    if (ChannelPrivate::_q_method(frame))
+    if (QAmqpChannelPrivate::_q_method(frame))
         return true;
 
-    if (frame.methodClass() == Frame::fcExchange) {
+    if (frame.methodClass() == QAmqpFrame::fcExchange) {
         switch (frame.id()) {
         case miDeclareOk:
             declareOk(frame);
@@ -77,7 +76,7 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
         }
 
         return true;
-    } else if (frame.methodClass() == Frame::fcBasic) {
+    } else if (frame.methodClass() == QAmqpFrame::fcBasic) {
         switch (frame.id()) {
         case bmReturn:
             basicReturn(frame);
@@ -93,47 +92,47 @@ bool ExchangePrivate::_q_method(const Frame::Method &frame)
     return false;
 }
 
-void ExchangePrivate::declareOk(const Frame::Method &frame)
+void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame)
 
-    Q_Q(Exchange);
+    Q_Q(QAmqpExchange);
     qAmqpDebug() << "declared exchange: " << name;
     declared = true;
     Q_EMIT q->declared();
 }
 
-void ExchangePrivate::deleteOk(const Frame::Method &frame)
+void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame)
 
-    Q_Q(Exchange);
+    Q_Q(QAmqpExchange);
     qAmqpDebug() << "deleted exchange: " << name;
     declared = false;
     Q_EMIT q->removed();
 }
 
-void ExchangePrivate::_q_disconnected()
+void QAmqpExchangePrivate::_q_disconnected()
 {
-    ChannelPrivate::_q_disconnected();
+    QAmqpChannelPrivate::_q_disconnected();
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
     declared = false;
 }
 
-void ExchangePrivate::basicReturn(const Frame::Method &frame)
+void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
 {
-    Q_Q(Exchange);
+    Q_Q(QAmqpExchange);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
     quint16 replyCode;
     stream >> replyCode;
-    QString replyText = Frame::readAmqpField(stream, MetaType::ShortString).toString();
-    QString exchangeName = Frame::readAmqpField(stream, MetaType::ShortString).toString();
-    QString routingKey = Frame::readAmqpField(stream, MetaType::ShortString).toString();
+    QString replyText = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
+    QString exchangeName = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
+    QString routingKey = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
 
-    Error checkError = static_cast<Error>(replyCode);
+    QAMQP::Error checkError = static_cast<QAMQP::Error>(replyCode);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(replyText);
@@ -148,113 +147,113 @@ void ExchangePrivate::basicReturn(const Frame::Method &frame)
 
 //////////////////////////////////////////////////////////////////////////
 
-Exchange::Exchange(int channelNumber, Client *parent)
-    : Channel(new ExchangePrivate(this), parent)
+QAmqpExchange::QAmqpExchange(int channelNumber, QAmqpClient *parent)
+    : QAmqpChannel(new QAmqpExchangePrivate(this), parent)
 {
-    Q_D(Exchange);
+    Q_D(QAmqpExchange);
     d->init(channelNumber, parent);
 }
 
-Exchange::~Exchange()
+QAmqpExchange::~QAmqpExchange()
 {
 }
 
-void Exchange::channelOpened()
+void QAmqpExchange::channelOpened()
 {
-    Q_D(Exchange);
+    Q_D(QAmqpExchange);
     if (d->delayedDeclare)
         d->declare();
 }
 
-void Exchange::channelClosed()
+void QAmqpExchange::channelClosed()
 {
 }
 
-Exchange::ExchangeOptions Exchange::options() const
+QAmqpExchange::ExchangeOptions QAmqpExchange::options() const
 {
-    Q_D(const Exchange);
+    Q_D(const QAmqpExchange);
     return d->options;
 }
 
-QString Exchange::type() const
+QString QAmqpExchange::type() const
 {
-    Q_D(const Exchange);
+    Q_D(const QAmqpExchange);
     return d->type;
 }
 
-void Exchange::declare(ExchangeType type, ExchangeOptions options, const Table &args)
+void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QAmqpTable &args)
 {
-    declare(ExchangePrivate::typeToString(type), options, args);
+    declare(QAmqpExchangePrivate::typeToString(type), options, args);
 }
 
-void Exchange::declare(const QString &type, ExchangeOptions options, const Table &args)
+void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const QAmqpTable &args)
 {
-    Q_D(Exchange);
+    Q_D(QAmqpExchange);
     d->type = type;
     d->options = options;
     d->arguments = args;
     d->declare();
 }
 
-void Exchange::remove(int options)
+void QAmqpExchange::remove(int options)
 {
-    Q_D(Exchange);
-    Frame::Method frame(Frame::fcExchange, ExchangePrivate::miDelete);
+    Q_D(QAmqpExchange);
+    QAmqpMethodFrame frame(QAmqpFrame::fcExchange, QAmqpExchangePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     stream << qint16(0);    //reserved 1
-    Frame::writeAmqpField(stream, MetaType::ShortString, d->name);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortString, d->name);
     stream << qint8(options);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
 
-void Exchange::publish(const QString &message, const QString &routingKey,
-                       const Message::PropertyHash &properties, int publishOptions)
+void QAmqpExchange::publish(const QString &message, const QString &routingKey,
+                            const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     publish(message.toUtf8(), routingKey, QLatin1String("text.plain"),
-            Table(), properties, publishOptions);
+            QAmqpTable(), properties, publishOptions);
 }
 
-void Exchange::publish(const QByteArray &message, const QString &routingKey,
-                       const QString &mimeType, const Message::PropertyHash &properties,
-                       int publishOptions)
+void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
+                            const QString &mimeType, const QAmqpMessage::PropertyHash &properties,
+                            int publishOptions)
 {
-    publish(message, routingKey, mimeType, Table(), properties, publishOptions);
+    publish(message, routingKey, mimeType, QAmqpTable(), properties, publishOptions);
 }
 
-void Exchange::publish(const QByteArray &message, const QString &routingKey,
-                       const QString &mimeType, const Table &headers,
-                       const Message::PropertyHash &properties, int publishOptions)
+void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
+                            const QString &mimeType, const QAmqpTable &headers,
+                            const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
-    Q_D(Exchange);
-    Frame::Method frame(Frame::fcBasic, ExchangePrivate::bmPublish);
+    Q_D(QAmqpExchange);
+    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpExchangePrivate::bmPublish);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    Frame::writeAmqpField(out, MetaType::ShortString, d->name);
-    Frame::writeAmqpField(out, MetaType::ShortString, routingKey);
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, routingKey);
     out << qint8(publishOptions);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
 
-    Frame::Content content(Frame::fcBasic);
+    QAmqpContentFrame content(QAmqpFrame::fcBasic);
     content.setChannel(d->channelNumber);
-    content.setProperty(Message::ContentType, mimeType);
-    content.setProperty(Message::ContentEncoding, "utf-8");
-    content.setProperty(Message::Headers, headers);
-    content.setProperty(Message::MessageId, "0");
+    content.setProperty(QAmqpMessage::ContentType, mimeType);
+    content.setProperty(QAmqpMessage::ContentEncoding, "utf-8");
+    content.setProperty(QAmqpMessage::Headers, headers);
+    content.setProperty(QAmqpMessage::MessageId, "0");
 
-    Message::PropertyHash::ConstIterator it;
-    Message::PropertyHash::ConstIterator itEnd = properties.constEnd();
+    QAmqpMessage::PropertyHash::ConstIterator it;
+    QAmqpMessage::PropertyHash::ConstIterator itEnd = properties.constEnd();
     for (it = properties.constBegin(); it != itEnd; ++it)
         content.setProperty(it.key(), it.value());
     content.setBodySize(message.size());
@@ -262,7 +261,7 @@ void Exchange::publish(const QByteArray &message, const QString &routingKey,
 
     int fullSize = message.size();
     for (int sent = 0; sent < fullSize; sent += (d->client->frameMax() - 7)) {
-        Frame::ContentBody body;
+        QAmqpContentBodyFrame body;
         QByteArray partition = message.mid(sent, (d->client->frameMax() - 7));
         body.setChannel(d->channelNumber);
         body.setBody(partition);

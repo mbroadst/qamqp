@@ -4,7 +4,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class Receiver : public QObject
 {
@@ -20,32 +19,32 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Queue *queue = m_client.createQueue("hello");
+        QAmqpQueue *queue = m_client.createQueue("hello");
         connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         queue->declare();
     }
 
     void queueDeclared() {
-        Queue *queue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *queue = qobject_cast<QAmqpQueue*>(sender());
         if (!queue)
             return;
 
         connect(queue, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
-        queue->consume(Queue::coNoAck);
+        queue->consume(QAmqpQueue::coNoAck);
         qDebug() << " [*] Waiting for messages. To exit press CTRL+C";
     }
 
     void messageReceived() {
-        Queue *queue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *queue = qobject_cast<QAmqpQueue*>(sender());
         if (!queue)
             return;
 
-        Message message = queue->dequeue();
+        QAmqpMessage message = queue->dequeue();
         qDebug() << " [x] Received " << message.payload();
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
 
 };
 

@@ -7,14 +7,11 @@
 #include "qamqpmessage.h"
 #include "qamqpglobal.h"
 
-namespace QAMQP
-{
-
-class Client;
-class ClientPrivate;
-class Exchange;
-class QueuePrivate;
-class QAMQP_EXPORT Queue : public Channel, public QQueue<Message>
+class QAmqpClient;
+class QAmqpClientPrivate;
+class QAmqpExchange;
+class QAmqpQueuePrivate;
+class QAMQP_EXPORT QAmqpQueue : public QAmqpChannel, public QQueue<QAmqpMessage>
 {
     Q_OBJECT
     Q_ENUMS(QueueOptions)
@@ -52,7 +49,7 @@ public:
     };
     Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
 
-    ~Queue();
+    ~QAmqpQueue();
 
     bool isConsuming() const;
     void setConsumerTag(const QString &consumerTag);
@@ -61,16 +58,16 @@ public:
     // AMQP Queue
     void declare(int options = Durable|AutoDelete);
     void bind(const QString &exchangeName, const QString &key);
-    void bind(Exchange *exchange, const QString &key);
+    void bind(QAmqpExchange *exchange, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
-    void unbind(Exchange *exchange, const QString &key);
+    void unbind(QAmqpExchange *exchange, const QString &key);
     void purge();
     void remove(int options = roIfUnused|roIfEmpty|roNoWait);
 
     // AMQP Basic
     bool consume(int options = NoOptions);
     void get(bool noAck = true);
-    void ack(const Message &message);
+    void ack(const QAmqpMessage &message);
     bool cancel(bool noWait = false);
 
 Q_SIGNALS:
@@ -91,14 +88,12 @@ protected:
     virtual void channelClosed();
 
 private:
-    explicit Queue(int channelNumber = -1, Client *parent = 0);
+    explicit QAmqpQueue(int channelNumber = -1, QAmqpClient *parent = 0);
 
-    Q_DISABLE_COPY(Queue)
-    Q_DECLARE_PRIVATE(Queue)
+    Q_DISABLE_COPY(QAmqpQueue)
+    Q_DECLARE_PRIVATE(QAmqpQueue)
 
-    friend class Client;
+    friend class QAmqpClient;
 };
-
-} // namespace QAMQP
 
 #endif  // QAMQPQUEUE_H

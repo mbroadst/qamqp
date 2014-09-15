@@ -5,7 +5,6 @@
 #include "qamqpclient.h"
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
-using namespace QAMQP;
 
 class TaskCreator : public QObject
 {
@@ -22,19 +21,19 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void clientConnected() {
-        Queue *queue = m_client.createQueue("task_queue");
+        QAmqpQueue *queue = m_client.createQueue("task_queue");
         connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         queue->declare();
     }
 
     void queueDeclared() {
-        Queue *queue = qobject_cast<Queue*>(sender());
+        QAmqpQueue *queue = qobject_cast<QAmqpQueue*>(sender());
         if (!queue)
             return;
 
-        Exchange *defaultExchange = m_client.createExchange();
-        Message::PropertyHash properties;
-        properties[Message::DeliveryMode] = "2";   // make message persistent
+        QAmqpExchange *defaultExchange = m_client.createExchange();
+        QAmqpMessage::PropertyHash properties;
+        properties[QAmqpMessage::DeliveryMode] = "2";   // make message persistent
 
         QString message;
         if (qApp->arguments().size() < 2)
@@ -48,7 +47,7 @@ private Q_SLOTS:
     }
 
 private:
-    Client m_client;
+    QAmqpClient m_client;
 
 };
 

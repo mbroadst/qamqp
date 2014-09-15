@@ -5,10 +5,7 @@
 #include "qamqpexchange.h"
 #include "qamqpchannel_p.h"
 
-namespace QAMQP
-{
-
-class ExchangePrivate: public ChannelPrivate
+class QAmqpExchangePrivate: public QAmqpChannelPrivate
 {
 public:
     enum MethodId {
@@ -16,27 +13,25 @@ public:
         METHOD_ID_ENUM(miDelete, 20)
     };
 
-    ExchangePrivate(Exchange *q);
-    static QString typeToString(Exchange::ExchangeType type);
+    QAmqpExchangePrivate(QAmqpExchange *q);
+    static QString typeToString(QAmqpExchange::ExchangeType type);
 
     void declare();
 
     // method handler related
     virtual void _q_disconnected();
-    virtual bool _q_method(const Frame::Method &frame);
-    void declareOk(const Frame::Method &frame);
-    void deleteOk(const Frame::Method &frame);
-    void basicReturn(const Frame::Method &frame);
+    virtual bool _q_method(const QAmqpMethodFrame &frame);
+    void declareOk(const QAmqpMethodFrame &frame);
+    void deleteOk(const QAmqpMethodFrame &frame);
+    void basicReturn(const QAmqpMethodFrame &frame);
 
     QString type;
-    Exchange::ExchangeOptions options;
-    Table arguments;
+    QAmqpExchange::ExchangeOptions options;
+    QAmqpTable arguments;
     bool delayedDeclare;
     bool declared;
 
-    Q_DECLARE_PUBLIC(Exchange)
+    Q_DECLARE_PUBLIC(QAmqpExchange)
 };
-
-} // namespace QAMQP
 
 #endif // QAMQPEXCHANGE_P_H

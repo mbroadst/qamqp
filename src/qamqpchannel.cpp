@@ -1,15 +1,13 @@
+#include <QDataStream>
+#include <QDebug>
+
 #include "qamqpchannel.h"
 #include "qamqpchannel_p.h"
 #include "qamqpclient.h"
 #include "qamqpclient_p.h"
 
-#include <QDebug>
-#include <QDataStream>
-
-using namespace QAMQP;
-
-int ChannelPrivate::nextChannelNumber = 0;
-ChannelPrivate::ChannelPrivate(Channel *q)
+int QAmqpChannelPrivate::nextChannelNumber = 0;
+QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
     : channelNumber(0),
       opened(false),
       needOpen(true),
@@ -22,11 +20,11 @@ ChannelPrivate::ChannelPrivate(Channel *q)
 {
 }
 
-ChannelPrivate::~ChannelPrivate()
+QAmqpChannelPrivate::~QAmqpChannelPrivate()
 {
 }
 
-void ChannelPrivate::init(int channel, Client *c)
+void QAmqpChannelPrivate::init(int channel, QAmqpClient *c)
 {
     client = c;
     needOpen = channel == -1 ? true : false;
@@ -34,13 +32,13 @@ void ChannelPrivate::init(int channel, Client *c)
     nextChannelNumber = qMax(channelNumber, (nextChannelNumber + 1));
 }
 
-bool ChannelPrivate::_q_method(const Frame::Method &frame)
+bool QAmqpChannelPrivate::_q_method(const QAmqpMethodFrame &frame)
 {
     Q_ASSERT(frame.channel() == channelNumber);
     if (frame.channel() != channelNumber)
         return true;
 
-    if (frame.methodClass() == Frame::fcBasic) {
+    if (frame.methodClass() == QAmqpFrame::fcBasic) {
         if (frame.id() == bmQosOk) {
             qosOk(frame);
             return true;
@@ -49,7 +47,7 @@ bool ChannelPrivate::_q_method(const Frame::Method &frame)
         return false;
     }
 
-    if (frame.methodClass() != Frame::fcChannel)
+    if (frame.methodClass() != QAmqpFrame::fcChannel)
         return false;
 
     qAmqpDebug("Channel#%d:", channelNumber);
@@ -75,12 +73,12 @@ bool ChannelPrivate::_q_method(const Frame::Method &frame)
     return true;
 }
 
-void ChannelPrivate::_q_open()
+void QAmqpChannelPrivate::_q_open()
 {
     open();
 }
 
-void ChannelPrivate::sendFrame(const Frame::Base &frame)
+void QAmqpChannelPrivate::sendFrame(const QAmqpFrame &frame)
 {
     if (!client) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid client";
@@ -90,7 +88,7 @@ void ChannelPrivate::sendFrame(const Frame::Base &frame)
     client->d_func()->sendFrame(frame);
 }
 
-void ChannelPrivate::open()
+void QAmqpChannelPrivate::open()
 {
     if (!needOpen || opened)
         return;
@@ -99,7 +97,7 @@ void ChannelPrivate::open()
         return;
 
     qAmqpDebug("Open channel #%d", channelNumber);
-    Frame::Method frame(Frame::fcChannel, miOpen);
+    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miOpen);
     frame.setChannel(channelNumber);
 
     QByteArray arguments;
@@ -110,13 +108,13 @@ void ChannelPrivate::open()
     sendFrame(frame);
 }
 
-void ChannelPrivate::flow(bool active)
+void QAmqpChannelPrivate::flow(bool active)
 {
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
-    Frame::writeAmqpField(stream, MetaType::ShortShortUint, (active ? 1 : 0));
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortShortUint, (active ? 1 : 0));
 
-    Frame::Method frame(Frame::fcChannel, miFlow);
+    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miFlow);
     frame.setChannel(channelNumber);
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -125,65 +123,66 @@ void ChannelPrivate::flow(bool active)
 // NOTE: not implemented until I can figure out a good way to force the server
 //       to pause the channel in a test. It seems like RabbitMQ just doesn't
 //       care about flow control, preferring rather to use basic.qos
-void ChannelPrivate::flow(const Frame::Method &frame)
+void QAmqpChannelPrivate::flow(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame);
     qAmqpDebug() << Q_FUNC_INFO;
 }
 
-void ChannelPrivate::flowOk()
+void QAmqpChannelPrivate::flowOk()
 {
     qAmqpDebug() << Q_FUNC_INFO;
 }
 
-void ChannelPrivate::flowOk(const Frame::Method &frame)
+void QAmqpChannelPrivate::flowOk(const QAmqpMethodFrame &frame)
 {
-    Q_Q(Channel);
+    Q_Q(QAmqpChannel);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
-    bool active = Frame::readAmqpField(stream, MetaType::Boolean).toBool();
+    bool active = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
     if (active)
         Q_EMIT q->resumed();
     else
         Q_EMIT q->paused();
 }
 
-void ChannelPrivate::close(int code, const QString &text, int classId, int methodId)
+void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int methodId)
 {
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     if (!code) code = 200;
-    Frame::writeAmqpField(stream, MetaType::ShortUint, code);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, code);
     if (!text.isEmpty()) {
-      Frame::writeAmqpField(stream, MetaType::ShortString, text);
+      QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortString, text);
     } else {
-      Frame::writeAmqpField(stream, MetaType::ShortString, QLatin1String("OK"));
+      QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortString, QLatin1String("OK"));
     }
 
-    Frame::writeAmqpField(stream, MetaType::ShortUint, classId);
-    Frame::writeAmqpField(stream, MetaType::ShortUint, methodId);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, classId);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, methodId);
 
-    Frame::Method frame(Frame::fcChannel, miClose);
+    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miClose);
     frame.setChannel(channelNumber);
     frame.setArguments(arguments);
     sendFrame(frame);
 }
 
-void ChannelPrivate::close(const Frame::Method &frame)
+void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
 {
-    Q_Q(Channel);
+    Q_Q(QAmqpChannel);
     qAmqpDebug(">> CLOSE");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
-    QString text = Frame::readAmqpField(stream, MetaType::ShortString).toString();
+    QString text =
+        QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
 
     stream >> classId;
     stream >> methodId;
 
-    Error checkError = static_cast<Error>(code);
+    QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
@@ -197,37 +196,37 @@ void ChannelPrivate::close(const Frame::Method &frame)
     Q_EMIT q->closed();
 
     // complete handshake
-    Frame::Method closeOkFrame(Frame::fcChannel, miCloseOk);
+    QAmqpMethodFrame closeOkFrame(QAmqpFrame::fcChannel, miCloseOk);
     closeOkFrame.setChannel(channelNumber);
     sendFrame(closeOkFrame);
 }
 
-void ChannelPrivate::closeOk(const Frame::Method &)
+void QAmqpChannelPrivate::closeOk(const QAmqpMethodFrame &)
 {
-    Q_Q(Channel);
+    Q_Q(QAmqpChannel);
     Q_EMIT q->closed();
     q->channelClosed();
     opened = false;
 }
 
-void ChannelPrivate::openOk(const Frame::Method &)
+void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 {
-    Q_Q(Channel);
+    Q_Q(QAmqpChannel);
     qAmqpDebug(">> OpenOK");
     opened = true;
     Q_EMIT q->opened();
     q->channelOpened();
 }
 
-void ChannelPrivate::_q_disconnected()
+void QAmqpChannelPrivate::_q_disconnected()
 {
     nextChannelNumber = 0;
     opened = false;
 }
 
-void ChannelPrivate::qosOk(const Frame::Method &frame)
+void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
 {
-    Q_Q(Channel);
+    Q_Q(QAmqpChannel);
     Q_UNUSED(frame)
 
     prefetchCount = requestedPrefetchCount;
@@ -237,60 +236,60 @@ void ChannelPrivate::qosOk(const Frame::Method &frame)
 
 //////////////////////////////////////////////////////////////////////////
 
-Channel::Channel(ChannelPrivate *dd, Client *parent)
+QAmqpChannel::QAmqpChannel(QAmqpChannelPrivate *dd, QAmqpClient *parent)
     : QObject(parent),
       d_ptr(dd)
 {
 }
 
-Channel::~Channel()
+QAmqpChannel::~QAmqpChannel()
 {
 }
 
-void Channel::close()
+void QAmqpChannel::close()
 {
-    Q_D(Channel);
+    Q_D(QAmqpChannel);
     d->needOpen = true;
     if (d->opened)
         d->close(0, QString(), 0,0);
 }
 
-void Channel::reopen()
+void QAmqpChannel::reopen()
 {
-    Q_D(Channel);
+    Q_D(QAmqpChannel);
     if (d->opened)
         close();
     d->open();
 }
 
-QString Channel::name() const
+QString QAmqpChannel::name() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->name;
 }
 
-int Channel::channelNumber() const
+int QAmqpChannel::channelNumber() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->channelNumber;
 }
 
-void Channel::setName(const QString &name)
+void QAmqpChannel::setName(const QString &name)
 {
-    Q_D(Channel);
+    Q_D(QAmqpChannel);
     d->name = name;
 }
 
-bool Channel::isOpened() const
+bool QAmqpChannel::isOpened() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->opened;
 }
 
-void Channel::qos(qint16 prefetchCount, qint32 prefetchSize)
+void QAmqpChannel::qos(qint16 prefetchCount, qint32 prefetchSize)
 {
-    Q_D(Channel);
-    Frame::Method frame(Frame::fcBasic, ChannelPrivate::bmQos);
+    Q_D(QAmqpChannel);
+    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpChannelPrivate::bmQos);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -307,33 +306,33 @@ void Channel::qos(qint16 prefetchCount, qint32 prefetchSize)
     d->sendFrame(frame);
 }
 
-qint32 Channel::prefetchSize() const
+qint32 QAmqpChannel::prefetchSize() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->prefetchSize;
 }
 
-qint16 Channel::prefetchCount() const
+qint16 QAmqpChannel::prefetchCount() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->prefetchCount;
 }
 
-Error Channel::error() const
+QAMQP::Error QAmqpChannel::error() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->error;
 }
 
-QString Channel::errorString() const
+QString QAmqpChannel::errorString() const
 {
-    Q_D(const Channel);
+    Q_D(const QAmqpChannel);
     return d->errorString;
 }
 
-void Channel::resume()
+void QAmqpChannel::resume()
 {
-    Q_D(Channel);
+    Q_D(QAmqpChannel);
     d->flow(true);
 }
 

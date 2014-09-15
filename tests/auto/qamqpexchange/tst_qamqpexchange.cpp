@@ -7,7 +7,6 @@
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
 
-using namespace QAMQP;
 class tst_QAMQPExchange : public TestCase
 {
     Q_OBJECT
@@ -26,13 +25,13 @@ private Q_SLOTS:
     void invalidImmediateRouting();
 
 private:
-    QScopedPointer<Client> client;
+    QScopedPointer<QAmqpClient> client;
 
 };
 
 void tst_QAMQPExchange::init()
 {
-    client.reset(new Client);
+    client.reset(new QAmqpClient);
     client->connectToHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
 }
@@ -47,55 +46,55 @@ void tst_QAMQPExchange::cleanup()
 
 void tst_QAMQPExchange::standardTypes_data()
 {
-    QTest::addColumn<Exchange::ExchangeType>("type");
+    QTest::addColumn<QAmqpExchange::ExchangeType>("type");
     QTest::addColumn<bool>("delayedDeclaration");
 
-    QTest::newRow("direct") << Exchange::Direct << false;
-    QTest::newRow("direct-delayed") << Exchange::Direct << true;
-    QTest::newRow("fanout") << Exchange::FanOut << false;
-    QTest::newRow("fanout-delayed") << Exchange::FanOut << true;
-    QTest::newRow("topic") << Exchange::Topic << false;
-    QTest::newRow("topic-delayed") << Exchange::Topic << true;
-    QTest::newRow("headers") << Exchange::Headers << false;
-    QTest::newRow("headers-delayed") << Exchange::Headers << true;
+    QTest::newRow("direct") << QAmqpExchange::Direct << false;
+    QTest::newRow("direct-delayed") << QAmqpExchange::Direct << true;
+    QTest::newRow("fanout") << QAmqpExchange::FanOut << false;
+    QTest::newRow("fanout-delayed") << QAmqpExchange::FanOut << true;
+    QTest::newRow("topic") << QAmqpExchange::Topic << false;
+    QTest::newRow("topic-delayed") << QAmqpExchange::Topic << true;
+    QTest::newRow("headers") << QAmqpExchange::Headers << false;
+    QTest::newRow("headers-delayed") << QAmqpExchange::Headers << true;
 }
 
 void tst_QAMQPExchange::standardTypes()
 {
-    QFETCH(Exchange::ExchangeType, type);
+    QFETCH(QAmqpExchange::ExchangeType, type);
     QFETCH(bool, delayedDeclaration);
 
-    Exchange *exchange = client->createExchange("test");
+    QAmqpExchange *exchange = client->createExchange("test");
     if (!delayedDeclaration)
         QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
 
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
-    exchange->remove(Exchange::roForce);
+    exchange->remove(QAmqpExchange::roForce);
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
 }
 
 void tst_QAMQPExchange::invalidStandardDeclaration_data()
 {
     QTest::addColumn<QString>("exchangeName");
-    QTest::addColumn<Exchange::ExchangeType>("type");
+    QTest::addColumn<QAmqpExchange::ExchangeType>("type");
     QTest::addColumn<QAMQP::Error>("error");
 
-    QTest::newRow("amq.direct") << "amq.direct" << Exchange::Direct << QAMQP::PreconditionFailedError;
-    QTest::newRow("amq.fanout") << "amq.fanout" << Exchange::FanOut << QAMQP::PreconditionFailedError;
-    QTest::newRow("amq.headers") << "amq.headers" << Exchange::Headers << QAMQP::PreconditionFailedError;
-    QTest::newRow("amq.match") << "amq.match" << Exchange::Headers << QAMQP::PreconditionFailedError;
-    QTest::newRow("amq.topic") << "amq.topic" << Exchange::Topic << QAMQP::PreconditionFailedError;
-    QTest::newRow("amq.reserved") << "amq.reserved" << Exchange::Direct << QAMQP::AccessRefusedError;
+    QTest::newRow("amq.direct") << "amq.direct" << QAmqpExchange::Direct << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.fanout") << "amq.fanout" << QAmqpExchange::FanOut << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.headers") << "amq.headers" << QAmqpExchange::Headers << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.match") << "amq.match" << QAmqpExchange::Headers << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.topic") << "amq.topic" << QAmqpExchange::Topic << QAMQP::PreconditionFailedError;
+    QTest::newRow("amq.reserved") << "amq.reserved" << QAmqpExchange::Direct << QAMQP::AccessRefusedError;
 }
 
 void tst_QAMQPExchange::invalidStandardDeclaration()
 {
     QFETCH(QString, exchangeName);
-    QFETCH(Exchange::ExchangeType, type);
+    QFETCH(QAmqpExchange::ExchangeType, type);
     QFETCH(QAMQP::Error, error);
 
-    Exchange *exchange = client->createExchange(exchangeName);
+    QAmqpExchange *exchange = client->createExchange(exchangeName);
     exchange->declare(type);
     QVERIFY(waitForSignal(exchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(exchange->error(), error);
@@ -103,7 +102,7 @@ void tst_QAMQPExchange::invalidStandardDeclaration()
 
 void tst_QAMQPExchange::invalidDeclaration()
 {
-    Exchange *exchange = client->createExchange("test-invalid-declaration");
+    QAmqpExchange *exchange = client->createExchange("test-invalid-declaration");
     exchange->declare("invalidExchangeType");
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::CommandInvalidError);
@@ -111,12 +110,12 @@ void tst_QAMQPExchange::invalidDeclaration()
 
 void tst_QAMQPExchange::invalidRedeclaration()
 {
-    Exchange *exchange = client->createExchange("test-invalid-redeclaration");
-    exchange->declare(Exchange::Direct);
+    QAmqpExchange *exchange = client->createExchange("test-invalid-redeclaration");
+    exchange->declare(QAmqpExchange::Direct);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
 
-    Exchange *redeclared = client->createExchange("test-invalid-redeclaration");
-    redeclared->declare(Exchange::FanOut);
+    QAmqpExchange *redeclared = client->createExchange("test-invalid-redeclaration");
+    redeclared->declare(QAmqpExchange::FanOut);
     QVERIFY(waitForSignal(redeclared, SIGNAL(error(QAMQP::Error))));
 
     // this is per spec:
@@ -132,38 +131,38 @@ void tst_QAMQPExchange::invalidRedeclaration()
 
 void tst_QAMQPExchange::removeIfUnused()
 {
-    Exchange *exchange = client->createExchange("test-if-unused-exchange");
-    exchange->declare(Exchange::Direct, Exchange::AutoDelete);
+    QAmqpExchange *exchange = client->createExchange("test-if-unused-exchange");
+    exchange->declare(QAmqpExchange::Direct, QAmqpExchange::AutoDelete);
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
 
-    Queue *queue = client->createQueue("test-if-unused-queue");
+    QAmqpQueue *queue = client->createQueue("test-if-unused-queue");
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     queue->bind("test-if-unused-exchange", "testRoutingKey");
     QVERIFY(waitForSignal(queue, SIGNAL(bound())));
 
-    exchange->remove(Exchange::roIfUnused);
+    exchange->remove(QAmqpExchange::roIfUnused);
     QVERIFY(waitForSignal(exchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(exchange->error(), QAMQP::PreconditionFailedError);
     QVERIFY(!exchange->errorString().isEmpty());
 
     // cleanup
-    queue->remove(Queue::roForce);
+    queue->remove(QAmqpQueue::roForce);
     QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPExchange::invalidMandatoryRouting()
 {
-    Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("some message", "unroutable-key", Message::PropertyHash(), Exchange::poMandatory);
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("some message", "unroutable-key", QAmqpMessage::PropertyHash(), QAmqpExchange::poMandatory);
     QVERIFY(waitForSignal(defaultExchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(defaultExchange->error(), QAMQP::UnroutableKey);
 }
 
 void tst_QAMQPExchange::invalidImmediateRouting()
 {
-    Exchange *defaultExchange = client->createExchange();
-    defaultExchange->publish("some message", "unroutable-key", Message::PropertyHash(), Exchange::poImmediate);
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("some message", "unroutable-key", QAmqpMessage::PropertyHash(), QAmqpExchange::poImmediate);
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::NotImplementedError);
 }
