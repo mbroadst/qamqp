@@ -207,16 +207,18 @@ void QAmqpClientPrivate::_q_readyRead()
         }
 
         QDataStream streamB(&buffer, QIODevice::ReadOnly);
-        switch(QAmqpFrame::Type(type)) {
-        case QAmqpFrame::ftMethod:
+        switch (static_cast<QAmqpFrame::FrameType>(type)) {
+        case QAmqpFrame::Method:
         {
-            QAmqpMethodFrame frame(streamB);
+            QAmqpMethodFrame frame;
+            streamB >> frame;
+
             if (frame.size() > frameMax) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
             }
 
-            if (frame.methodClass() == QAmqpFrame::fcConnection) {
+            if (frame.methodClass() == QAmqpFrame::Connection) {
                 _q_method(frame);
             } else {
                 foreach (QAmqpMethodFrameHandler *methodHandler, methodHandlersByChannel[frame.channel()])
@@ -224,9 +226,11 @@ void QAmqpClientPrivate::_q_readyRead()
             }
         }
             break;
-        case QAmqpFrame::ftHeader:
+        case QAmqpFrame::Header:
         {
-            QAmqpContentFrame frame(streamB);
+            QAmqpContentFrame frame;
+            streamB >> frame;
+
             if (frame.size() > frameMax) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
@@ -239,9 +243,11 @@ void QAmqpClientPrivate::_q_readyRead()
                 methodHandler->_q_content(frame);
         }
             break;
-        case QAmqpFrame::ftBody:
+        case QAmqpFrame::Body:
         {
-            QAmqpContentBodyFrame frame(streamB);
+            QAmqpContentBodyFrame frame;
+            streamB >> frame;
+
             if (frame.size() > frameMax) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
@@ -254,9 +260,11 @@ void QAmqpClientPrivate::_q_readyRead()
                 methodHandler->_q_body(frame);
         }
             break;
-        case QAmqpFrame::ftHeartbeat:
+        case QAmqpFrame::Heartbeat:
         {
-            QAmqpMethodFrame frame(streamB);
+            QAmqpMethodFrame frame;
+            streamB >> frame;
+
             if (frame.channel() != 0) {
                 close(QAMQP::FrameError, "heartbeat must have channel id zero");
                 return;
@@ -281,13 +289,13 @@ void QAmqpClientPrivate::sendFrame(const QAmqpFrame &frame)
     }
 
     QDataStream stream(socket);
-    frame.toStream(stream);
+    stream << frame;
 }
 
 bool QAmqpClientPrivate::_q_method(const QAmqpMethodFrame &frame)
 {
-    Q_ASSERT(frame.methodClass() == QAmqpFrame::fcConnection);
-    if (frame.methodClass() != QAmqpFrame::fcConnection)
+    Q_ASSERT(frame.methodClass() == QAmqpFrame::Connection);
+    if (frame.methodClass() != QAmqpFrame::Connection)
         return false;
 
     qAmqpDebug() << "Connection:";
@@ -448,13 +456,13 @@ void QAmqpClientPrivate::close(const QAmqpMethodFrame &frame)
     Q_EMIT q->disconnected();
 
     // complete handshake
-    QAmqpMethodFrame closeOkFrame(QAmqpFrame::fcConnection, QAmqpClientPrivate::miCloseOk);
+    QAmqpMethodFrame closeOkFrame(QAmqpFrame::Connection, QAmqpClientPrivate::miCloseOk);
     sendFrame(closeOkFrame);
 }
 
 void QAmqpClientPrivate::startOk()
 {
-    QAmqpMethodFrame frame(QAmqpFrame::fcConnection, QAmqpClientPrivate::miStartOk);
+    QAmqpMethodFrame frame(QAmqpFrame::Connection, QAmqpClientPrivate::miStartOk);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
@@ -479,7 +487,7 @@ void QAmqpClientPrivate::secureOk()
 
 void QAmqpClientPrivate::tuneOk()
 {
-    QAmqpMethodFrame frame(QAmqpFrame::fcConnection, QAmqpClientPrivate::miTuneOk);
+    QAmqpMethodFrame frame(QAmqpFrame::Connection, QAmqpClientPrivate::miTuneOk);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
@@ -493,7 +501,7 @@ void QAmqpClientPrivate::tuneOk()
 
 void QAmqpClientPrivate::open()
 {
-    QAmqpMethodFrame frame(QAmqpFrame::fcConnection, QAmqpClientPrivate::miOpen);
+    QAmqpMethodFrame frame(QAmqpFrame::Connection, QAmqpClientPrivate::miOpen);
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
@@ -515,7 +523,7 @@ void QAmqpClientPrivate::close(int code, const QString &text, int classId, int m
     stream << qint16(classId);
     stream << qint16(methodId);
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcConnection, QAmqpClientPrivate::miClose);
+    QAmqpMethodFrame frame(QAmqpFrame::Connection, QAmqpClientPrivate::miClose);
     frame.setArguments(arguments);
     sendFrame(frame);
 }

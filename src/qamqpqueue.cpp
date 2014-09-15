@@ -29,7 +29,7 @@ bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)
     if (QAmqpChannelPrivate::_q_method(frame))
         return true;
 
-    if (frame.methodClass() == QAmqpFrame::fcQueue) {
+    if (frame.methodClass() == QAmqpFrame::Queue) {
         switch (frame.id()) {
         case miDeclareOk:
             declareOk(frame);
@@ -51,7 +51,7 @@ bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)
         return true;
     }
 
-    if (frame.methodClass() == QAmqpFrame::fcBasic) {
+    if (frame.methodClass() == QAmqpFrame::Basic) {
         switch(frame.id()) {
         case bmConsumeOk:
             consumeOk(frame);
@@ -235,7 +235,7 @@ void QAmqpQueuePrivate::deliver(const QAmqpMethodFrame &frame)
 
 void QAmqpQueuePrivate::declare()
 {
-    QAmqpMethodFrame frame(QAmqpFrame::fcQueue, QAmqpQueuePrivate::miDeclare);
+    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDeclare);
     frame.setChannel(channelNumber);
 
     QByteArray arguments;
@@ -327,7 +327,7 @@ void QAmqpQueue::remove(int options)
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcQueue, QAmqpQueuePrivate::miDelete);
+    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -348,7 +348,7 @@ void QAmqpQueue::purge()
     if (!d->opened)
         return;
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcQueue, QAmqpQueuePrivate::miPurge);
+    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miPurge);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -379,7 +379,7 @@ void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcQueue, QAmqpQueuePrivate::miBind);
+    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miBind);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -415,7 +415,7 @@ void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcQueue, QAmqpQueuePrivate::miUnbind);
+    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miUnbind);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -443,7 +443,7 @@ bool QAmqpQueue::consume(int options)
         return false;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpQueuePrivate::bmConsume);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmConsume);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -487,7 +487,7 @@ void QAmqpQueue::get(bool noAck)
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpQueuePrivate::bmGet);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmGet);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -509,7 +509,7 @@ void QAmqpQueue::ack(const QAmqpMessage &message)
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpQueuePrivate::bmAck);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmAck);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -535,7 +535,7 @@ bool QAmqpQueue::cancel(bool noWait)
         return false;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpQueuePrivate::bmCancel);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmCancel);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;

@@ -38,7 +38,7 @@ void QAmqpExchangePrivate::declare()
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcExchange, QAmqpExchangePrivate::miDeclare);
+    QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDeclare);
     frame.setChannel(channelNumber);
 
     QByteArray args;
@@ -61,7 +61,7 @@ bool QAmqpExchangePrivate::_q_method(const QAmqpMethodFrame &frame)
     if (QAmqpChannelPrivate::_q_method(frame))
         return true;
 
-    if (frame.methodClass() == QAmqpFrame::fcExchange) {
+    if (frame.methodClass() == QAmqpFrame::Exchange) {
         switch (frame.id()) {
         case miDeclareOk:
             declareOk(frame);
@@ -76,7 +76,7 @@ bool QAmqpExchangePrivate::_q_method(const QAmqpMethodFrame &frame)
         }
 
         return true;
-    } else if (frame.methodClass() == QAmqpFrame::fcBasic) {
+    } else if (frame.methodClass() == QAmqpFrame::Basic) {
         switch (frame.id()) {
         case bmReturn:
             basicReturn(frame);
@@ -198,7 +198,7 @@ void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const 
 void QAmqpExchange::remove(int options)
 {
     Q_D(QAmqpExchange);
-    QAmqpMethodFrame frame(QAmqpFrame::fcExchange, QAmqpExchangePrivate::miDelete);
+    QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -231,7 +231,7 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpExchangePrivate::bmPublish);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpExchangePrivate::bmPublish);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;
@@ -245,7 +245,7 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
     frame.setArguments(arguments);
     d->sendFrame(frame);
 
-    QAmqpContentFrame content(QAmqpFrame::fcBasic);
+    QAmqpContentFrame content(QAmqpFrame::Basic);
     content.setChannel(d->channelNumber);
     content.setProperty(QAmqpMessage::ContentType, mimeType);
     content.setProperty(QAmqpMessage::ContentEncoding, "utf-8");

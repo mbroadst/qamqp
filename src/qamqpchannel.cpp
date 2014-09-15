@@ -38,7 +38,7 @@ bool QAmqpChannelPrivate::_q_method(const QAmqpMethodFrame &frame)
     if (frame.channel() != channelNumber)
         return true;
 
-    if (frame.methodClass() == QAmqpFrame::fcBasic) {
+    if (frame.methodClass() == QAmqpFrame::Basic) {
         if (frame.id() == bmQosOk) {
             qosOk(frame);
             return true;
@@ -47,7 +47,7 @@ bool QAmqpChannelPrivate::_q_method(const QAmqpMethodFrame &frame)
         return false;
     }
 
-    if (frame.methodClass() != QAmqpFrame::fcChannel)
+    if (frame.methodClass() != QAmqpFrame::Channel)
         return false;
 
     qAmqpDebug("Channel#%d:", channelNumber);
@@ -97,7 +97,7 @@ void QAmqpChannelPrivate::open()
         return;
 
     qAmqpDebug("Open channel #%d", channelNumber);
-    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miOpen);
+    QAmqpMethodFrame frame(QAmqpFrame::Channel, miOpen);
     frame.setChannel(channelNumber);
 
     QByteArray arguments;
@@ -114,7 +114,7 @@ void QAmqpChannelPrivate::flow(bool active)
     QDataStream stream(&arguments, QIODevice::WriteOnly);
     QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortShortUint, (active ? 1 : 0));
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miFlow);
+    QAmqpMethodFrame frame(QAmqpFrame::Channel, miFlow);
     frame.setChannel(channelNumber);
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -162,7 +162,7 @@ void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int 
     QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, classId);
     QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, methodId);
 
-    QAmqpMethodFrame frame(QAmqpFrame::fcChannel, miClose);
+    QAmqpMethodFrame frame(QAmqpFrame::Channel, miClose);
     frame.setChannel(channelNumber);
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -196,7 +196,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     Q_EMIT q->closed();
 
     // complete handshake
-    QAmqpMethodFrame closeOkFrame(QAmqpFrame::fcChannel, miCloseOk);
+    QAmqpMethodFrame closeOkFrame(QAmqpFrame::Channel, miCloseOk);
     closeOkFrame.setChannel(channelNumber);
     sendFrame(closeOkFrame);
 }
@@ -289,7 +289,7 @@ bool QAmqpChannel::isOpened() const
 void QAmqpChannel::qos(qint16 prefetchCount, qint32 prefetchSize)
 {
     Q_D(QAmqpChannel);
-    QAmqpMethodFrame frame(QAmqpFrame::fcBasic, QAmqpChannelPrivate::bmQos);
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpChannelPrivate::bmQos);
     frame.setChannel(d->channelNumber);
 
     QByteArray arguments;

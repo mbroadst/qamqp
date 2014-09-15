@@ -6,21 +6,16 @@
 #include "qamqpglobal.h"
 #include "qamqpframe_p.h"
 
-QAmqpFrame::QAmqpFrame(Type type)
+QAmqpFrame::QAmqpFrame(FrameType type)
     : size_(0),
       type_(type),
       channel_(0)
 {
 }
 
-QAmqpFrame::QAmqpFrame(QDataStream &raw)
+QAmqpFrame::FrameType QAmqpFrame::type() const
 {
-    readHeader(raw);
-}
-
-QAmqpFrame::Type QAmqpFrame::type() const
-{
-    return Type(type_);
+    return static_cast<QAmqpFrame::FrameType>(type_);
 }
 
 QAmqpFrame::~QAmqpFrame()
@@ -42,26 +37,6 @@ qint32 QAmqpFrame::size() const
     return 0;
 }
 
-void QAmqpFrame::writeHeader(QDataStream &stream) const
-{
-    stream << type_;
-    stream << channel_;
-    stream << qint32(size());
-}
-
-void QAmqpFrame::writeEnd(QDataStream &stream) const
-{
-    stream << qint8(FRAME_END);
-    stream.device()->waitForBytesWritten(1000);
-}
-
-void QAmqpFrame::readHeader(QDataStream &stream)
-{
-    stream >> type_;
-    stream >> channel_;
-    stream >> size_;
-}
-
 /*
 void QAmqpFrame::readEnd(QDataStream &stream)
 {
@@ -72,26 +47,44 @@ void QAmqpFrame::readEnd(QDataStream &stream)
 }
 */
 
-void QAmqpFrame::toStream(QDataStream &stream) const
+QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame)
 {
-    writeHeader(stream);
-    writePayload(stream);
-    writeEnd(stream);
+    // write header
+    stream << frame.type_;
+    stream << frame.channel_;
+    stream << frame.size();
+
+    frame.writePayload(stream);
+
+    // write end
+    stream << qint8(QAmqpFrame::FRAME_END);
+    stream.device()->waitForBytesWritten(1000);
+    return stream;
+}
+
+QDataStream &operator>>(QDataStream &stream, QAmqpFrame &frame)
+{
+    stream >> frame.type_;
+    stream >> frame.channel_;
+    stream >> frame.size_;
+    frame.readPayload(stream);
+    return stream;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-QAmqpMethodFrame::QAmqpMethodFrame(MethodClass methodClass, qint16 id)
-    : QAmqpFrame(QAmqpFrame::ftMethod),
-      methodClass_(methodClass),
-      id_(id)
+QAmqpMethodFrame::QAmqpMethodFrame()
+    : QAmqpFrame(QAmqpFrame::Method),
+      methodClass_(0),
+      id_(0)
 {
 }
 
-QAmqpMethodFrame::QAmqpMethodFrame(QDataStream &raw)
-    : QAmqpFrame(raw)
+QAmqpMethodFrame::QAmqpMethodFrame(MethodClass methodClass, qint16 id)
+    : QAmqpFrame(QAmqpFrame::Method),
+      methodClass_(methodClass),
+      id_(id)
 {
-    readPayload(raw);
 }
 
 QAmqpFrame::MethodClass QAmqpMethodFrame::methodClass() const
@@ -264,20 +257,14 @@ void QAmqpFrame::writeAmqpField(QDataStream &s, QAmqpMetaType::ValueType type, c
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpContentFrame::QAmqpContentFrame()
-    : QAmqpFrame(QAmqpFrame::ftHeader)
+    : QAmqpFrame(QAmqpFrame::Header)
 {
 }
 
 QAmqpContentFrame::QAmqpContentFrame(QAmqpFrame::MethodClass methodClass)
-    : QAmqpFrame(QAmqpFrame::ftHeader)
+    : QAmqpFrame(QAmqpFrame::Header)
 {
     methodClass_ = methodClass;
-}
-
-QAmqpContentFrame::QAmqpContentFrame(QDataStream &raw)
-    : QAmqpFrame(raw)
-{
-    readPayload(raw);
 }
 
 QAmqpFrame::MethodClass QAmqpContentFrame::methodClass() const
@@ -421,14 +408,8 @@ void QAmqpContentFrame::readPayload(QDataStream &in)
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpContentBodyFrame::QAmqpContentBodyFrame()
-    : QAmqpFrame(QAmqpFrame::ftBody)
+    : QAmqpFrame(QAmqpFrame::Body)
 {
-}
-
-QAmqpContentBodyFrame::QAmqpContentBodyFrame(QDataStream &raw)
-    : QAmqpFrame(raw)
-{
-    readPayload(raw);
 }
 
 void QAmqpContentBodyFrame::setBody(const QByteArray &data)
@@ -460,7 +441,7 @@ qint32 QAmqpContentBodyFrame::size() const
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpHeartbeatFrame::QAmqpHeartbeatFrame()
-    : QAmqpFrame(QAmqpFrame::ftHeartbeat)
+    : QAmqpFrame(QAmqpFrame::Heartbeat)
 {
 }
 
