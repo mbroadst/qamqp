@@ -11,6 +11,26 @@ VERSION = $${QAMQP_VERSION}
 win32:DESTDIR = $$OUT_PWD
 macx:QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 
+# for some reason with Travis' qt 5.0.2 you can't chain these with an |
+NEED_GCOV_SUPPORT = 0
+greaterThan(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 2) {
+    NEED_GCOV_SUPPORT = 1
+}
+lessThan(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 9):lessThan(QT_PATCH_VERSION, 6) {
+    NEED_GCOV_SUPPORT = 1
+}
+
+greaterThan(NEED_GCOV_SUPPORT, 0) {
+    # NOTE: remove when travis adds a newer ubuntu, or when hell freezes over
+    gcov {
+        QMAKE_CFLAGS           += -fprofile-arcs -ftest-coverage
+        QMAKE_CXXFLAGS         += -fprofile-arcs -ftest-coverage
+        QMAKE_OBJECTIVE_CFLAGS += -fprofile-arcs -ftest-coverage
+        QMAKE_LFLAGS           += -fprofile-arcs -ftest-coverage
+        QMAKE_CLEAN += $(OBJECTS_DIR)*.gcno and $(OBJECTS_DIR)*.gcda
+    }
+}
+
 PRIVATE_HEADERS += \
     qamqpchannel_p.h \
     qamqpclient_p.h \

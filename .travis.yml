@@ -1,14 +1,17 @@
 language: cpp
+cache: apt
 env:
   - QT_SELECT=qt4
   - QT_SELECT=qt5
 services:
   - rabbitmq
+before_install:
+  - sudo pip install cpp-coveralls
 install:
   - tests/test-deps.sh
 script:
-  - mkdir build
-  - cd build
-  - qmake ..
+  - qmake -config gcov
   - make
   - make check
+after_success:
+  - coveralls -e tutorials -e tests -E ".moc_*.cpp" -E ".*.moc*" -E ".rcc*" --gcov-options '\-lp'
