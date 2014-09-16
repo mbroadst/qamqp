@@ -56,6 +56,8 @@ void QAmqpClientPrivate::initSocket()
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
     QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
+    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+                          q, SIGNAL(socketError(QAbstractSocket::SocketError)));
 }
 
 void QAmqpClientPrivate::setUsername(const QString &username)
@@ -172,7 +174,7 @@ void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
     case QAbstractSocket::ProxyConnectionTimeoutError:
 
     default:
-        qAmqpDebug() << "socket Error: " << socket->errorString();
+        qAmqpDebug() << "socket error: " << socket->errorString();
         break;
     }
 
@@ -754,6 +756,12 @@ QString QAmqpClient::customProperty(const QString &name) const
 {
     Q_D(const QAmqpClient);
     return d->customProperties.value(name).toString();
+}
+
+QAbstractSocket::SocketError QAmqpClient::socketError() const
+{
+    Q_D(const QAmqpClient);
+    return d->socket->error();
 }
 
 QAMQP::Error QAmqpClient::error() const

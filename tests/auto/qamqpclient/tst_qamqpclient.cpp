@@ -16,7 +16,7 @@ private Q_SLOTS:
     void connectDisconnect();
     void invalidAuthenticationMechanism();
     void tune();
-
+    void socketError();
     void validateUri_data();
     void validateUri();
 
@@ -122,6 +122,14 @@ void tst_QAMQPClient::tune()
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::socketError()
+{
+    QAmqpClient client;
+    client.connectToHost("amqp://127.0.0.1:56725/");
+    QVERIFY(waitForSignal(&client, SIGNAL(socketError(QAbstractSocket::SocketError))));
+    QCOMPARE(client.socketError(), QAbstractSocket::ConnectionRefusedError);
 }
 
 void tst_QAMQPClient::validateUri_data()

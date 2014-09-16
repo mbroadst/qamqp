@@ -69,6 +69,7 @@ public:
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 
+    QAbstractSocket::SocketError socketError() const;
     QAMQP::Error error() const;
     QString errorString() const;
 
@@ -88,6 +89,7 @@ Q_SIGNALS:
     void connected();
     void disconnected();
     void error(QAMQP::Error error);
+    void socketError(QAbstractSocket::SocketError error);
 
 protected:
     QAmqpClient(QAmqpClientPrivate *dd, QObject *parent = 0);
