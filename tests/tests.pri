@@ -10,9 +10,8 @@ macx {
 QT = core network testlib
 QT -= gui
 CONFIG -= app_bundle
-CONFIG += testcase
+CONFIG += testcase no_testcase_installs
 
 HEADERS += \
     $${PWD}/common/signalspy.h \
     $${PWD}/common/qamqptestcase.h
-
