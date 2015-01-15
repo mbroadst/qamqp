@@ -203,7 +203,7 @@ void QAmqpClientPrivate::_q_readyRead()
         const char *bufferData = buffer.constData();
         const quint8 type = *(quint8*)&bufferData[0];
         const quint8 magic = *(quint8*)&bufferData[QAmqpFrame::HEADER_SIZE + payloadSize];
-        if (magic != QAmqpFrame::FRAME_END) {
+        if (Q_UNLIKELY(magic != QAmqpFrame::FRAME_END)) {
             close(QAMQP::UnexpectedFrameError, "wrong end of frame");
             return;
         }
@@ -215,7 +215,7 @@ void QAmqpClientPrivate::_q_readyRead()
             QAmqpMethodFrame frame;
             streamB >> frame;
 
-            if (frame.size() > frameMax) {
+            if (Q_UNLIKELY(frame.size() > frameMax)) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
             }
@@ -233,10 +233,10 @@ void QAmqpClientPrivate::_q_readyRead()
             QAmqpContentFrame frame;
             streamB >> frame;
 
-            if (frame.size() > frameMax) {
+            if (Q_UNLIKELY(frame.size() > frameMax)) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
-            } else if (frame.channel() <= 0) {
+            } else if (Q_UNLIKELY(frame.channel() <= 0)) {
                 close(QAMQP::ChannelError, "channel number must be greater than zero");
                 return;
             }
@@ -250,10 +250,10 @@ void QAmqpClientPrivate::_q_readyRead()
             QAmqpContentBodyFrame frame;
             streamB >> frame;
 
-            if (frame.size() > frameMax) {
+            if (Q_UNLIKELY(frame.size() > frameMax)) {
                 close(QAMQP::FrameError, "frame size too large");
                 return;
-            } else if (frame.channel() <= 0) {
+            } else if (Q_UNLIKELY(frame.channel() <= 0)) {
                 close(QAMQP::ChannelError, "channel number must be greater than zero");
                 return;
             }
@@ -267,7 +267,7 @@ void QAmqpClientPrivate::_q_readyRead()
             QAmqpMethodFrame frame;
             streamB >> frame;
 
-            if (frame.channel() != 0) {
+            if (Q_UNLIKELY(frame.channel() != 0)) {
                 close(QAMQP::FrameError, "heartbeat must have channel id zero");
                 return;
             }
