@@ -23,6 +23,8 @@ private Q_SLOTS:
     void removeIfUnused();
     void invalidMandatoryRouting();
     void invalidImmediateRouting();
+    void confirmsSupport();
+    void confirmDontLoseMessages();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -165,6 +167,27 @@ void tst_QAMQPExchange::invalidImmediateRouting()
     defaultExchange->publish("some message", "unroutable-key", QAmqpMessage::PropertyHash(), QAmqpExchange::poImmediate);
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::NotImplementedError);
+}
+
+void tst_QAMQPExchange::confirmsSupport()
+{
+    QAmqpExchange *exchange = client->createExchange("confirm-test");
+    exchange->enableConfirms();
+    QVERIFY(waitForSignal(exchange, SIGNAL(confirmsEnabled())));
+}
+
+void tst_QAMQPExchange::confirmDontLoseMessages()
+{
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->enableConfirms();
+    QVERIFY(waitForSignal(defaultExchange, SIGNAL(confirmsEnabled())));
+
+    QAmqpMessage::PropertyHash properties;
+    properties[QAmqpMessage::DeliveryMode] = "2";   // make message persistent
+
+    for (int i = 0; i < 10000; ++i)
+        defaultExchange->publish("noop", "confirms-test", properties);
+    QVERIFY(defaultExchange->waitForConfirms());
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

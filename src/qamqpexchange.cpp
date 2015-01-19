@@ -1,4 +1,6 @@
+#include <QEventLoop>
 #include <QDataStream>
+#include <QTimer>
 #include <QDebug>
 
 #include "qamqpexchange.h"
@@ -22,7 +24,8 @@ QString QAmqpExchangePrivate::typeToString(QAmqpExchange::ExchangeType type)
 QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
-      declared(false)
+      declared(false),
+      nextDeliveryTag(0)
 {
 }
 
@@ -58,29 +61,36 @@ void QAmqpExchangePrivate::declare()
 
 bool QAmqpExchangePrivate::_q_method(const QAmqpMethodFrame &frame)
 {
+    Q_Q(QAmqpExchange);
     if (QAmqpChannelPrivate::_q_method(frame))
         return true;
 
-    if (frame.methodClass() == QAmqpFrame::Exchange) {
+    if (frame.methodClass() == QAmqpFrame::Basic) {
         switch (frame.id()) {
-        case miDeclareOk:
-            declareOk(frame);
+        case bmAck:
+        case bmNack:
+            handleAckOrNack(frame);
             break;
-
-        case miDeleteOk:
-            deleteOk(frame);
-            break;
+        case bmReturn: basicReturn(frame); break;
 
         default:
             break;
         }
 
         return true;
-    } else if (frame.methodClass() == QAmqpFrame::Basic) {
+    }
+
+    if (frame.methodClass() == QAmqpFrame::Confirm) {
+        if (frame.id() == cmConfirmOk) {
+            Q_EMIT q->confirmsEnabled();
+            return true;
+        }
+    }
+
+    if (frame.methodClass() == QAmqpFrame::Exchange) {
         switch (frame.id()) {
-        case bmReturn:
-            basicReturn(frame);
-            break;
+        case miDeclareOk: declareOk(frame); break;
+        case miDeleteOk: deleteOk(frame); break;
 
         default:
             break;
@@ -143,6 +153,39 @@ void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
     qAmqpDebug(">> replyText: %s", qPrintable(replyText));
     qAmqpDebug(">> exchangeName: %s", qPrintable(exchangeName));
     qAmqpDebug(">> routingKey: %s", qPrintable(routingKey));
+}
+
+void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
+{
+    Q_Q(QAmqpExchange);
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+
+    qlonglong deliveryTag =
+        QAmqpFrame::readAmqpField(stream, QAmqpMetaType::LongLongUint).toLongLong();
+    bool multiple = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
+    if (frame.id() == QAmqpExchangePrivate::bmAck) {
+        if (deliveryTag == 0) {
+            unconfirmedDeliveryTags.clear();
+        } else {
+            int idx = unconfirmedDeliveryTags.indexOf(deliveryTag);
+            if (idx == -1) {
+                return;
+            }
+
+            if (multiple) {
+                unconfirmedDeliveryTags.remove(0, idx + 1);
+            } else {
+                unconfirmedDeliveryTags.remove(idx);
+            }
+        }
+
+        if (unconfirmedDeliveryTags.isEmpty())
+            Q_EMIT q->allMessagesDelivered();
+
+    } else {
+        qAmqpDebug() << "nacked(" << deliveryTag << "), multiple=" << multiple;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -231,6 +274,11 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
+    if (d->nextDeliveryTag > 0) {
+        d->unconfirmedDeliveryTags.append(d->nextDeliveryTag);
+        d->nextDeliveryTag++;
+    }
+
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpExchangePrivate::bmPublish);
     frame.setChannel(d->channelNumber);
 
@@ -267,4 +315,33 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
         body.setBody(partition);
         d->sendFrame(body);
     }
+}
+
+void QAmqpExchange::enableConfirms(bool noWait)
+{
+    Q_D(QAmqpExchange);
+    QAmqpMethodFrame frame(QAmqpFrame::Confirm, QAmqpExchangePrivate::cmConfirm);
+    frame.setChannel(d->channelNumber);
+
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+    stream << qint8(noWait ? 1 : 0);
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+
+    // for tracking acks and nacks
+    if (d->nextDeliveryTag == 0) d->nextDeliveryTag = 1;
+}
+
+bool QAmqpExchange::waitForConfirms(int msecs)
+{
+    Q_D(QAmqpExchange);
+
+    QEventLoop loop;
+    connect(this, SIGNAL(allMessagesDelivered()), &loop, SLOT(quit()));
+    QTimer::singleShot(msecs, &loop, SLOT(quit()));
+    loop.exec();
+
+    return (d->unconfirmedDeliveryTags.isEmpty());
 }

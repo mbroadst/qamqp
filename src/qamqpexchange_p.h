@@ -13,6 +13,10 @@ public:
         METHOD_ID_ENUM(miDelete, 20)
     };
 
+    enum ConfirmMethod {
+        METHOD_ID_ENUM(cmConfirm, 10)
+    };
+
     QAmqpExchangePrivate(QAmqpExchange *q);
     static QString typeToString(QAmqpExchange::ExchangeType type);
 
@@ -24,12 +28,15 @@ public:
     void declareOk(const QAmqpMethodFrame &frame);
     void deleteOk(const QAmqpMethodFrame &frame);
     void basicReturn(const QAmqpMethodFrame &frame);
+    void handleAckOrNack(const QAmqpMethodFrame &frame);
 
     QString type;
     QAmqpExchange::ExchangeOptions options;
     QAmqpTable arguments;
     bool delayedDeclare;
     bool declared;
+    qlonglong nextDeliveryTag;
+    QVector<qlonglong> unconfirmedDeliveryTags;
 
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };

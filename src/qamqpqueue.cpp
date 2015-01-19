@@ -503,6 +503,11 @@ void QAmqpQueue::get(bool noAck)
 
 void QAmqpQueue::ack(const QAmqpMessage &message)
 {
+    ack(message.deliveryTag(), false);
+}
+
+void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
+{
     Q_D(QAmqpQueue);
     if (!d->opened) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
@@ -515,8 +520,8 @@ void QAmqpQueue::ack(const QAmqpMessage &message)
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
-    out << message.deliveryTag();
-    out << qint8(0); // multiple
+    out << deliveryTag;
+    out << qint8(multiple ? 1 : 0); // multiple
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

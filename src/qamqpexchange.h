@@ -17,6 +17,8 @@ class QAMQP_EXPORT QAmqpExchange : public QAmqpChannel
     Q_ENUMS(ExchangeOptions)
 
 public:
+    virtual ~QAmqpExchange();
+
     enum ExchangeType {
         Direct,
         FanOut,
@@ -50,13 +52,11 @@ public:
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
     ExchangeOptions options() const;
 
-    virtual ~QAmqpExchange();
-
     // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
                  const QAmqpTable &args = QAmqpTable());
-    void declare(const QString &type = QLatin1String("direct"),
+    void declare(const QString &type,
                  ExchangeOptions options = NoOptions,
                  const QAmqpTable &args = QAmqpTable());
     void remove(int options = roIfUnused|roNoWait);
@@ -73,9 +73,15 @@ public:
                  const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
 
+    void enableConfirms(bool noWait = false);
+    bool waitForConfirms(int msecs = 30000);
+
 Q_SIGNALS:
     void declared();
     void removed();
+
+    void confirmsEnabled();
+    void allMessagesDelivered();
 
 protected:
     virtual void channelOpened();
@@ -86,7 +92,6 @@ private:
 
     Q_DISABLE_COPY(QAmqpExchange)
     Q_DECLARE_PRIVATE(QAmqpExchange)
-
     friend class QAmqpClient;
 
 };

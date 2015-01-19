@@ -52,6 +52,7 @@ public:
     ~QAmqpQueue();
 
     bool isConsuming() const;
+
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
 
@@ -67,8 +68,10 @@ public:
     // AMQP Basic
     bool consume(int options = NoOptions);
     void get(bool noAck = true);
-    void ack(const QAmqpMessage &message);
     bool cancel(bool noWait = false);
+
+    void ack(const QAmqpMessage &message);
+    void ack(qlonglong deliveryTag, bool multiple);
 
 Q_SIGNALS:
     void declared();

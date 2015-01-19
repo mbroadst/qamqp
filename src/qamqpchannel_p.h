@@ -12,9 +12,9 @@ class QAmqpChannelPrivate : public QAmqpMethodFrameHandler
 {
 public:
     enum MethodId {
-         METHOD_ID_ENUM(miOpen, 10),
-         METHOD_ID_ENUM(miFlow, 20),
-         METHOD_ID_ENUM(miClose, 40)
+        METHOD_ID_ENUM(miOpen, 10),
+        METHOD_ID_ENUM(miFlow, 20),
+        METHOD_ID_ENUM(miClose, 40)
     };
 
     enum BasicMethod {
@@ -29,7 +29,8 @@ public:
         bmAck = 80,
         bmReject = 90,
         bmRecoverAsync = 100,
-        METHOD_ID_ENUM(bmRecover, 110)
+        METHOD_ID_ENUM(bmRecover, 110),
+        bmNack = 120
     };
 
     QAmqpChannelPrivate(QAmqpChannel *q);

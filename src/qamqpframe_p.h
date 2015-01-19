@@ -31,7 +31,8 @@ public:
         Exchange = 40,
         Queue = 50,
         Basic = 60,
-        Tx = 90,
+        Confirm = 85,
+        Tx = 90
     };
 
     virtual ~QAmqpFrame();
