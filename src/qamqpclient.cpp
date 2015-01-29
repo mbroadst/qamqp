@@ -19,7 +19,7 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       host(AMQP_HOST),
       virtualHost(AMQP_VHOST),
       autoReconnect(false),
-      timeout(-1),
+      timeout(0),
       connecting(false),
       socket(0),
       closed(false),
@@ -157,7 +157,7 @@ void QAmqpClientPrivate::_q_heartbeat()
 void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 {
     Q_Q(QAmqpClient);
-    if (timeout == 0) {
+    if (timeout <= 0) {
         timeout = 1000;
     } else {
         if (timeout < 120000)
@@ -183,6 +183,7 @@ void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
     socket->close();
 
     if (autoReconnect) {
+        qAmqpDebug() << "trying to reconnect after: " << timeout << "ms";
         QTimer::singleShot(timeout, q, SLOT(_q_connect()));
     }
 }
