@@ -1,10 +1,11 @@
 #include <QtTest/QtTest>
-#include "qamqptestcase.h"
-
 #include <QProcess>
-#include "qamqpclient.h"
-#include "qamqpclient_p.h"
+#include <QSslKey>
+
+#include "qamqptestcase.h"
 #include "qamqpauthenticator.h"
+#include "qamqpclient_p.h"
+#include "qamqpclient.h"
 
 class tst_QAMQPClient : public TestCase
 {
@@ -20,10 +21,33 @@ private Q_SLOTS:
     void validateUri_data();
     void validateUri();
 
-private:
+public Q_SLOTS:     // temporarily disabled
     void autoReconnect();
+    void sslConnect();
+
+private:
+    QSslConfiguration createSslConfiguration();
 
 };
+
+QSslConfiguration tst_QAMQPClient::createSslConfiguration()
+{
+    QList<QSslCertificate> caCerts =
+        QSslCertificate::fromPath(QLatin1String(":/certs/ca-cert.pem"));
+    QList<QSslCertificate> localCerts =
+        QSslCertificate::fromPath(QLatin1String(":/certs/client-cert.pem"));
+    QFile keyFile( QLatin1String(":/certs/client-key.pem"));
+    keyFile.open(QIODevice::ReadOnly);
+    QSslKey key(&keyFile, QSsl::Rsa, QSsl::Pem,  QSsl::PrivateKey);
+    keyFile.close();
+
+    QSslConfiguration sslConfiguration;
+    sslConfiguration.setCaCertificates(caCerts);
+    sslConfiguration.setLocalCertificate(localCerts.first());
+    sslConfiguration.setPrivateKey(key);
+    sslConfiguration.setProtocol(QSsl::SecureProtocols);
+    return sslConfiguration;
+}
 
 void tst_QAMQPClient::connect()
 {
@@ -40,6 +64,17 @@ void tst_QAMQPClient::connect()
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::sslConnect()
+{
+    QAmqpClient client;
+    client.setSslConfiguration(createSslConfiguration());
+    QObject::connect(&client, SIGNAL(sslErrors(QList<QSslError>)),
+                     &client, SLOT(ignoreSslErrors(QList<QSslError>)));
+
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
 }
 
 void tst_QAMQPClient::connectProperties()

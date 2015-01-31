@@ -1,7 +1,7 @@
 #include <QTimer>
-#include <QTcpSocket>
 #include <QTextStream>
 #include <QStringList>
+#include <QSslSocket>
 #include <QtEndian>
 
 #include "qamqpglobal.h"
@@ -21,6 +21,7 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       autoReconnect(false),
       timeout(0),
       connecting(false),
+      useSsl(false),
       socket(0),
       closed(false),
       connected(false),
@@ -50,7 +51,7 @@ void QAmqpClientPrivate::init()
 void QAmqpClientPrivate::initSocket()
 {
     Q_Q(QAmqpClient);
-    socket = new QTcpSocket(q);
+    socket = new QSslSocket(q);
     QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
     QObject::connect(socket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
@@ -58,6 +59,8 @@ void QAmqpClientPrivate::initSocket()
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
     QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
                           q, SIGNAL(socketError(QAbstractSocket::SocketError)));
+    QObject::connect(socket, SIGNAL(sslErrors(QList<QSslError>)),
+                          q, SIGNAL(sslErrors(QList<QSslError>)));
 }
 
 void QAmqpClientPrivate::setUsername(const QString &username)
@@ -87,12 +90,13 @@ void QAmqpClientPrivate::parseConnectionString(const QString &uri)
 #endif
 
     if (connectionString.scheme() != AMQP_SCHEME &&
-        connectionString.scheme() != AMQP_SSCHEME) {
+        connectionString.scheme() != AMQP_SSL_SCHEME) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
         return;
     }
 
-    port = connectionString.port(AMQP_PORT);
+    useSsl = (connectionString.scheme() == AMQP_SSL_SCHEME);
+    port = connectionString.port((useSsl ? AMQP_SSL_PORT : AMQP_PORT));
     host = connectionString.host();
 
     QString vhost = connectionString.path();
@@ -116,7 +120,11 @@ void QAmqpClientPrivate::_q_connect()
         _q_disconnect();
     }
 
-    socket->connectToHost(host, port);
+    qAmqpDebug() << "connecting to host: " << host << ", port: " << port;
+    if (useSsl)
+        socket->connectToHostEncrypted(host, port);
+    else
+        socket->connectToHost(host, port);
 }
 
 void QAmqpClientPrivate::_q_disconnect()
@@ -775,6 +783,29 @@ QString QAmqpClient::errorString() const
 {
     Q_D(const QAmqpClient);
     return d->errorString;
+}
+
+QSslConfiguration QAmqpClient::sslConfiguration() const
+{
+    Q_D(const QAmqpClient);
+    return d->sslConfiguration;
+}
+
+void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
+{
+    Q_D(QAmqpClient);
+    d->sslConfiguration = config;
+
+    if (!config.isNull()) {
+        d->useSsl = true;
+        d->port = AMQP_SSL_PORT;
+    }
+}
+
+void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)
+{
+    Q_D(QAmqpClient);
+    d->socket->ignoreSslErrors(errors);
 }
 
 void QAmqpClient::connectToHost(const QString &uri)

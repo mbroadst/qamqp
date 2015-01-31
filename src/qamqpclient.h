@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QUrl>
 #include <QHostAddress>
+#include <QSslConfiguration>
+#include <QSslError>
 
 #include "qamqpglobal.h"
 
@@ -68,6 +70,9 @@ public:
     QAMQP::Error error() const;
     QString errorString() const;
 
+    QSslConfiguration sslConfiguration() const;
+    void setSslConfiguration(const QSslConfiguration &config);
+
     // channels
     QAmqpExchange *createExchange(int channelNumber = -1);
     QAmqpExchange *createExchange(const QString &name, int channelNumber = -1);
@@ -85,6 +90,10 @@ Q_SIGNALS:
     void disconnected();
     void error(QAMQP::Error error);
     void socketError(QAbstractSocket::SocketError error);
+    void sslErrors(const QList<QSslError> &errors);
+
+public Q_SLOTS:
+    void ignoreSslErrors(const QList<QSslError> &errors);
 
 protected:
     QAmqpClient(QAmqpClientPrivate *dd, QObject *parent = 0);

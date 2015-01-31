@@ -5,11 +5,8 @@
 #include <QSharedPointer>
 #include <QPointer>
 #include <QAbstractSocket>
-
-#ifndef QT_NO_SSL
-#   include <QSslConfiguration>
-#   include <QSslError>
-#endif
+#include <QSslConfiguration>
+#include <QSslError>
 
 #include "qamqpglobal.h"
 #include "qamqpauthenticator.h"
@@ -19,7 +16,7 @@
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
 class QTimer;
-class QTcpSocket;
+class QSslSocket;
 class QAmqpClient;
 class QAmqpQueue;
 class QAmqpExchange;
@@ -85,8 +82,9 @@ public:
     bool autoReconnect;
     int timeout;
     bool connecting;
-    QTcpSocket *socket;
+    bool useSsl;
 
+    QSslSocket *socket;
     QHash<quint16, QList<QAmqpMethodFrameHandler*> > methodHandlersByChannel;
     QHash<quint16, QList<QAmqpContentFrameHandler*> > contentHandlerByChannel;
     QHash<quint16, QList<QAmqpContentBodyFrameHandler*> > bodyHandlersByChannel;
@@ -103,27 +101,11 @@ public:
     QAMQP::Error error;
     QString errorString;
 
+    QSslConfiguration sslConfiguration;
+
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)
 
 };
-
-#ifndef QT_NO_SSL
-class QAmqpSslClient;
-class QAmqpSslClientPrivate : public QAmqpClientPrivate
-{
-public:
-    QAmqpSslClientPrivate(QAmqpSslClient *q);
-
-    virtual void initSocket();
-    virtual void _q_connect();
-
-    // private slots
-    void _q_sslErrors(const QList<QSslError> &errors);
-
-    QSslConfiguration sslConfiguration;
-
-};
-#endif
 
 #endif // QAMQPCLIENT_P_H

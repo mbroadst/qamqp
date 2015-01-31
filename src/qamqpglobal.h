@@ -3,13 +3,14 @@
 
 #include <QMetaType>
 
-#define AMQP_SCHEME "amqp"
-#define AMQP_SSCHEME "amqps"
-#define AMQP_PORT 5672
-#define AMQP_HOST "localhost"
-#define AMQP_VHOST "/"
-#define AMQP_LOGIN "guest"
-#define AMQP_PSWD  "guest"
+#define AMQP_SCHEME             "amqp"
+#define AMQP_SSL_SCHEME         "amqps"
+#define AMQP_PORT               5672
+#define AMQP_SSL_PORT           5671
+#define AMQP_HOST               "localhost"
+#define AMQP_VHOST              "/"
+#define AMQP_LOGIN              "guest"
+#define AMQP_PSWD               "guest"
 
 #define AMQP_FRAME_MAX 131072
 #define AMQP_FRAME_MIN_SIZE 4096

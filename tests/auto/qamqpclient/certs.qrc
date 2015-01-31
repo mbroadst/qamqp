@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/certs">
+        <file alias="ca-cert.pem">../../files/certs/testca/cacert.pem</file>
+        <file alias="client-cert.pem">../../files/certs/client/cert.pem</file>
+        <file alias="client-key.pem">../../files/certs/client/key.pem</file>
+    </qresource>
+</RCC>
