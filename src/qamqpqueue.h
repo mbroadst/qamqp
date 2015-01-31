@@ -52,6 +52,7 @@ public:
     ~QAmqpQueue();
 
     bool isConsuming() const;
+    bool isDeclared() const;
 
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;

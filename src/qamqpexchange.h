@@ -52,6 +52,8 @@ public:
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
     ExchangeOptions options() const;
 
+    bool isDeclared() const;
+
     // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,

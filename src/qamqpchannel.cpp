@@ -280,7 +280,7 @@ void QAmqpChannel::setName(const QString &name)
     d->name = name;
 }
 
-bool QAmqpChannel::isOpened() const
+bool QAmqpChannel::isOpen() const
 {
     Q_D(const QAmqpChannel);
     return d->opened;

@@ -479,6 +479,12 @@ bool QAmqpQueue::isConsuming() const
     return d->consuming;
 }
 
+bool QAmqpQueue::isDeclared() const
+{
+    Q_D(const QAmqpQueue);
+    return d->declared;
+}
+
 void QAmqpQueue::get(bool noAck)
 {
     Q_D(QAmqpQueue);

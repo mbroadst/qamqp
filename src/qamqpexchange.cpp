@@ -224,6 +224,12 @@ QString QAmqpExchange::type() const
     return d->type;
 }
 
+bool QAmqpExchange::isDeclared() const
+{
+    Q_D(const QAmqpExchange);
+    return d->declared;
+}
+
 void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QAmqpTable &args)
 {
     declare(QAmqpExchangePrivate::typeToString(type), options, args);

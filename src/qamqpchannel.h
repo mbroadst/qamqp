@@ -10,13 +10,13 @@ class QAMQP_EXPORT QAmqpChannel : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int number READ channelNumber CONSTANT)
-    Q_PROPERTY(bool opened READ isOpened CONSTANT)
+    Q_PROPERTY(bool open READ isOpen CONSTANT)
     Q_PROPERTY(QString name READ name WRITE setName)
 public:
     virtual ~QAmqpChannel();
 
     int channelNumber() const;
-    bool isOpened() const;
+    bool isOpen() const;
 
     QString name() const;
     void setName(const QString &name);
