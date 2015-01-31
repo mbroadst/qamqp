@@ -5,11 +5,6 @@
 #include <QUrl>
 #include <QHostAddress>
 
-#ifndef QT_NO_SSL
-#include <QSslConfiguration>
-#include <QSslError>
-#endif
-
 #include "qamqpglobal.h"
 
 class QAmqpExchange;
@@ -110,27 +105,5 @@ private:
     friend class QAmqpChannelPrivate;
 
 };
-
-#ifndef QT_NO_SSL
-class QAmqpSslClientPrivate;
-class QAmqpSslClient : public QAmqpClient
-{
-    Q_OBJECT
-public:
-    QAmqpSslClient(QObject *parent = 0);
-    QAmqpSslClient(const QUrl &connectionString, QObject *parent = 0);
-    ~QAmqpSslClient();
-
-    QSslConfiguration sslConfiguration() const;
-    void setSslConfiguration(const QSslConfiguration &config);
-
-private:
-    Q_DISABLE_COPY(QAmqpSslClient)
-    Q_DECLARE_PRIVATE(QAmqpSslClient)
-
-    Q_PRIVATE_SLOT(d_func(), void _q_sslErrors(const QList<QSslError> &errors))
-
-};
-#endif
 
 #endif // QAMQPCLIENT_H
