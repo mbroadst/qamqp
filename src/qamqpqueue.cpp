@@ -533,6 +533,32 @@ void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
     d->sendFrame(frame);
 }
 
+void QAmqpQueue::reject(const QAmqpMessage &message, bool requeue)
+{
+    ack(message.deliveryTag(), requeue);
+}
+
+void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
+{
+    Q_D(QAmqpQueue);
+    if (!d->opened) {
+        qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
+        return;
+    }
+
+    QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmReject);
+    frame.setChannel(d->channelNumber);
+
+    QByteArray arguments;
+    QDataStream out(&arguments, QIODevice::WriteOnly);
+
+    out << deliveryTag;
+    out << qint8(requeue ? 1 : 0);
+
+    frame.setArguments(arguments);
+    d->sendFrame(frame);
+}
+
 bool QAmqpQueue::cancel(bool noWait)
 {
     Q_D(QAmqpQueue);

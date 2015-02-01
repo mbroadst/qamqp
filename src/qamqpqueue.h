@@ -70,9 +70,10 @@ public:
     bool consume(int options = NoOptions);
     void get(bool noAck = true);
     bool cancel(bool noWait = false);
-
     void ack(const QAmqpMessage &message);
     void ack(qlonglong deliveryTag, bool multiple);
+    void reject(const QAmqpMessage &message, bool requeue);
+    void reject(qlonglong deliveryTag, bool requeue);
 
 Q_SIGNALS:
     void declared();
