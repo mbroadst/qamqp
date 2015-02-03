@@ -504,7 +504,7 @@ void QAmqpClientPrivate::tuneOk()
 
     stream << qint16(channelMax);
     stream << qint32(frameMax);
-    stream << qint16(heartbeatDelay / 1000);
+    stream << qint16(heartbeatDelay);
 
     frame.setArguments(arguments);
     sendFrame(frame);
