@@ -25,6 +25,7 @@ private Q_SLOTS:
     void invalidImmediateRouting();
     void confirmsSupport();
     void confirmDontLoseMessages();
+    void passiveDeclareNotFound();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -188,6 +189,14 @@ void tst_QAMQPExchange::confirmDontLoseMessages()
     for (int i = 0; i < 10000; ++i)
         defaultExchange->publish("noop", "confirms-test", properties);
     QVERIFY(defaultExchange->waitForConfirms());
+}
+
+void tst_QAMQPExchange::passiveDeclareNotFound()
+{
+    QAmqpExchange *nonExistentExchange = client->createExchange("this-does-not-exist");
+    nonExistentExchange->declare(QAmqpExchange::Direct, QAmqpExchange::Passive);
+    QVERIFY(waitForSignal(nonExistentExchange, SIGNAL(error(QAMQP::Error))));
+    QCOMPARE(nonExistentExchange->error(), QAMQP::NotFoundError);
 }
 
 QTEST_MAIN(tst_QAMQPExchange)
