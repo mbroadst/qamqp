@@ -189,6 +189,7 @@ void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
     // per spec, on any error we need to close the socket immediately
     // and send no more data;
     socket->close();
+    errorString = socket->errorString();
 
     if (autoReconnect) {
         qAmqpDebug() << "trying to reconnect after: " << timeout << "ms";
