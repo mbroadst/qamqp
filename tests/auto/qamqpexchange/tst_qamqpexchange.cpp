@@ -159,7 +159,7 @@ void tst_QAMQPExchange::invalidMandatoryRouting()
     QAmqpExchange *defaultExchange = client->createExchange();
     defaultExchange->publish("some message", "unroutable-key", QAmqpMessage::PropertyHash(), QAmqpExchange::poMandatory);
     QVERIFY(waitForSignal(defaultExchange, SIGNAL(error(QAMQP::Error))));
-    QCOMPARE(defaultExchange->error(), QAMQP::UnroutableKey);
+    QCOMPARE(defaultExchange->error(), QAMQP::NoRouteError);
 }
 
 void tst_QAMQPExchange::invalidImmediateRouting()

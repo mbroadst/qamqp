@@ -84,7 +84,7 @@ enum Error
 {
     NoError = 0,
     ContentTooLargeError = 311,
-    UnroutableKey = 312,
+    NoRouteError = 312,
     NoConsumersError = 313,
     ConnectionForcedError = 320,
     InvalidPathError = 402,
