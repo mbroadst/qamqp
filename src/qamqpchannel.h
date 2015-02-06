@@ -58,6 +58,7 @@ protected:
     Q_PRIVATE_SLOT(d_func(), void _q_disconnected())
 
     friend class QAmqpClientPrivate;
+    friend class QAmqpExchangePrivate;
 };
 
 #endif  // QAMQPCHANNEL_H

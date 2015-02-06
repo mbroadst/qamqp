@@ -26,6 +26,7 @@ private Q_SLOTS:
     void confirmsSupport();
     void confirmDontLoseMessages();
     void passiveDeclareNotFound();
+    void cleanupOnDeletion();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -197,6 +198,23 @@ void tst_QAMQPExchange::passiveDeclareNotFound()
     nonExistentExchange->declare(QAmqpExchange::Direct, QAmqpExchange::Passive);
     QVERIFY(waitForSignal(nonExistentExchange, SIGNAL(error(QAMQP::Error))));
     QCOMPARE(nonExistentExchange->error(), QAMQP::NotFoundError);
+}
+
+void tst_QAMQPExchange::cleanupOnDeletion()
+{
+    // create, declare, and close the wrong way
+    QAmqpExchange *exchange = client->createExchange("test-deletion");
+    exchange->declare();
+    QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
+    exchange->close();
+    exchange->deleteLater();
+
+    // now create, declare, and close the right way
+    exchange = client->createExchange("test-deletion");
+    exchange->declare();
+    QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
+    exchange->close();
+    QVERIFY(waitForSignal(exchange, SIGNAL(closed())));
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

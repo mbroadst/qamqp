@@ -112,6 +112,7 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_disconnect())
 
     friend class QAmqpChannelPrivate;
+    friend class QAmqpQueuePrivate;
 
 };
 

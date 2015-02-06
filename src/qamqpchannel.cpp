@@ -22,6 +22,10 @@ QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
 
 QAmqpChannelPrivate::~QAmqpChannelPrivate()
 {
+    if (!client.isNull()) {
+        QAmqpClientPrivate *priv = client->d_func();
+        priv->methodHandlersByChannel[channelNumber].removeAll(this);
+    }
 }
 
 void QAmqpChannelPrivate::init(int channel, QAmqpClient *c)

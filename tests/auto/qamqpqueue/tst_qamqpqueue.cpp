@@ -46,6 +46,7 @@ private Q_SLOTS:
     void tableFieldDataTypes();
     void messageProperties();
     void emptyMessage();
+    void cleanupOnDeletion();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -651,6 +652,23 @@ void tst_QAMQPQueue::emptyMessage()
     QAmqpMessage message = queue->dequeue();
     verifyStandardMessageHeaders(message, "test-issue-43");
     QVERIFY(message.payload().isEmpty());
+}
+
+void tst_QAMQPQueue::cleanupOnDeletion()
+{
+    // create, declare, and close the wrong way
+    QAmqpQueue *queue = client->createQueue("test-deletion");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->close();
+    queue->deleteLater();
+
+    // now create, declare, and close the right way
+    queue = client->createQueue("test-deletion");
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->close();
+    QVERIFY(waitForSignal(queue, SIGNAL(closed())));
 }
 
 QTEST_MAIN(tst_QAMQPQueue)

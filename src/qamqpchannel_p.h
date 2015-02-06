@@ -6,6 +6,7 @@
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
+class QAmqpChannel;
 class QAmqpClient;
 class QAmqpClientPrivate;
 class QAmqpChannelPrivate : public QAmqpMethodFrameHandler

@@ -3,6 +3,8 @@
 #include <QDataStream>
 #include <QFile>
 
+#include "qamqpclient.h"
+#include "qamqpclient_p.h"
 #include "qamqpqueue.h"
 #include "qamqpqueue_p.h"
 #include "qamqpexchange.h"
@@ -21,6 +23,11 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
 
 QAmqpQueuePrivate::~QAmqpQueuePrivate()
 {
+    if (!client.isNull()) {
+        QAmqpClientPrivate *priv = client->d_func();
+        priv->contentHandlerByChannel[channelNumber].removeAll(this);
+        priv->bodyHandlersByChannel[channelNumber].removeAll(this);
+    }
 }
 
 bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)
