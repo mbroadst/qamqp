@@ -789,17 +789,16 @@ QString QAmqpClient::errorString() const
 QSslConfiguration QAmqpClient::sslConfiguration() const
 {
     Q_D(const QAmqpClient);
-    return d->sslConfiguration;
+    return d->socket->sslConfiguration();
 }
 
 void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
 {
     Q_D(QAmqpClient);
-    d->sslConfiguration = config;
-
     if (!config.isNull()) {
         d->useSsl = true;
         d->port = AMQP_SSL_PORT;
+        d->socket->setSslConfiguration(config);
     }
 }
 

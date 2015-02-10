@@ -5,7 +5,6 @@
 #include <QSharedPointer>
 #include <QPointer>
 #include <QAbstractSocket>
-#include <QSslConfiguration>
 #include <QSslError>
 
 #include "qamqpglobal.h"
@@ -100,8 +99,6 @@ public:
 
     QAMQP::Error error;
     QString errorString;
-
-    QSslConfiguration sslConfiguration;
 
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)
