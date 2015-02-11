@@ -6,7 +6,7 @@
 #include "qamqpclient.h"
 #include "qamqpclient_p.h"
 
-int QAmqpChannelPrivate::nextChannelNumber = 0;
+quint16 QAmqpChannelPrivate::nextChannelNumber = 0;
 QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
     : channelNumber(0),
       opened(false),
