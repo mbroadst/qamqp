@@ -22,12 +22,12 @@ QAmqpFrame::~QAmqpFrame()
 {
 }
 
-void QAmqpFrame::setChannel(qint16 channel)
+void QAmqpFrame::setChannel(quint16 channel)
 {
     channel_ = channel;
 }
 
-qint16 QAmqpFrame::channel() const
+quint16 QAmqpFrame::channel() const
 {
     return channel_;
 }

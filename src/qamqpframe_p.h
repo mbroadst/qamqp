@@ -39,8 +39,8 @@ public:
 
     FrameType type() const;
 
-    qint16 channel() const;
-    void setChannel(qint16 channel);
+    quint16 channel() const;
+    void setChannel(quint16 channel);
 
     virtual qint32 size() const;
 
@@ -56,7 +56,7 @@ protected:
 
 private:
     qint8 type_;
-    qint16 channel_;
+    quint16 channel_;
 
     friend QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame);
     friend QDataStream &operator>>(QDataStream &stream, QAmqpFrame &frame);
