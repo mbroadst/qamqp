@@ -71,6 +71,17 @@ public:
 
     bool isDeclared() const;
 
+    void enableConfirms(bool noWait = false);
+    bool waitForConfirms(int msecs = 30000);
+
+Q_SIGNALS:
+    void declared();
+    void removed();
+
+    void confirmsEnabled();
+    void allMessagesDelivered();
+
+public Q_SLOTS:
     // AMQP Exchange
     void declare(ExchangeType type = Direct,
                  ExchangeOptions options = NoOptions,
@@ -91,16 +102,6 @@ public:
                  const QString &mimeType, const QAmqpTable &headers,
                  const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
-
-    void enableConfirms(bool noWait = false);
-    bool waitForConfirms(int msecs = 30000);
-
-Q_SIGNALS:
-    void declared();
-    void removed();
-
-    void confirmsEnabled();
-    void allMessagesDelivered();
 
 protected:
     virtual void channelOpened();

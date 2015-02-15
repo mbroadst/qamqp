@@ -74,6 +74,19 @@ public:
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
 
+Q_SIGNALS:
+    void declared();
+    void bound();
+    void unbound();
+    void removed();
+    void purged(int messageCount);
+
+    void messageReceived();
+    void empty();
+    void consuming(const QString &consumerTag);
+    void cancelled(const QString &consumerTag);
+
+public Q_SLOTS:
     // AMQP Queue
     void declare(int options = Durable|AutoDelete);
     void bind(const QString &exchangeName, const QString &key);
@@ -91,18 +104,6 @@ public:
     void ack(qlonglong deliveryTag, bool multiple);
     void reject(const QAmqpMessage &message, bool requeue);
     void reject(qlonglong deliveryTag, bool requeue);
-
-Q_SIGNALS:
-    void declared();
-    void bound();
-    void unbound();
-    void removed();
-    void purged(int messageCount);
-
-    void messageReceived();
-    void empty();
-    void consuming(const QString &consumerTag);
-    void cancelled(const QString &consumerTag);
 
 protected:
     // reimp Channel
