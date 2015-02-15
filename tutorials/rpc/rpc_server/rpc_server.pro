@@ -6,4 +6,8 @@ INCLUDEPATH += $${QAMQP_INCLUDEPATH}
 LIBS += -L$${DEPTH}/src $${QAMQP_LIBS}
 macx:CONFIG -= app_bundle
 
-SOURCES += main.cpp
+HEADERS += \
+    server.h
+SOURCES += \
+    server.cpp \
+    main.cpp

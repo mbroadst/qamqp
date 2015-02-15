@@ -1,9 +1,10 @@
 #include <QCoreApplication>
-#include <QDebug>
+#include "server.h"
 
 int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
-    qDebug() << "testing";
-    return EXIT_SUCCESS;
+    Server server;
+    server.listen();
+    return app.exec();
 }
