@@ -402,7 +402,7 @@ void QAmqpClientPrivate::tune(const QAmqpMethodFrame &frame)
     if (!frameMax)
         frameMax = frame_max;
     channelMax = !channelMax ? channel_max : qMax(channel_max, channelMax);
-    heartbeatDelay = !heartbeatDelay ? heartbeat_delay: qMax(heartbeat_delay, heartbeatDelay);
+    heartbeatDelay = !heartbeatDelay ? heartbeat_delay: heartbeatDelay;
 
     qAmqpDebug(">> channel_max: %d", channelMax);
     qAmqpDebug(">> frame_max: %d", frameMax);
