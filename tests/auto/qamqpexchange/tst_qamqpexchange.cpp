@@ -27,6 +27,7 @@ private Q_SLOTS:
     void confirmDontLoseMessages();
     void passiveDeclareNotFound();
     void cleanupOnDeletion();
+    void testQueuedPublish();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -215,6 +216,23 @@ void tst_QAMQPExchange::cleanupOnDeletion()
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->close();
     QVERIFY(waitForSignal(exchange, SIGNAL(closed())));
+}
+
+void tst_QAMQPExchange::testQueuedPublish()
+{
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->enableConfirms();
+    QVERIFY(waitForSignal(defaultExchange, SIGNAL(confirmsEnabled())));
+
+    QAmqpMessage::PropertyHash properties;
+    properties[QAmqpMessage::DeliveryMode] = "2";   // make message persistent
+    for (int i = 0; i < 10000; ++i) {
+        QMetaObject::invokeMethod(defaultExchange, "publish", Qt::QueuedConnection,
+                                  Q_ARG(QString, "noop"), Q_ARG(QString, "confirms-test"),
+                                  Q_ARG(QAmqpMessage::PropertyHash, properties));
+    }
+
+    QVERIFY(defaultExchange->waitForConfirms());
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

@@ -7,7 +7,6 @@ QAmqpMessagePrivate::QAmqpMessagePrivate()
     : deliveryTag(0),
       leftSize(0)
 {
-    qRegisterMetaType<QAmqpMessage::PropertyHash>("QAmqpMessage::PropertyHash");
 }
 
 //////////////////////////////////////////////////////////////////////////

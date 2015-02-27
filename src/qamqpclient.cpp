@@ -31,6 +31,7 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       error(QAMQP::NoError),
       q_ptr(q)
 {
+    qRegisterMetaType<QAmqpMessage::PropertyHash>();
 }
 
 QAmqpClientPrivate::~QAmqpClientPrivate()
