@@ -84,6 +84,8 @@ public:
     QString customProperty(const QString &name) const;
 
     QAbstractSocket::SocketError socketError() const;
+    QAbstractSocket::SocketState socketState() const;
+
     QAMQP::Error error() const;
     QString errorString() const;
 
@@ -107,6 +109,7 @@ Q_SIGNALS:
     void disconnected();
     void error(QAMQP::Error error);
     void socketError(QAbstractSocket::SocketError error);
+    void socketStateChanged(QAbstractSocket::SocketState state);
     void sslErrors(const QList<QSslError> &errors);
 
 public Q_SLOTS:

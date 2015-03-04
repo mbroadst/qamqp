@@ -53,6 +53,9 @@ void QAmqpClientPrivate::initSocket()
 {
     Q_Q(QAmqpClient);
     socket = new QSslSocket(q);
+    socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+    socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+
     QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
     QObject::connect(socket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
@@ -60,6 +63,8 @@ void QAmqpClientPrivate::initSocket()
                           q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
     QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
                           q, SIGNAL(socketError(QAbstractSocket::SocketError)));
+    QObject::connect(socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
+                          q, SIGNAL(socketStateChanged(QAbstractSocket::SocketState)));
     QObject::connect(socket, SIGNAL(sslErrors(QList<QSslError>)),
                           q, SIGNAL(sslErrors(QList<QSslError>)));
 }
@@ -773,6 +778,12 @@ QAbstractSocket::SocketError QAmqpClient::socketError() const
 {
     Q_D(const QAmqpClient);
     return d->socket->error();
+}
+
+QAbstractSocket::SocketState QAmqpClient::socketState() const
+{
+    Q_D(const QAmqpClient);
+    return d->socket->state();
 }
 
 QAMQP::Error QAmqpClient::error() const
