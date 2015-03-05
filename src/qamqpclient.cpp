@@ -193,8 +193,13 @@ void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
     }
 
     // per spec, on any error we need to close the socket immediately
-    // and send no more data;
-    socket->close();
+    // and send no more data. only try to send the close message if we
+    // are actively connected
+    if (socket->state() == QAbstractSocket::ConnectedState ||
+        socket->state() == QAbstractSocket::ConnectingState) {
+        socket->abort();
+    }
+
     errorString = socket->errorString();
 
     if (autoReconnect) {
