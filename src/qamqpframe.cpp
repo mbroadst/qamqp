@@ -73,7 +73,7 @@ QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame)
 
     // write end
     stream << qint8(QAmqpFrame::FRAME_END);
-    stream.device()->waitForBytesWritten(frame.writeTimeout());
+    stream.device()->waitForBytesWritten(QAmqpFrame::writeTimeout());
     return stream;
 }
 
