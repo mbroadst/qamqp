@@ -80,6 +80,9 @@ public:
     qint16 heartbeatDelay() const;
     void setHeartbeatDelay(qint16 delay);
 
+    int writeTimeout() const;
+    void setWriteTimeout(int msecs);
+
     void addCustomProperty(const QString &name, const QString &value);
     QString customProperty(const QString &name) const;
 

@@ -2,6 +2,7 @@
 #define QAMQPFRAME_P_H
 
 #include <QDataStream>
+#include <QReadWriteLock>
 #include <QHash>
 #include <QVariant>
 
@@ -42,6 +43,9 @@ public:
     quint16 channel() const;
     void setChannel(quint16 channel);
 
+    static int writeTimeout();
+    static void setWriteTimeout(int msecs);
+
     virtual qint32 size() const;
 
     static QVariant readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type);
@@ -57,6 +61,9 @@ protected:
 private:
     qint8 type_;
     quint16 channel_;
+
+    static QReadWriteLock lock_;
+    static int writeTimeout_;
 
     friend QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame);
     friend QDataStream &operator>>(QDataStream &stream, QAmqpFrame &frame);
