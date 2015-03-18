@@ -767,6 +767,16 @@ void QAmqpClient::setHeartbeatDelay(qint16 delay)
     d->heartbeatDelay = delay;
 }
 
+int QAmqpClient::writeTimeout() const
+{
+    return QAmqpFrame::writeTimeout();
+}
+
+void QAmqpClient::setWriteTimeout(int msecs)
+{
+    QAmqpFrame::setWriteTimeout(msecs);
+}
+
 void QAmqpClient::addCustomProperty(const QString &name, const QString &value)
 {
     Q_D(QAmqpClient);

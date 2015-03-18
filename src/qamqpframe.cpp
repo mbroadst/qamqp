@@ -6,6 +6,9 @@
 #include "qamqpglobal.h"
 #include "qamqpframe_p.h"
 
+QReadWriteLock QAmqpFrame::lock_;
+int QAmqpFrame::writeTimeout_ = 1000;
+
 QAmqpFrame::QAmqpFrame(FrameType type)
     : size_(0),
       type_(type),
@@ -25,6 +28,18 @@ QAmqpFrame::~QAmqpFrame()
 void QAmqpFrame::setChannel(quint16 channel)
 {
     channel_ = channel;
+}
+
+int QAmqpFrame::writeTimeout()
+{
+    QReadLocker locker(&lock_);
+    return writeTimeout_;
+}
+
+void QAmqpFrame::setWriteTimeout(int msecs)
+{
+    QWriteLocker locker(&lock_);
+    writeTimeout_ = msecs;
 }
 
 quint16 QAmqpFrame::channel() const
@@ -58,7 +73,7 @@ QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame)
 
     // write end
     stream << qint8(QAmqpFrame::FRAME_END);
-    stream.device()->waitForBytesWritten(1000);
+    stream.device()->waitForBytesWritten(QAmqpFrame::writeTimeout());
     return stream;
 }
 
