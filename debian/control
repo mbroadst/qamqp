@@ -11,7 +11,7 @@ Vcs-Browser: https://github.com/mbroadst/qamqp
 Package: libqamqp-dev
 Section: libdevel
 Architecture: any
-Depends: qamqp (= ${binary:Version})
+Depends: libqamqp (= ${binary:Version})
 Description: QAMQP: An AMQP client library for the Qt C++ framework.
  .
  This package bundles the development libraries needed to build
