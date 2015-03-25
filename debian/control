@@ -1,0 +1,27 @@
+Source: qamqp
+Priority: extra
+Maintainer: Stuart Longland <stuartl@vrt.com.au>
+Build-Depends: debhelper (>= 8.0.0), libqt4-dev, libqt4-dev-bin
+Standards-Version: 3.9.3
+Section: libs
+Homepage: https://github.com/mbroadst/qamqp
+Vcs-Git: git://github.com/mbroadst/qamqp
+Vcs-Browser: https://github.com/mbroadst/qamqp
+
+Package: libqamqp-dev
+Section: libdevel
+Architecture: any
+Depends: qamqp (= ${binary:Version})
+Description: QAMQP: An AMQP client library for the Qt C++ framework.
+ .
+ This package bundles the development libraries needed to build
+ applications using QAMQP.
+
+Package: libqamqp
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: QAMQP: An AMQP client library for the Qt C++ framework.
+ .
+ QAMQP is a library for communicating with AMQP message brokers from
+ within Qt applications.
