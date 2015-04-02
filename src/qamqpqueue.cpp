@@ -17,7 +17,8 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
       delayedDeclare(false),
       declared(false),
       recievingMessage(false),
-      consuming(false)
+      consuming(false),
+      consumePending(false)
 {
 }
 
@@ -137,6 +138,7 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "declared queue: " << name;
     declared = true;
+    consumePending = false;
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -218,6 +220,7 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
     consuming = true;
+    consumePending = false;
     Q_EMIT q->consuming(consumerTag);
 }
 
@@ -448,6 +451,13 @@ bool QAmqpQueue::consume(int options)
     if (d->consuming) {
         qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
         return false;
+    }
+
+    if (d->consumePending) {
+        qAmqpDebug() << Q_FUNC_INFO << "consume operation is pending";
+        return false;
+    } else {
+        d->consumePending = true;
     }
 
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmConsume);
