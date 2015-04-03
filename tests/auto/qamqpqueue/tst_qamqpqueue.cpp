@@ -364,7 +364,8 @@ void tst_QAMQPQueue::preventStartConsumerRaceIssue23()
 
     QList<QVariant> arguments = testSpy.takeFirst();
     QVERIFY(arguments.at(0).toInt() == 1);
-    QVERIFY(arguments.at(1).toInt() == arguments.at(0).toInt());
+    QVERIFY(arguments.at(1).toInt() ==
+                    arguments.at(0).toInt() * Issue23Test::NUM_MSGS);
     QVERIFY(arguments.at(2).toInt() == arguments.at(1).toInt());
     QVERIFY(arguments.at(3).toInt() == 0);
 }
