@@ -22,6 +22,9 @@ public:
     Issue23Test(QAmqpClient* client, QObject* parent=0);
     ~Issue23Test();
 
+    /*! Number of messages per consumer to send */
+    static int NUM_MSGS;
+
     /*! Our message payload.  We should only see this once. */
     static const QByteArray MSG_PAYLOAD;
 
@@ -31,7 +34,7 @@ public:
 signals:
     /*!
      * Signal indicating when the test is complete.  We should see
-     * consumers == 1, sent == consumers, sent == passes and
+     * consumers == 1, sent == consumers*NUM_MSGS, sent == passes and
      * failures == 0.
      */
     void testComplete(int consumers, int sent,

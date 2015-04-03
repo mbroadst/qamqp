@@ -7,6 +7,7 @@
 #include "qamqpexchange.h"
 
 const QByteArray Issue23Test::MSG_PAYLOAD("Hello AMQP World\n");
+const int Issue23Test::NUM_MSGS = 3;
 
 Issue23Test::Issue23Test(QAmqpClient* client, QObject* parent)
 : QObject(parent), client(client), default_ex(NULL), queue(NULL),
@@ -79,7 +80,7 @@ void Issue23Test::queueDeclared()
  */
 void Issue23Test::queueConsuming(const QString& consumer_tag)
 {
-    int count=3;
+    int count=Issue23Test::NUM_MSGS;
     qDebug()    << "CONSUMING: ConsumeOk received with tag "
                 << consumer_tag
                 << " sending test messages.";
