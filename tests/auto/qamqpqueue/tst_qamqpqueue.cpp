@@ -9,6 +9,8 @@
 #include "qamqpqueue.h"
 #include "qamqpexchange.h"
 
+#include "Issue23.h"
+
 class tst_QAMQPQueue : public TestCase
 {
     Q_OBJECT
@@ -33,6 +35,7 @@ private Q_SLOTS:
     void delayedBind();
     void purge();
     void canOnlyStartConsumingOnce();
+    void preventStartConsumerRaceIssue23();
     void cancel();
     void invalidCancelBecauseNotConsuming();
     void invalidCancelBecauseInvalidConsumerTag();
@@ -348,6 +351,22 @@ void tst_QAMQPQueue::canOnlyStartConsumingOnce()
     QAmqpQueue *queue = client->createQueue("test-single-consumer");
     declareQueueAndVerifyConsuming(queue);
     QCOMPARE(queue->consume(), false);
+}
+void tst_QAMQPQueue::preventStartConsumerRaceIssue23()
+{
+    Issue23Test test(client.data());
+    QSignalSpy testSpy(&test, SIGNAL(testComplete(int, int, int, int)));
+    test.run();
+    QVERIFY(waitForSignal(&test,
+                SIGNAL(testComplete(int, int, int, int))));
+
+    QCOMPARE(testSpy.count(), 1);
+
+    QList<QVariant> arguments = testSpy.takeFirst();
+    QVERIFY(arguments.at(0).toInt() == 1);
+    QVERIFY(arguments.at(1).toInt() == arguments.at(0).toInt());
+    QVERIFY(arguments.at(2).toInt() == arguments.at(1).toInt());
+    QVERIFY(arguments.at(3).toInt() == 0);
 }
 
 void tst_QAMQPQueue::cancel()
