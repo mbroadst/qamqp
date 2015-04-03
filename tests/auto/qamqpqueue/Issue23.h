@@ -23,7 +23,7 @@ public:
     ~Issue23Test();
 
     /*! Number of messages per consumer to send */
-    static int NUM_MSGS;
+    static const int NUM_MSGS;
 
     /*! Our message payload.  We should only see this once. */
     static const QByteArray MSG_PAYLOAD;
