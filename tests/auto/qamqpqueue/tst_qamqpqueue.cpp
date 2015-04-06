@@ -4,6 +4,7 @@
 
 #include <QtTest/QtTest>
 #include "qamqptestcase.h"
+#include "signalspy.h"
 
 #include "qamqpclient.h"
 #include "qamqpqueue.h"
@@ -33,6 +34,7 @@ private Q_SLOTS:
     void delayedBind();
     void purge();
     void canOnlyStartConsumingOnce();
+    void ensureConsumeOnlySentOnce();
     void cancel();
     void invalidCancelBecauseNotConsuming();
     void invalidCancelBecauseInvalidConsumerTag();
@@ -346,8 +348,27 @@ void tst_QAMQPQueue::purge()
 void tst_QAMQPQueue::canOnlyStartConsumingOnce()
 {
     QAmqpQueue *queue = client->createQueue("test-single-consumer");
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
     declareQueueAndVerifyConsuming(queue);
     QCOMPARE(queue->consume(), false);
+}
+
+void tst_QAMQPQueue::ensureConsumeOnlySentOnce()
+{
+    QAmqpQueue *queue = client->createQueue("test-single-consumer");
+    SignalSpy spy(queue, SIGNAL(consuming(QString)));
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    // try to consume twice
+    QVERIFY(queue->consume());
+    QCOMPARE(queue->consume(), false);
+    QVERIFY(spy.wait());
+    QCOMPARE(spy.size(), 1);
+
+    // clean up queue
+    queue->remove(QAmqpQueue::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPQueue::cancel()

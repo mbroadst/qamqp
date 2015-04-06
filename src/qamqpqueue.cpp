@@ -17,7 +17,8 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
       delayedDeclare(false),
       declared(false),
       recievingMessage(false),
-      consuming(false)
+      consuming(false),
+      consumeRequested(false)
 {
 }
 
@@ -218,6 +219,7 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
     consuming = true;
+    consumeRequested = false;
     Q_EMIT q->consuming(consumerTag);
 }
 
@@ -273,6 +275,8 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
     }
 
     consumerTag.clear();
+    consuming = false;
+    consumeRequested = false;
     Q_EMIT q->cancelled(consumer);
 }
 
@@ -445,6 +449,11 @@ bool QAmqpQueue::consume(int options)
         return false;
     }
 
+    if (d->consumeRequested) {
+        qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
+        return false;
+    }
+
     if (d->consuming) {
         qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
         return false;
@@ -465,6 +474,7 @@ bool QAmqpQueue::consume(int options)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
+    d->consumeRequested = true;
     return true;
 }
 
