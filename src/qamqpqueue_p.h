@@ -50,6 +50,7 @@ public:
     bool recievingMessage;
     QAmqpMessage currentMessage;
     bool consuming;
+    bool consumePending;
 
     Q_DECLARE_PUBLIC(QAmqpQueue)
 
