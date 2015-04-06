@@ -47,7 +47,7 @@ public:
     QQueue<QPair<QString, QString> > delayedBindings;
 
     QString consumerTag;
-    bool recievingMessage;
+    bool receivingMessage;
     QAmqpMessage currentMessage;
     bool consuming;
     bool consumeRequested;

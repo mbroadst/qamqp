@@ -16,7 +16,7 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
       declared(false),
-      recievingMessage(false),
+      receivingMessage(false),
       consuming(false),
       consumeRequested(false)
 {
