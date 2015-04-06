@@ -322,7 +322,7 @@ void QAmqpQueue::declare(int options)
     Q_D(QAmqpQueue);
     d->options = options;
 
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         d->delayedDeclare = true;
         return;
     }
@@ -356,7 +356,7 @@ void QAmqpQueue::purge()
 {
     Q_D(QAmqpQueue);
 
-    if (!d->opened)
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
         return;
 
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miPurge);
@@ -385,7 +385,7 @@ void QAmqpQueue::bind(QAmqpExchange *exchange, const QString &key)
 void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         d->delayedBindings.append(QPair<QString,QString>(exchangeName, key));
         return;
     }
@@ -421,7 +421,7 @@ void QAmqpQueue::unbind(QAmqpExchange *exchange, const QString &key)
 void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return;
     }
@@ -444,7 +444,7 @@ void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
 bool QAmqpQueue::consume(int options)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
         return false;
     }
@@ -505,7 +505,7 @@ bool QAmqpQueue::isDeclared() const
 void QAmqpQueue::get(bool noAck)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -532,7 +532,7 @@ void QAmqpQueue::ack(const QAmqpMessage &message)
 void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -558,7 +558,7 @@ void QAmqpQueue::reject(const QAmqpMessage &message, bool requeue)
 void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
 {
     Q_D(QAmqpQueue);
-    if (!d->opened) {
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }

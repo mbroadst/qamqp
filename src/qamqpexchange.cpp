@@ -31,7 +31,7 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 
 void QAmqpExchangePrivate::declare()
 {
-    if (!opened) {
+    if (channelState != CH_OPEN) {
         delayedDeclare = true;
         return;
     }
