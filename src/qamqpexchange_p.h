@@ -17,6 +17,19 @@ public:
         METHOD_ID_ENUM(cmConfirm, 10)
     };
 
+    enum ExchangeState {
+        /*! Exchange channel is closed */
+        EX_CLOSED,
+        /*! Exchange is undeclared */
+        EX_UNDECLARED,
+        /*! Exchange is being declared */
+        EX_DECLARING,
+        /*! Exchange is declared */
+        EX_DECLARED,
+        /*! Exchange is being removed */
+        EX_REMOVING,
+    };
+
     QAmqpExchangePrivate(QAmqpExchange *q);
     static QString typeToString(QAmqpExchange::ExchangeType type);
 
@@ -34,7 +47,7 @@ public:
     QAmqpExchange::ExchangeOptions options;
     QAmqpTable arguments;
     bool delayedDeclare;
-    bool declared;
+    ExchangeState exchangeState;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
 
