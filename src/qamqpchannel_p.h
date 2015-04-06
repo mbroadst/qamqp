@@ -34,6 +34,17 @@ public:
         bmNack = 120
     };
 
+    enum ChannelState {
+        /*! Channel is presently closed */
+        CH_CLOSED,
+        /*! Channel is being opened, pending response. */
+        CH_OPENING,
+        /*! Channel is open */
+        CH_OPEN,
+        /*! Channel is being closed, pending response. */
+        CH_CLOSING,
+    };
+
     QAmqpChannelPrivate(QAmqpChannel *q);
     virtual ~QAmqpChannelPrivate();
 
@@ -62,7 +73,7 @@ public:
     QString name;
     quint16 channelNumber;
     static quint16 nextChannelNumber;
-    bool opened;
+    ChannelState channelState;
     bool needOpen;
 
     qint32 prefetchSize;

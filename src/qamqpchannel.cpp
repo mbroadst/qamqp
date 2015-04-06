@@ -9,7 +9,7 @@
 quint16 QAmqpChannelPrivate::nextChannelNumber = 0;
 QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
     : channelNumber(0),
-      opened(false),
+      channelState(CH_CLOSED),
       needOpen(true),
       prefetchSize(0),
       requestedPrefetchSize(0),
@@ -94,12 +94,13 @@ void QAmqpChannelPrivate::sendFrame(const QAmqpFrame &frame)
 
 void QAmqpChannelPrivate::open()
 {
-    if (!needOpen || opened)
+    if (!needOpen || (channelState != CH_CLOSED))
         return;
 
     if (!client->isConnected())
         return;
 
+    channelState = CH_OPENING;
     qAmqpDebug("Open channel #%d", channelNumber);
     QAmqpMethodFrame frame(QAmqpFrame::Channel, miOpen);
     frame.setChannel(channelNumber);
@@ -154,6 +155,11 @@ void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int 
 {
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
+    if (channelState != CH_OPEN) {
+        qAmqpDebug()    << Q_FUNC_INFO
+                        << "Channel is not open.";
+        return;
+    }
 
     if (!code) code = 200;
     QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortUint, code);
@@ -180,6 +186,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
     stream >> code;
+    channelState = CH_CLOSING;
     QString text =
         QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
 
@@ -210,14 +217,14 @@ void QAmqpChannelPrivate::closeOk(const QAmqpMethodFrame &)
     Q_Q(QAmqpChannel);
     Q_EMIT q->closed();
     q->channelClosed();
-    opened = false;
+    channelState = CH_CLOSED;
 }
 
 void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 {
     Q_Q(QAmqpChannel);
     qAmqpDebug(">> OpenOK");
-    opened = true;
+    channelState = CH_OPEN;
     Q_EMIT q->opened();
     q->channelOpened();
 }
@@ -225,7 +232,7 @@ void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 void QAmqpChannelPrivate::_q_disconnected()
 {
     nextChannelNumber = 0;
-    opened = false;
+    channelState = CH_CLOSED;
 }
 
 void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
@@ -254,14 +261,14 @@ void QAmqpChannel::close()
 {
     Q_D(QAmqpChannel);
     d->needOpen = true;
-    if (d->opened)
+    if (d->channelState == QAmqpChannelPrivate::CH_OPEN)
         d->close(0, QString(), 0,0);
 }
 
 void QAmqpChannel::reopen()
 {
     Q_D(QAmqpChannel);
-    if (d->opened)
+    if (d->channelState != QAmqpChannelPrivate::CH_CLOSED)
         close();
     d->open();
 }
@@ -287,7 +294,7 @@ void QAmqpChannel::setName(const QString &name)
 bool QAmqpChannel::isOpen() const
 {
     Q_D(const QAmqpChannel);
-    return d->opened;
+    return d->channelState == QAmqpChannelPrivate::CH_OPEN;
 }
 
 void QAmqpChannel::qos(qint16 prefetchCount, qint32 prefetchSize)
