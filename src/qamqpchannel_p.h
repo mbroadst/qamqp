@@ -39,6 +39,8 @@ public:
         CH_CLOSED,
         /*! Channel is being opened, pending response. */
         CH_OPENING,
+        /*! Defining QOS parameters for channel. */
+        CH_QOS,
         /*! Channel is open */
         CH_OPEN,
         /*! Channel is being closed, pending response. */
@@ -65,6 +67,12 @@ public:
     void closeOk(const QAmqpMethodFrame &frame);
     void qosOk(const QAmqpMethodFrame &frame);
 
+    /*!
+     * Declare the channel as opened, signal listeners and call the subclass
+     * channelOpened method.
+     */
+    void markOpened();
+
     // private slots
     virtual void _q_disconnected();
     void _q_open();
@@ -76,6 +84,10 @@ public:
     ChannelState channelState;
     bool needOpen;
 
+    /*! Flag: the user has defined QOS settings */
+    bool qosDefined;
+    /*! Flag: channel was open at time of qos call */
+    bool qosWasOpen;
     qint32 prefetchSize;
     qint32 requestedPrefetchSize;
     qint16 prefetchCount;

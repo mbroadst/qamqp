@@ -11,6 +11,8 @@ QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
     : channelNumber(0),
       channelState(CH_CLOSED),
       needOpen(true),
+      qosDefined(false),
+      qosWasOpen(false),
       prefetchSize(0),
       requestedPrefetchSize(0),
       prefetchCount(0),
@@ -224,7 +226,21 @@ void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 {
     Q_Q(QAmqpChannel);
     qAmqpDebug(">> OpenOK");
+    if (qosDefined) {
+        q->qos(requestedPrefetchCount,
+                requestedPrefetchSize);
+    } else {
+        markOpened();
+    }
+}
+
+void QAmqpChannelPrivate::markOpened() {
+    Q_Q(QAmqpChannel);
+
     channelState = CH_OPEN;
+    if (qosWasOpen)
+        return;
+
     Q_EMIT q->opened();
     q->channelOpened();
 }
@@ -243,6 +259,7 @@ void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
     prefetchCount = requestedPrefetchCount;
     prefetchSize = requestedPrefetchSize;
     Q_EMIT q->qosDefined();
+    markOpened();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -314,7 +331,10 @@ void QAmqpChannel::qos(qint16 prefetchCount, qint32 prefetchSize)
     stream << qint8(0x0);   // global
 
     frame.setArguments(arguments);
+    d->qosWasOpen = (d->channelState == QAmqpChannelPrivate::CH_OPEN);
+    d->channelState = QAmqpChannelPrivate::CH_QOS;
     d->sendFrame(frame);
+    d->qosDefined = (prefetchCount != 0) || (prefetchSize != 0);
 }
 
 qint32 QAmqpChannel::prefetchSize() const
