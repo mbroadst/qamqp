@@ -100,6 +100,12 @@ public:
     QAMQP::Error error;
     QString errorString;
 
+    /*! Exchange objects */
+    QHash<QString, QAmqpExchange*> exchanges;
+
+    /*! Named queue objects */
+    QHash<QString, QAmqpQueue*> queues;
+
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)
 
