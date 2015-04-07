@@ -51,7 +51,13 @@ public:
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
 
+    /*! Report and change state. */
+    virtual void newState(ChannelState state);
+    virtual void newState(ExchangeState state);
+
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };
+
+QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s);
 
 #endif // QAMQPEXCHANGE_P_H

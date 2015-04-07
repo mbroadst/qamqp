@@ -32,7 +32,7 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 void QAmqpExchangePrivate::declare()
 {
     if (exchangeState != EX_UNDECLARED) {
-        qAmqpDebug() << "Exchange" << name << "not in undeclared state.";
+        qAmqpDebug() << "Exchange" << name << "in state" << exchangeState;
         if (exchangeState != EX_DECLARING) {
             qAmqpDebug() << "Delaying declare of exchange "
                          << name;
@@ -47,7 +47,7 @@ void QAmqpExchangePrivate::declare()
     }
 
     qAmqpDebug() << "Declaring exchange" << name;
-    exchangeState = EX_DECLARING;
+    newState(EX_DECLARING);
 
     QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDeclare);
     frame.setChannel(channelNumber);
@@ -116,7 +116,7 @@ void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "declared exchange: " << name;
-    exchangeState = EX_DECLARED;
+    newState(EX_DECLARED);
     Q_EMIT q->declared();
 }
 
@@ -126,7 +126,7 @@ void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "deleted exchange: " << name;
-    exchangeState = EX_UNDECLARED;
+    newState(EX_UNDECLARED);
     Q_EMIT q->removed();
 }
 
@@ -135,7 +135,7 @@ void QAmqpExchangePrivate::_q_disconnected()
     QAmqpChannelPrivate::_q_disconnected();
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
-    exchangeState = EX_CLOSED;
+    newState(EX_CLOSED);
 }
 
 void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
@@ -196,6 +196,47 @@ void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
     }
 }
 
+/*! Report and change state. */
+void QAmqpExchangePrivate::newState(ExchangeState state)
+{
+    qAmqpDebug() << "Exchange state: "
+                 << exchangeState
+                 << " -> "
+                 << state;
+    exchangeState = state;
+}
+
+void QAmqpExchangePrivate::newState(ChannelState state)
+{
+    QAmqpChannelPrivate::newState(state);
+    if (state == QAmqpChannelPrivate::CH_CLOSED)
+        newState(EX_CLOSED);
+}
+
+QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s)
+{
+    switch(s) {
+        case QAmqpExchangePrivate::EX_CLOSED:
+            dbg << "EX_CLOSED";
+            break;
+        case QAmqpExchangePrivate::EX_UNDECLARED:
+            dbg << "EX_UNDECLARED";
+            break;
+        case QAmqpExchangePrivate::EX_DECLARING:
+            dbg << "EX_DECLARING";
+            break;
+        case QAmqpExchangePrivate::EX_DECLARED:
+            dbg << "EX_DECLARED";
+            break;
+        case QAmqpExchangePrivate::EX_REMOVING:
+            dbg << "EX_REMOVING";
+            break;
+        default:
+            dbg << "EX_????";
+    }
+    return dbg;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpExchange::QAmqpExchange(int channelNumber, QAmqpClient *parent)
@@ -217,12 +258,12 @@ void QAmqpExchange::channelOpened()
     if (name().isEmpty()) {
         /* Nameless exchange, we should consider this declared by default */
         qAmqpDebug() << "Automatically declaring built-in exchange: \"\"";
-        d->exchangeState = QAmqpExchangePrivate::EX_DECLARED;
+        d->newState(QAmqpExchangePrivate::EX_DECLARED);
         Q_EMIT declared();
         return;
     } else {
         qAmqpDebug() << "Exchange" << name() << "entering undeclared state.";
-        d->exchangeState = QAmqpExchangePrivate::EX_UNDECLARED;
+        d->newState(QAmqpExchangePrivate::EX_UNDECLARED);
     }
 
     if (d->delayedDeclare)
@@ -235,7 +276,7 @@ void QAmqpExchange::channelClosed()
 {
     Q_D(QAmqpExchange);
     qAmqpDebug() << "Channel closed";
-    d->exchangeState = QAmqpExchangePrivate::EX_CLOSED;
+    d->newState(QAmqpExchangePrivate::EX_CLOSED);
 }
 
 QAmqpExchange::ExchangeOptions QAmqpExchange::options() const
@@ -264,7 +305,7 @@ void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QA
 void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const QAmqpTable &args)
 {
     Q_D(QAmqpExchange);
-    d->exchangeState = QAmqpExchangePrivate::EX_DECLARING;
+    d->newState(QAmqpExchangePrivate::EX_DECLARING);
     d->type = type;
     d->options = options;
     d->arguments = args;
