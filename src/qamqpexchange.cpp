@@ -209,8 +209,8 @@ void QAmqpExchange::channelOpened()
     Q_D(QAmqpExchange);
     if (name().isEmpty()) {
         /* Nameless exchange, we should consider this declared by default */
-        exchangeState = EX_DECLARED;
-        Q_EMIT q->declared();
+        d->exchangeState = QAmqpExchangePrivate::EX_DECLARED;
+        Q_EMIT declared();
         return;
     }
 
