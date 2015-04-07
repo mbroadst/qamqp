@@ -15,12 +15,11 @@ using namespace QAMQP;
 QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
-      declared(false),
+      queueState(Q_CLOSED),
       receivingMessage(false),
       consumeOptions(0),
-      consuming(false),
-      delayedConsume(false),
-      consumeRequested(false)
+      consumerState(C_UNDECLARED),
+      delayedConsume(false)
 {
 }
 
@@ -139,7 +138,8 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "declared queue: " << name;
-    declared = true;
+    queueState = Q_DECLARED;
+    consumerState = C_DECLARED;
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -148,6 +148,11 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
     qint32 messageCount = 0, consumerCount = 0;
     stream >> messageCount >> consumerCount;
     qAmqpDebug("message count %d\nConsumer count: %d", messageCount, consumerCount);
+
+    if (delayedConsume)
+        q->consume(consumeOptions);
+    else
+        processBindings();
 
     Q_EMIT q->declared();
 }
@@ -170,7 +175,8 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "deleted queue: " << name;
-    declared = false;
+    queueState = Q_UNDECLARED;
+    consumerState = C_UNDECLARED;
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -186,8 +192,23 @@ void QAmqpQueuePrivate::bindOk(const QAmqpMethodFrame &frame)
     Q_UNUSED(frame)
 
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << Q_FUNC_INFO << "bound to exchange";
+    qAmqpDebug() << Q_FUNC_INFO << "bound to exchange"
+        << bindPendingExchange << "key" << bindPendingKey;
     Q_EMIT q->bound();
+
+    QString exchangeName(bindPendingExchange);
+    QString key(bindPendingKey);
+
+    bindPendingExchange.clear();
+    bindPendingKey.clear();
+
+    if (exchangeName.isEmpty() || key.isEmpty())
+        return;
+
+    SubscriptionState& state(getState(exchangeName));
+    state.topicsToBind.remove(key);
+    state.topics << key;
+    processBindings();
 }
 
 void QAmqpQueuePrivate::unbindOk(const QAmqpMethodFrame &frame)
@@ -195,8 +216,24 @@ void QAmqpQueuePrivate::unbindOk(const QAmqpMethodFrame &frame)
     Q_UNUSED(frame)
 
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << Q_FUNC_INFO << "unbound from exchange";
+    qAmqpDebug() << Q_FUNC_INFO << "unbound from exchange"
+        << bindPendingExchange << "key" << bindPendingKey;
     Q_EMIT q->unbound();
+
+    QString exchangeName(bindPendingExchange);
+    QString key(bindPendingKey);
+
+    bindPendingExchange.clear();
+    bindPendingKey.clear();
+
+    if (exchangeName.isEmpty() || key.isEmpty())
+        return;
+
+    SubscriptionState& state(getState(exchangeName));
+    state.topicsToUnbind.remove(key);
+    state.topics.remove(key);
+    processBindings();
+
 }
 
 void QAmqpQueuePrivate::getOk(const QAmqpMethodFrame &frame)
@@ -220,9 +257,9 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
-    consuming = true;
-    consumeRequested = false;
+    consumerState = C_CONSUMING;
     delayedConsume = false;
+    processBindings();
     Q_EMIT q->consuming(consumerTag);
 }
 
@@ -278,10 +315,127 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
     }
 
     consumerTag.clear();
-    consuming = false;
-    consumeRequested = false;
+    consumerState = C_DECLARED;
     delayedConsume = false;
     Q_EMIT q->cancelled(consumer);
+}
+
+/*!
+ * Retrieve the state of an exchange's bindings.
+ */
+QAmqpQueuePrivate::SubscriptionState&
+QAmqpQueuePrivate::getState(const QString& exchangeName)
+{
+    SubscriptionState& state = bindings[exchangeName];
+    if (state.exchange == NULL)
+        state.exchange = client->createExchange(exchangeName);
+    return state;
+}
+
+/*!
+ * Reset the binding state.  This marks all presently "subscribed" exchanges
+ * and keys as "to be subscribed" except those presently marked as "to be
+ * unsubscribed".
+ */
+void QAmqpQueuePrivate::resetBindings()
+{
+    /* Reset the current binding operation */
+    bindPendingExchange.clear();
+    bindPendingKey.clear();
+
+    /* Get a list of all bindings */
+    QHash<QString, SubscriptionState> bindings(this->bindings);
+    QHash<QString, SubscriptionState>::iterator bIt;
+
+    for (bIt = bindings.begin(); bIt != bindings.end(); bIt++) {
+        SubscriptionState&  state(bIt.value());
+
+        /* Remove all contents of the "to unbind" from "currently bound" */
+        state.topics.subtract(state.topicsToUnbind);
+
+        /* Add the contents of "currently bound" to "to bind" */
+        state.topicsToBind.unite(state.topics);
+
+        /*
+         * Clear out the currently bound topics.  We leave the contents of
+         * toUnbind alone, since the queue may still exist and still have those
+         * exchanges/keys bound to it.
+         */
+        state.topics.clear();
+    }
+    this->bindings = bindings;
+}
+
+/*!
+ * Process binding list.
+ */
+void QAmqpQueuePrivate::processBindings()
+{
+    /* Do not proceed if a bind or unbind is pending. */
+    if (!bindPendingExchange.isEmpty())
+        return;
+
+    /* Get a list of all bindings */
+    QHash<QString, SubscriptionState> bindings(this->bindings);
+    QHash<QString, SubscriptionState>::iterator bIt;
+    QSet<QString>::iterator tIt;
+
+    for (bIt = bindings.begin(); bIt != bindings.end(); bIt++) {
+        QString             exchangeName(bIt.key());
+        SubscriptionState&  state(bIt.value());
+
+        /* Check for bindings to create */
+        for (tIt = state.topicsToBind.begin();
+                tIt != state.topicsToBind.end();
+                tIt++) {
+            QString         key(*tIt);
+            bindPendingExchange = exchangeName;
+            bindPendingKey = key;
+
+            QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miBind);
+            frame.setChannel(channelNumber);
+
+            QByteArray arguments;
+            QDataStream out(&arguments, QIODevice::WriteOnly);
+
+            out << qint16(0);   //  reserved 1
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, name);
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
+
+            out << qint8(0);    //  no-wait
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+
+            frame.setArguments(arguments);
+            sendFrame(frame);
+            /* Stop processing the list here */
+            return;
+        }
+
+        /* Check for bindings to destroy */
+        for (tIt = state.topicsToUnbind.begin();
+                tIt != state.topicsToUnbind.end();
+                tIt++) {
+            QString         key(*tIt);
+            bindPendingExchange = exchangeName;
+            bindPendingKey = key;
+
+            QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miUnbind);
+            frame.setChannel(channelNumber);
+
+            QByteArray arguments;
+            QDataStream out(&arguments, QIODevice::WriteOnly);
+            out << qint16(0);   //reserved 1
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, name);
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
+            QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+
+            frame.setArguments(arguments);
+            sendFrame(frame);
+            return;
+        }
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -300,25 +454,17 @@ QAmqpQueue::~QAmqpQueue()
 void QAmqpQueue::channelOpened()
 {
     Q_D(QAmqpQueue);
+    d->resetBindings();
     if (d->delayedDeclare)
         d->declare();
-
-    if (!d->delayedBindings.isEmpty()) {
-        typedef QPair<QString, QString> BindingPair;
-        foreach(BindingPair binding, d->delayedBindings)
-            bind(binding.first, binding.second);
-        d->delayedBindings.clear();
-    }
-
-    if (d->delayedConsume)
-        consume(d->consumeOptions);
 }
 
 void QAmqpQueue::channelClosed()
 {
     Q_D(QAmqpQueue);
-    if (d->consuming)
+    if (d->consumerState == QAmqpQueuePrivate::C_CONSUMING)
         d->delayedConsume = true;
+    d->resetBindings();
 }
 
 int QAmqpQueue::options() const
@@ -343,11 +489,12 @@ void QAmqpQueue::declare(int options)
 void QAmqpQueue::remove(int options)
 {
     Q_D(QAmqpQueue);
-    if (!d->declared) {
+    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
         qAmqpDebug() << Q_FUNC_INFO << "trying to remove undeclared queue, aborting...";
         return;
     }
 
+    d->queueState = QAmqpQueuePrivate::Q_REMOVING;
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
@@ -395,27 +542,19 @@ void QAmqpQueue::bind(QAmqpExchange *exchange, const QString &key)
 void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
-        d->delayedBindings.append(QPair<QString,QString>(exchangeName, key));
+    QAmqpQueuePrivate::SubscriptionState& subState = d->getState(exchangeName);
+    subState.topicsToUnbind.remove(key);
+    if (subState.topics.contains(key)) {
+        qAmqpDebug() << Q_FUNC_INFO << "Already bound to exchange"
+                     << exchangeName << "topic" << key;
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miBind);
-    frame.setChannel(d->channelNumber);
+    subState.topicsToBind << key;
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
+        return;
 
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
-
-    out << qint16(0);   //  reserved 1
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
-
-    out << qint8(0);    //  no-wait
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
-
-    frame.setArguments(arguments);
-    d->sendFrame(frame);
+    d->processBindings();
 }
 
 void QAmqpQueue::unbind(QAmqpExchange *exchange, const QString &key)
@@ -431,45 +570,55 @@ void QAmqpQueue::unbind(QAmqpExchange *exchange, const QString &key)
 void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
-        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
+    if (!d->bindings.contains(exchangeName)) {
+        qAmqpDebug() << Q_FUNC_INFO << "queue is not bound to "
+                                    << exchangeName;
         return;
     }
 
-    QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miUnbind);
-    frame.setChannel(d->channelNumber);
+    QAmqpQueuePrivate::SubscriptionState& subState = d->getState(exchangeName);
+    subState.topicsToBind.remove(key);
+    if (!subState.topics.contains(key)) {
+        qAmqpDebug() << Q_FUNC_INFO << "Not bound to exchange"
+                     << exchangeName << "topic" << key;
+        return;
+    }
 
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
-    out << qint16(0);   //reserved 1
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+    subState.topicsToUnbind << key;
+    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
+        return;
 
-    frame.setArguments(arguments);
-    d->sendFrame(frame);
+    d->processBindings();
 }
 
 bool QAmqpQueue::consume(int options)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
+    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
         d->consumeOptions = options;
         d->delayedConsume = true;
         return true;
     }
 
-    if (d->consumeRequested) {
-        qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
-        return false;
+    switch(d->consumerState) {
+        case QAmqpQueuePrivate::C_UNDECLARED:
+            d->consumeOptions = options;
+            d->delayedConsume = true;
+            return true;
+        case QAmqpQueuePrivate::C_REQUESTED:
+            qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
+            return false;
+        case QAmqpQueuePrivate::C_CONSUMING:
+            qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
+            return false;
+        case QAmqpQueuePrivate::C_CANCELLING:
+            qAmqpDebug() << Q_FUNC_INFO << "attempting to cancel";
+            return false;
+        default:
+            break;
     }
 
-    if (d->consuming) {
-        qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
-        return false;
-    }
-
+    d->consumerState = QAmqpQueuePrivate::C_REQUESTED;
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmConsume);
     frame.setChannel(d->channelNumber);
 
@@ -485,7 +634,6 @@ bool QAmqpQueue::consume(int options)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
-    d->consumeRequested = true;
     return true;
 }
 
@@ -504,19 +652,19 @@ QString QAmqpQueue::consumerTag() const
 bool QAmqpQueue::isConsuming() const
 {
     Q_D(const QAmqpQueue);
-    return d->consuming;
+    return d->consumerState == QAmqpQueuePrivate::C_CONSUMING;
 }
 
 bool QAmqpQueue::isDeclared() const
 {
     Q_D(const QAmqpQueue);
-    return d->declared;
+    return d->queueState == QAmqpQueuePrivate::Q_DECLARED;
 }
 
 void QAmqpQueue::get(bool noAck)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
+    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -543,7 +691,7 @@ void QAmqpQueue::ack(const QAmqpMessage &message)
 void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
+    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -569,7 +717,7 @@ void QAmqpQueue::reject(const QAmqpMessage &message, bool requeue)
 void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
 {
     Q_D(QAmqpQueue);
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
+    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -590,7 +738,8 @@ void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
 bool QAmqpQueue::cancel(bool noWait)
 {
     Q_D(QAmqpQueue);
-    if (!d->consuming) {
+
+    if (d->consumerState != QAmqpQueuePrivate::C_CONSUMING) {
         qAmqpDebug() << Q_FUNC_INFO << "not consuming!";
         return false;
     }

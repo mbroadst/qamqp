@@ -2,6 +2,8 @@
 #define QAMQPQUEUE_P_H
 
 #include <QQueue>
+#include <QSet>
+#include <QHash>
 #include <QStringList>
 
 #include "qamqpchannel_p.h"
@@ -17,6 +19,48 @@ public:
         METHOD_ID_ENUM(miUnbind, 50),
         METHOD_ID_ENUM(miPurge, 30),
         METHOD_ID_ENUM(miDelete, 40)
+    };
+
+    /*!
+     * A class representing the state of this queue's subscriptions to
+     * a given exchange.
+     */
+    class SubscriptionState {
+    public:
+        /*! Exchange pointer, for checking state */
+        QAmqpExchange*  exchange;
+        /*! Presently subscribed topics */
+        QSet<QString>   topics;
+        /*! Topics that are to be bound */
+        QSet<QString>   topicsToBind;
+        /*! Topics that are to be unbound */
+        QSet<QString>   topicsToUnbind;
+    };
+
+    enum QueueState {
+        /*! Channel is closed */
+        Q_CLOSED,
+        /*! Queue is undeclared */
+        Q_UNDECLARED,
+        /*! Queue is declaring */
+        Q_DECLARING,
+        /*! Queue is declared */
+        Q_DECLARED,
+        /*! Queue is being removed */
+        Q_REMOVING,
+    };
+
+    enum ConsumerState {
+        /*! Queue is undeclared */
+        C_UNDECLARED,
+        /*! Queue is declared */
+        C_DECLARED,
+        /*! Consumation request started */
+        C_REQUESTED,
+        /*! Consumation in progress */
+        C_CONSUMING,
+        /*! Cancellation in progress */
+        C_CANCELLING,
     };
 
     QAmqpQueuePrivate(QAmqpQueue *q);
@@ -43,16 +87,41 @@ public:
     QString type;
     int options;
     bool delayedDeclare;
-    bool declared;
-    QQueue<QPair<QString, QString> > delayedBindings;
+    QueueState queueState;
+
+    /*!
+     * Queue binding state.  Exchange name to binding state.
+     */
+    QHash<QString, SubscriptionState> bindings;
+
+    /*! Name of exchange in current bind/unbind operation */
+    QString bindPendingExchange;
+    /*! Name of key in current bind/unbind operation */
+    QString bindPendingKey;
+
+    /*!
+     * Retrieve the state of an exchange's bindings.
+     */
+    SubscriptionState& getState(const QString& exchangeName);
+
+    /*!
+     * Reset the binding state.  This marks all presently "subscribed" exchanges
+     * and keys as "to be subscribed" except those presently marked as "to be
+     * unsubscribed".
+     */
+    void resetBindings();
+
+    /*!
+     * Process binding list.
+     */
+    void processBindings();
 
     QString consumerTag;
     bool receivingMessage;
     QAmqpMessage currentMessage;
     int consumeOptions;
-    bool consuming;
+    ConsumerState consumerState;
     bool delayedConsume;
-    bool consumeRequested;
 
     Q_DECLARE_PUBLIC(QAmqpQueue)
 
