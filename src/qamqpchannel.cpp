@@ -212,6 +212,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     QAmqpMethodFrame closeOkFrame(QAmqpFrame::Channel, miCloseOk);
     closeOkFrame.setChannel(channelNumber);
     sendFrame(closeOkFrame);
+    newState(CH_CLOSED);
 }
 
 void QAmqpChannelPrivate::closeOk(const QAmqpMethodFrame &)
@@ -265,9 +266,11 @@ void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
 /*! Report and change state. */
 void QAmqpChannelPrivate::newState(ChannelState state)
 {
-    qAmqpDebug() << "Channel state: "
+    qAmqpDebug() << "Channel"
+                 << name
+                 << "state:"
                  << channelState
-                 << " -> "
+                 << "->"
                  << state;
     channelState = state;
 }
