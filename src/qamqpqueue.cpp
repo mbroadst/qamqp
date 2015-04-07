@@ -280,6 +280,7 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
     consumerTag.clear();
     consuming = false;
     consumeRequested = false;
+    delayedConsume = false;
     Q_EMIT q->cancelled(consumer);
 }
 
@@ -315,6 +316,9 @@ void QAmqpQueue::channelOpened()
 
 void QAmqpQueue::channelClosed()
 {
+    Q_D(QAmqpQueue);
+    if (d->consuming)
+        d->delayedConsume = true;
 }
 
 int QAmqpQueue::options() const
