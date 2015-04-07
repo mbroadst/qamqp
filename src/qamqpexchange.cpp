@@ -32,6 +32,17 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 
 void QAmqpExchangePrivate::declare()
 {
+    Q_Q(QAmqpExchange);
+    if (!q->isOpen()) {
+        qAmqpDebug()    << Q_FUNC_INFO
+                        << "Channel is closed, re-opening and delaying declare.";
+        delayedDeclare = true;
+        delayedRemove = false;
+        needOpen = true;
+        q->reopen();
+        return;
+    }
+
     if (exchangeState == EX_DECLARED) {
         qAmqpDebug() << "Re-declaring exchange" << name;
     } else if (exchangeState != EX_UNDECLARED) {
@@ -371,12 +382,6 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
-    if (d->exchangeState != QAmqpExchangePrivate::EX_DECLARED) {
-        qAmqpDebug()    << Q_FUNC_INFO
-                        << "Attempted to publish to exchange not yet declared.";
-        return;
-    }
-
     if (d->nextDeliveryTag > 0) {
         d->unconfirmedDeliveryTags.append(d->nextDeliveryTag);
         d->nextDeliveryTag++;
@@ -423,13 +428,6 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
 void QAmqpExchange::enableConfirms(bool noWait)
 {
     Q_D(QAmqpExchange);
-    if (d->exchangeState != QAmqpExchangePrivate::EX_DECLARED) {
-        qAmqpDebug()    << Q_FUNC_INFO
-                        << "Attempted to enable confirms on exchange "
-                           "not yet declared.";
-        return;
-    }
-
     QAmqpMethodFrame frame(QAmqpFrame::Confirm, QAmqpExchangePrivate::cmConfirm);
     frame.setChannel(d->channelNumber);
 
