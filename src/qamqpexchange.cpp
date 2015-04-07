@@ -31,12 +31,18 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 
 void QAmqpExchangePrivate::declare()
 {
-    if (exchangeState != EX_UNDECLARED) {
-        qAmqpDebug() << "Exchange" << name << "in state" << exchangeState;
+    if (exchangeState == EX_DECLARED) {
+        qAmqpDebug() << "Re-declaring exchange" << name;
+    } else if (exchangeState != EX_UNDECLARED) {
         if (exchangeState != EX_DECLARING) {
-            qAmqpDebug() << "Delaying declare of exchange "
-                         << name;
+            qAmqpDebug() << "Delaying declare of exchange"
+                         << name
+                         << "(current state "
+                         << exchangeState
+                         << ")";
             delayedDeclare = true;
+        } else {
+            qAmqpDebug() << "Exchange" << name << "already declaring";
         }
         return;
     }
@@ -255,14 +261,13 @@ void QAmqpExchange::channelOpened()
     Q_D(QAmqpExchange);
     qAmqpDebug() << "Channel open";
 
-    if (name().isEmpty()) {
+    if (!d->delayedDeclare && (name().isEmpty() || name().startsWith("amq."))) {
         /* Nameless exchange, we should consider this declared by default */
-        qAmqpDebug() << "Automatically declaring built-in exchange: \"\"";
+        qAmqpDebug() << "Automatically declaring built-in exchange:" << name();
         d->newState(QAmqpExchangePrivate::EX_DECLARED);
         Q_EMIT declared();
         return;
     } else {
-        qAmqpDebug() << "Exchange" << name() << "entering undeclared state.";
         d->newState(QAmqpExchangePrivate::EX_UNDECLARED);
     }
 
@@ -305,7 +310,6 @@ void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QA
 void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const QAmqpTable &args)
 {
     Q_D(QAmqpExchange);
-    d->newState(QAmqpExchangePrivate::EX_DECLARING);
     d->type = type;
     d->options = options;
     d->arguments = args;
