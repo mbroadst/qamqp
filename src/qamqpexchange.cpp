@@ -32,8 +32,12 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 void QAmqpExchangePrivate::declare()
 {
     if (exchangeState != EX_UNDECLARED) {
-        if (exchangeState != EX_DECLARING)
+        qAmqpDebug() << "Exchange" << name << "not in undeclared state.";
+        if (exchangeState != EX_DECLARING) {
+            qAmqpDebug() << "Delaying declare of exchange "
+                         << name;
             delayedDeclare = true;
+        }
         return;
     }
 
@@ -42,6 +46,7 @@ void QAmqpExchangePrivate::declare()
         return;
     }
 
+    qAmqpDebug() << "Declaring exchange" << name;
     exchangeState = EX_DECLARING;
 
     QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDeclare);
@@ -207,20 +212,29 @@ QAmqpExchange::~QAmqpExchange()
 void QAmqpExchange::channelOpened()
 {
     Q_D(QAmqpExchange);
+    qAmqpDebug() << "Channel open";
+
     if (name().isEmpty()) {
         /* Nameless exchange, we should consider this declared by default */
+        qAmqpDebug() << "Automatically declaring built-in exchange: \"\"";
         d->exchangeState = QAmqpExchangePrivate::EX_DECLARED;
         Q_EMIT declared();
         return;
+    } else {
+        qAmqpDebug() << "Exchange" << name() << "entering undeclared state.";
+        d->exchangeState = QAmqpExchangePrivate::EX_UNDECLARED;
     }
 
     if (d->delayedDeclare)
         d->declare();
+    else
+        qAmqpDebug() << "No delayed declare pending for" << name();
 }
 
 void QAmqpExchange::channelClosed()
 {
     Q_D(QAmqpExchange);
+    qAmqpDebug() << "Channel closed";
     d->exchangeState = QAmqpExchangePrivate::EX_CLOSED;
 }
 
