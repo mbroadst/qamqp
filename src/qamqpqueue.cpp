@@ -17,7 +17,9 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
       delayedDeclare(false),
       declared(false),
       receivingMessage(false),
+      consumeOptions(0),
       consuming(false),
+      delayedConsume(false),
       consumeRequested(false)
 {
 }
@@ -220,6 +222,7 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
     consuming = true;
     consumeRequested = false;
+    delayedConsume = false;
     Q_EMIT q->consuming(consumerTag);
 }
 
@@ -305,6 +308,9 @@ void QAmqpQueue::channelOpened()
             bind(binding.first, binding.second);
         d->delayedBindings.clear();
     }
+
+    if (d->delayedConsume)
+        consume(d->consumeOptions);
 }
 
 void QAmqpQueue::channelClosed()
@@ -445,8 +451,9 @@ bool QAmqpQueue::consume(int options)
 {
     Q_D(QAmqpQueue);
     if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
-        qAmqpDebug() << Q_FUNC_INFO << "queue is not open";
-        return false;
+        d->consumeOptions = options;
+        d->delayedConsume = true;
+        return true;
     }
 
     if (d->consumeRequested) {

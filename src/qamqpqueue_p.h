@@ -49,7 +49,9 @@ public:
     QString consumerTag;
     bool receivingMessage;
     QAmqpMessage currentMessage;
+    int consumeOptions;
     bool consuming;
+    bool delayedConsume;
     bool consumeRequested;
 
     Q_DECLARE_PUBLIC(QAmqpQueue)
