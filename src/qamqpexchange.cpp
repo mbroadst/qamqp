@@ -207,6 +207,13 @@ QAmqpExchange::~QAmqpExchange()
 void QAmqpExchange::channelOpened()
 {
     Q_D(QAmqpExchange);
+    if (name().isEmpty()) {
+        /* Nameless exchange, we should consider this declared by default */
+        exchangeState = EX_DECLARED;
+        Q_EMIT q->declared();
+        return;
+    }
+
     if (d->delayedDeclare)
         d->declare();
 }
