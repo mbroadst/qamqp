@@ -45,8 +45,10 @@ public:
 
     QString type;
     QAmqpExchange::ExchangeOptions options;
+    int removeOptions;
     QAmqpTable arguments;
     bool delayedDeclare;
+    bool delayedRemove;
     ExchangeState exchangeState;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;

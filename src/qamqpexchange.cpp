@@ -24,6 +24,7 @@ QString QAmqpExchangePrivate::typeToString(QAmqpExchange::ExchangeType type)
 QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
+      delayedRemove(false),
       exchangeState(EX_CLOSED),
       nextDeliveryTag(0)
 {
@@ -124,6 +125,8 @@ void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
     qAmqpDebug() << "declared exchange: " << name;
     newState(EX_DECLARED);
     Q_EMIT q->declared();
+    if (delayedRemove)
+        q->remove(removeOptions);
 }
 
 void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
@@ -134,6 +137,8 @@ void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
     qAmqpDebug() << "deleted exchange: " << name;
     newState(EX_UNDECLARED);
     Q_EMIT q->removed();
+    if (delayedDeclare)
+        declare();
 }
 
 void QAmqpExchangePrivate::_q_disconnected()
@@ -271,7 +276,9 @@ void QAmqpExchange::channelOpened()
         d->newState(QAmqpExchangePrivate::EX_UNDECLARED);
     }
 
-    if (d->delayedDeclare)
+    if (d->delayedRemove)
+        remove(d->removeOptions);
+    else if (d->delayedDeclare)
         d->declare();
     else
         qAmqpDebug() << "No delayed declare pending for" << name();
@@ -319,11 +326,14 @@ void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const 
 void QAmqpExchange::remove(int options)
 {
     Q_D(QAmqpExchange);
-    if (d->exchangeState != QAmqpExchangePrivate::EX_DECLARED) {
-        /* TODO: should we tell the caller about this? */
+    if (!isOpen()) {
         qAmqpDebug()    << Q_FUNC_INFO
-                        << "remove of exchange not in \"declared\" state";
+                        << "Channel is closed, re-opening and delaying remove.";
         d->delayedDeclare = false;
+        d->delayedRemove = true;
+        d->needOpen = true;
+        d->removeOptions = options;
+        reopen();
         return;
     }
 
@@ -339,6 +349,7 @@ void QAmqpExchange::remove(int options)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
+    d->delayedRemove = false;
 }
 
 void QAmqpExchange::publish(const QString &message, const QString &routingKey,
