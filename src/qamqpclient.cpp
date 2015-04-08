@@ -660,8 +660,9 @@ QAmqpExchange *QAmqpClient::createExchange(int channelNumber)
 QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    if (!name.isEmpty() && d->exchanges.contains(name))
-        return d->exchanges[name];
+    if (!name.isEmpty() && d->exchanges.contains(name)
+                    && (!d->exchanges[name].isNull()))
+        return d->exchanges[name].data();
 
     QAmqpExchange *exchange = new QAmqpExchange(channelNumber, this);
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
@@ -684,8 +685,9 @@ QAmqpQueue *QAmqpClient::createQueue(int channelNumber)
 QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    if (!name.isEmpty() && d->queues.contains(name))
-        return d->queues[name];
+    if (!name.isEmpty() && d->queues.contains(name)
+                    && (!d->queues[name].isNull()))
+        return d->queues[name].data();
 
     QAmqpQueue *queue = new QAmqpQueue(channelNumber, this);
     d->methodHandlersByChannel[queue->channelNumber()].append(queue->d_func());
