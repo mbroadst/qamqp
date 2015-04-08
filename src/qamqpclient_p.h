@@ -101,10 +101,10 @@ public:
     QString errorString;
 
     /*! Exchange objects */
-    QHash<QString, QAmqpExchange*> exchanges;
+    QHash<QString, QPointer<QAmqpExchange> > exchanges;
 
     /*! Named queue objects */
-    QHash<QString, QAmqpQueue*> queues;
+    QHash<QString, QPointer<QAmqpQueue> > queues;
 
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)
