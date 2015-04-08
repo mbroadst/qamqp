@@ -327,7 +327,7 @@ QAmqpQueuePrivate::SubscriptionState&
 QAmqpQueuePrivate::getState(const QString& exchangeName)
 {
     SubscriptionState& state = bindings[exchangeName];
-    if (state.exchange == NULL)
+    if (state.exchange.isNull())
         state.exchange = client->createExchange(exchangeName);
     return state;
 }

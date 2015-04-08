@@ -4,6 +4,7 @@
 #include <QQueue>
 #include <QSet>
 #include <QHash>
+#include <QPointer>
 #include <QStringList>
 
 #include "qamqpchannel_p.h"
@@ -28,7 +29,7 @@ public:
     class SubscriptionState {
     public:
         /*! Exchange pointer, for checking state */
-        QAmqpExchange*  exchange;
+        QPointer<QAmqpExchange> exchange;
         /*! Presently subscribed topics */
         QSet<QString>   topics;
         /*! Topics that are to be bound */
