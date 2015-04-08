@@ -4,3 +4,35 @@
 /Debug
 /GeneratedFiles
 build
+# output files from qmake / make
+Makefile
+*.moc
+*.o
+moc_*.cpp
+# vim swapfiles
+.*.swp
+# generated files:
+src/libqamqp.prl
+src/libqamqp.so
+src/libqamqp.so.*
+src/pkgconfig/
+test.log
+tests/auto/qamqpchannel/tst_qamqpchannel
+tests/auto/qamqpclient/qrc_certs.cpp
+tests/auto/qamqpclient/tst_qamqpclient
+tests/auto/qamqpexchange/tst_qamqpexchange
+tests/auto/qamqpqueue/tst_qamqpqueue
+tutorials/helloworld/receive/receive
+tutorials/helloworld/send/send
+tutorials/pubsub/emit_log/emit_log
+tutorials/pubsub/receive_logs/receive_logs
+tutorials/routing/emit_log_direct/emit_log_direct
+tutorials/routing/receive_logs_direct/receive_logs_direct
+tutorials/rpc/rpc_client/moc_fibonaccirpcclient.cpp
+tutorials/rpc/rpc_client/rpc_client
+tutorials/rpc/rpc_server/moc_server.cpp
+tutorials/rpc/rpc_server/rpc_server
+tutorials/topics/emit_log_topic/emit_log_topic
+tutorials/topics/receive_logs_topic/receive_logs_topic
+tutorials/workqueues/new_task/new_task
+tutorials/workqueues/worker/worker
