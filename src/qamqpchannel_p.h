@@ -36,15 +36,15 @@ public:
 
     enum ChannelState {
         /*! Channel is presently closed */
-        CH_CLOSED,
+        ChannelClosedState,
         /*! Channel is being opened, pending response. */
-        CH_OPENING,
+        ChannelOpeningState,
         /*! Defining QOS parameters for channel. */
-        CH_QOS,
+        SetQOSState,
         /*! Channel is open */
-        CH_OPEN,
+        ChannelOpenState,
         /*! Channel is being closed, pending response. */
-        CH_CLOSING,
+        ChannelClosingState,
     };
 
     QAmqpChannelPrivate(QAmqpChannel *q);

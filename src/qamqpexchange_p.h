@@ -19,15 +19,15 @@ public:
 
     enum ExchangeState {
         /*! Exchange channel is closed */
-        EX_CLOSED,
+        ExchangeClosedState,
         /*! Exchange is undeclared */
-        EX_UNDECLARED,
+        ExchangeUndeclaredState,
         /*! Exchange is being declared */
-        EX_DECLARING,
+        ExchangeDeclaringState,
         /*! Exchange is declared */
-        EX_DECLARED,
+        ExchangeDeclaredState,
         /*! Exchange is being removed */
-        EX_REMOVING,
+        ExchangeRemovingState,
     };
 
     QAmqpExchangePrivate(QAmqpExchange *q);

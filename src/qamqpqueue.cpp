@@ -15,10 +15,10 @@ using namespace QAMQP;
 QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
-      queueState(Q_CLOSED),
+      queueState(QueueClosedState),
       receivingMessage(false),
       consumeOptions(0),
-      consumerState(C_UNDECLARED),
+      consumerState(ConsumerQueueUndeclaredState),
       delayedConsume(false)
 {
 }
@@ -138,8 +138,8 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "declared queue: " << name;
-    newState(Q_DECLARED);
-    newState(C_DECLARED);
+    newState(QueueDeclaredState);
+    newState(ConsumerQueueDeclaredState);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -175,8 +175,8 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "deleted queue: " << name;
-    newState(Q_UNDECLARED);
-    newState(C_UNDECLARED);
+    newState(QueueUndeclaredState);
+    newState(ConsumerQueueUndeclaredState);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -257,7 +257,7 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
-    newState(C_CONSUMING);
+    newState(ConsumerConsumingState);
     delayedConsume = false;
     processBindings();
     Q_EMIT q->consuming(consumerTag);
@@ -315,7 +315,7 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
     }
 
     consumerTag.clear();
-    newState(C_DECLARED);
+    newState(ConsumerQueueDeclaredState);
     delayedConsume = false;
     Q_EMIT q->cancelled(consumer);
 }
@@ -448,10 +448,10 @@ void QAmqpQueuePrivate::newState(QueueState state)
                  << " -> "
                  << state;
     queueState = state;
-    if ((state == Q_CLOSED) || (state == Q_UNDECLARED))
-        newState(C_UNDECLARED);
-    else if (state == Q_DECLARED)
-        newState(C_DECLARED);
+    if ((state == QueueClosedState) || (state == QueueUndeclaredState))
+        newState(ConsumerQueueUndeclaredState);
+    else if (state == QueueDeclaredState)
+        newState(ConsumerQueueDeclaredState);
 }
 
 void QAmqpQueuePrivate::newState(ConsumerState state)
@@ -468,30 +468,30 @@ void QAmqpQueuePrivate::newState(ConsumerState state)
 void QAmqpQueuePrivate::newState(ChannelState state)
 {
     QAmqpChannelPrivate::newState(state);
-    if (state == QAmqpChannelPrivate::CH_CLOSED)
-        newState(Q_CLOSED);
+    if (state == QAmqpChannelPrivate::ChannelClosedState)
+        newState(QueueClosedState);
 }
 
 QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s)
 {
     switch(s) {
-        case QAmqpQueuePrivate::Q_CLOSED:
-            dbg << "Q_CLOSED";
+        case QAmqpQueuePrivate::QueueClosedState:
+            dbg << "QueueClosedState";
             break;
-        case QAmqpQueuePrivate::Q_UNDECLARED:
-            dbg << "Q_UNDECLARED";
+        case QAmqpQueuePrivate::QueueUndeclaredState:
+            dbg << "QueueUndeclaredState";
             break;
-        case QAmqpQueuePrivate::Q_DECLARING:
-            dbg << "Q_DECLARING";
+        case QAmqpQueuePrivate::QueueDeclaringState:
+            dbg << "QueueDeclaredState";
             break;
-        case QAmqpQueuePrivate::Q_DECLARED:
-            dbg << "Q_DECLARED";
+        case QAmqpQueuePrivate::QueueDeclaredState:
+            dbg << "QueueDeclaredState";
             break;
-        case QAmqpQueuePrivate::Q_REMOVING:
-            dbg << "Q_REMOVING";
+        case QAmqpQueuePrivate::QueueRemovingState:
+            dbg << "QueueRemovingState";
             break;
         default:
-            dbg << "Q_????";
+            dbg << "{UNKNOWN QUEUE STATE}";
     }
     return dbg;
 }
@@ -499,23 +499,23 @@ QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s)
 QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::ConsumerState s)
 {
     switch(s) {
-        case QAmqpQueuePrivate::C_UNDECLARED:
-            dbg << "C_UNDECLARED";
+        case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
+            dbg << "ConsumerQueueUndeclaredState";
             break;
-        case QAmqpQueuePrivate::C_DECLARED:
-            dbg << "C_DECLARED";
+        case QAmqpQueuePrivate::ConsumerQueueDeclaredState:
+            dbg << "ConsumerQueueDeclaredState";
             break;
-        case QAmqpQueuePrivate::C_REQUESTED:
-            dbg << "C_REQUESTED";
+        case QAmqpQueuePrivate::ConsumerRequestedState:
+            dbg << "ConsumerRequestedState";
             break;
-        case QAmqpQueuePrivate::C_CONSUMING:
-            dbg << "C_CONSUMING";
+        case QAmqpQueuePrivate::ConsumerConsumingState:
+            dbg << "ConsumerConsumingState";
             break;
-        case QAmqpQueuePrivate::C_CANCELLING:
-            dbg << "C_CANCELLING";
+        case QAmqpQueuePrivate::ConsumerCancellingState:
+            dbg << "ConsumerCancellingState";
             break;
         default:
-            dbg << "C_????";
+            dbg << "{UNKNOWN CONSUMER STATE}";
     }
     return dbg;
 }
@@ -544,7 +544,7 @@ void QAmqpQueue::channelOpened()
 void QAmqpQueue::channelClosed()
 {
     Q_D(QAmqpQueue);
-    if (d->consumerState == QAmqpQueuePrivate::C_CONSUMING)
+    if (d->consumerState == QAmqpQueuePrivate::ConsumerConsumingState)
         d->delayedConsume = true;
     d->resetBindings();
 }
@@ -560,7 +560,7 @@ void QAmqpQueue::declare(int options)
     Q_D(QAmqpQueue);
     d->options = options;
 
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN) {
+    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState) {
         d->delayedDeclare = true;
         return;
     }
@@ -571,12 +571,12 @@ void QAmqpQueue::declare(int options)
 void QAmqpQueue::remove(int options)
 {
     Q_D(QAmqpQueue);
-    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState) {
         qAmqpDebug() << Q_FUNC_INFO << "trying to remove undeclared queue, aborting...";
         return;
     }
 
-    d->newState(QAmqpQueuePrivate::Q_REMOVING);
+    d->newState(QAmqpQueuePrivate::QueueRemovingState);
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
@@ -595,7 +595,7 @@ void QAmqpQueue::purge()
 {
     Q_D(QAmqpQueue);
 
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
+    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState)
         return;
 
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miPurge);
@@ -633,7 +633,7 @@ void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
     }
 
     subState.topicsToBind << key;
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
+    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState)
         return;
 
     d->processBindings();
@@ -667,7 +667,7 @@ void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
     }
 
     subState.topicsToUnbind << key;
-    if (d->channelState != QAmqpChannelPrivate::CH_OPEN)
+    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState)
         return;
 
     d->processBindings();
@@ -676,31 +676,31 @@ void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
 bool QAmqpQueue::consume(int options)
 {
     Q_D(QAmqpQueue);
-    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState) {
         d->consumeOptions = options;
         d->delayedConsume = true;
         return true;
     }
 
     switch(d->consumerState) {
-        case QAmqpQueuePrivate::C_UNDECLARED:
+        case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
             d->consumeOptions = options;
             d->delayedConsume = true;
             return true;
-        case QAmqpQueuePrivate::C_REQUESTED:
+        case QAmqpQueuePrivate::ConsumerRequestedState:
             qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
             return false;
-        case QAmqpQueuePrivate::C_CONSUMING:
+        case QAmqpQueuePrivate::ConsumerConsumingState:
             qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
             return false;
-        case QAmqpQueuePrivate::C_CANCELLING:
+        case QAmqpQueuePrivate::ConsumerCancellingState:
             qAmqpDebug() << Q_FUNC_INFO << "attempting to cancel";
             return false;
         default:
             break;
     }
 
-    d->newState(QAmqpQueuePrivate::C_REQUESTED);
+    d->newState(QAmqpQueuePrivate::ConsumerRequestedState);
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmConsume);
     frame.setChannel(d->channelNumber);
 
@@ -734,19 +734,19 @@ QString QAmqpQueue::consumerTag() const
 bool QAmqpQueue::isConsuming() const
 {
     Q_D(const QAmqpQueue);
-    return d->consumerState == QAmqpQueuePrivate::C_CONSUMING;
+    return d->consumerState == QAmqpQueuePrivate::ConsumerConsumingState;
 }
 
 bool QAmqpQueue::isDeclared() const
 {
     Q_D(const QAmqpQueue);
-    return d->queueState == QAmqpQueuePrivate::Q_DECLARED;
+    return d->queueState == QAmqpQueuePrivate::QueueDeclaredState;
 }
 
 void QAmqpQueue::get(bool noAck)
 {
     Q_D(QAmqpQueue);
-    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -773,7 +773,7 @@ void QAmqpQueue::ack(const QAmqpMessage &message)
 void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
 {
     Q_D(QAmqpQueue);
-    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -799,7 +799,7 @@ void QAmqpQueue::reject(const QAmqpMessage &message, bool requeue)
 void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
 {
     Q_D(QAmqpQueue);
-    if (d->queueState != QAmqpQueuePrivate::Q_DECLARED) {
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState) {
         qAmqpDebug() << Q_FUNC_INFO << "channel is not open";
         return;
     }
@@ -821,7 +821,7 @@ bool QAmqpQueue::cancel(bool noWait)
 {
     Q_D(QAmqpQueue);
 
-    if (d->consumerState != QAmqpQueuePrivate::C_CONSUMING) {
+    if (d->consumerState != QAmqpQueuePrivate::ConsumerConsumingState) {
         qAmqpDebug() << Q_FUNC_INFO << "not consuming!";
         return false;
     }

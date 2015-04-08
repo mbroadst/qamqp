@@ -40,28 +40,28 @@ public:
 
     enum QueueState {
         /*! Channel is closed */
-        Q_CLOSED,
+        QueueClosedState,
         /*! Queue is undeclared */
-        Q_UNDECLARED,
+        QueueUndeclaredState,
         /*! Queue is declaring */
-        Q_DECLARING,
+        QueueDeclaringState,
         /*! Queue is declared */
-        Q_DECLARED,
+        QueueDeclaredState,
         /*! Queue is being removed */
-        Q_REMOVING,
+        QueueRemovingState,
     };
 
     enum ConsumerState {
         /*! Queue is undeclared */
-        C_UNDECLARED,
+        ConsumerQueueUndeclaredState,
         /*! Queue is declared */
-        C_DECLARED,
+        ConsumerQueueDeclaredState,
         /*! Consumation request started */
-        C_REQUESTED,
+        ConsumerRequestedState,
         /*! Consumation in progress */
-        C_CONSUMING,
+        ConsumerConsumingState,
         /*! Cancellation in progress */
-        C_CANCELLING,
+        ConsumerCancellingState,
     };
 
     QAmqpQueuePrivate(QAmqpQueue *q);

@@ -25,7 +25,7 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
       delayedRemove(false),
-      exchangeState(EX_CLOSED),
+      exchangeState(ExchangeClosedState),
       nextDeliveryTag(0)
 {
 }
@@ -43,10 +43,10 @@ void QAmqpExchangePrivate::declare()
         return;
     }
 
-    if (exchangeState == EX_DECLARED) {
+    if (exchangeState == ExchangeDeclaredState) {
         qAmqpDebug() << "Re-declaring exchange" << name;
-    } else if (exchangeState != EX_UNDECLARED) {
-        if (exchangeState != EX_DECLARING) {
+    } else if (exchangeState != ExchangeUndeclaredState) {
+        if (exchangeState != ExchangeDeclaringState) {
             qAmqpDebug() << "Delaying declare of exchange"
                          << name
                          << "(current state "
@@ -65,7 +65,7 @@ void QAmqpExchangePrivate::declare()
     }
 
     qAmqpDebug() << "Declaring exchange" << name;
-    newState(EX_DECLARING);
+    newState(ExchangeDeclaringState);
 
     QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDeclare);
     frame.setChannel(channelNumber);
@@ -134,7 +134,7 @@ void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "declared exchange: " << name;
-    newState(EX_DECLARED);
+    newState(ExchangeDeclaredState);
     Q_EMIT q->declared();
     if (delayedRemove)
         q->remove(removeOptions);
@@ -146,7 +146,7 @@ void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "deleted exchange: " << name;
-    newState(EX_UNDECLARED);
+    newState(ExchangeUndeclaredState);
     Q_EMIT q->removed();
     if (delayedDeclare)
         declare();
@@ -157,7 +157,7 @@ void QAmqpExchangePrivate::_q_disconnected()
     QAmqpChannelPrivate::_q_disconnected();
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
-    newState(EX_CLOSED);
+    newState(ExchangeClosedState);
 }
 
 void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
@@ -231,30 +231,30 @@ void QAmqpExchangePrivate::newState(ExchangeState state)
 void QAmqpExchangePrivate::newState(ChannelState state)
 {
     QAmqpChannelPrivate::newState(state);
-    if (state == QAmqpChannelPrivate::CH_CLOSED)
-        newState(EX_CLOSED);
+    if (state == QAmqpChannelPrivate::ChannelClosedState)
+        newState(ExchangeClosedState);
 }
 
 QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s)
 {
     switch(s) {
-        case QAmqpExchangePrivate::EX_CLOSED:
-            dbg << "EX_CLOSED";
+        case QAmqpExchangePrivate::ExchangeClosedState:
+            dbg << "ExchangeClosedState";
             break;
-        case QAmqpExchangePrivate::EX_UNDECLARED:
-            dbg << "EX_UNDECLARED";
+        case QAmqpExchangePrivate::ExchangeUndeclaredState:
+            dbg << "ExchangeUndeclaredState";
             break;
-        case QAmqpExchangePrivate::EX_DECLARING:
-            dbg << "EX_DECLARING";
+        case QAmqpExchangePrivate::ExchangeDeclaringState:
+            dbg << "ExchangeDeclaringState";
             break;
-        case QAmqpExchangePrivate::EX_DECLARED:
-            dbg << "EX_DECLARED";
+        case QAmqpExchangePrivate::ExchangeDeclaredState:
+            dbg << "ExchangeDeclaredState";
             break;
-        case QAmqpExchangePrivate::EX_REMOVING:
-            dbg << "EX_REMOVING";
+        case QAmqpExchangePrivate::ExchangeRemovingState:
+            dbg << "ExchangeRemovingState";
             break;
         default:
-            dbg << "EX_????";
+            dbg << "{UNKNOWN EXCHANGE STATE}";
     }
     return dbg;
 }
@@ -280,11 +280,11 @@ void QAmqpExchange::channelOpened()
     if (!d->delayedDeclare && (name().isEmpty() || name().startsWith("amq."))) {
         /* Nameless exchange, we should consider this declared by default */
         qAmqpDebug() << "Automatically declaring built-in exchange:" << name();
-        d->newState(QAmqpExchangePrivate::EX_DECLARED);
+        d->newState(QAmqpExchangePrivate::ExchangeDeclaredState);
         Q_EMIT declared();
         return;
     } else {
-        d->newState(QAmqpExchangePrivate::EX_UNDECLARED);
+        d->newState(QAmqpExchangePrivate::ExchangeUndeclaredState);
     }
 
     if (d->delayedRemove)
@@ -299,7 +299,7 @@ void QAmqpExchange::channelClosed()
 {
     Q_D(QAmqpExchange);
     qAmqpDebug() << "Channel closed";
-    d->newState(QAmqpExchangePrivate::EX_CLOSED);
+    d->newState(QAmqpExchangePrivate::ExchangeClosedState);
 }
 
 QAmqpExchange::ExchangeOptions QAmqpExchange::options() const
@@ -317,7 +317,7 @@ QString QAmqpExchange::type() const
 bool QAmqpExchange::isDeclared() const
 {
     Q_D(const QAmqpExchange);
-    return (d->exchangeState == QAmqpExchangePrivate::EX_DECLARED);
+    return (d->exchangeState == QAmqpExchangePrivate::ExchangeDeclaredState);
 }
 
 void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QAmqpTable &args)
