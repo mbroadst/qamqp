@@ -139,7 +139,6 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "declared queue: " << name;
     newState(QueueDeclaredState);
-    newState(ConsumerQueueDeclaredState);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -176,7 +175,6 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "deleted queue: " << name;
     newState(QueueUndeclaredState);
-    newState(ConsumerQueueUndeclaredState);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -284,6 +282,7 @@ void QAmqpQueuePrivate::deliver(const QAmqpMethodFrame &frame)
 
 void QAmqpQueuePrivate::declare()
 {
+    qAmqpDebug() << Q_FUNC_INFO << "declaring queue";
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDeclare);
     frame.setChannel(channelNumber);
 
@@ -324,11 +323,15 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
  * Retrieve the state of an exchange's bindings.
  */
 QAmqpQueuePrivate::SubscriptionState&
-QAmqpQueuePrivate::getState(const QString& exchangeName)
+QAmqpQueuePrivate::getState(const QString& exchangeName,
+        QAmqpExchange* exchange)
 {
     SubscriptionState& state = bindings[exchangeName];
-    if (state.exchange.isNull())
-        state.exchange = client->createExchange(exchangeName);
+    if (state.exchange.isNull()) {
+        if (exchange == NULL)
+            exchange = client->createExchange(exchangeName);
+        state.exchange = exchange;
+    }
     return state;
 }
 
@@ -438,6 +441,26 @@ void QAmqpQueuePrivate::processBindings()
     }
 }
 
+/*! Process delayed bindings for a given exchange. */
+void QAmqpQueuePrivate::_q_exchangeDeclared()
+{
+    Q_Q(QAmqpQueue);
+    QAmqpExchange* exchange = static_cast<QAmqpExchange*>(q->sender());
+
+    if (!bindings.contains(exchange->name()))
+        return;
+
+    qAmqpDebug() << "Queue" << name << "received 'declared' from exchange "
+                 << exchange->name() << ", re-setting bindings.";
+
+    SubscriptionState& state(getState(exchange->name(), exchange));
+    state.topics.subtract(state.topicsToUnbind);
+    state.topicsToBind.unite(state.topics);
+    state.topics.clear();
+    if (queueState == QueueDeclaredState)
+        processBindings();
+}
+
 /*! Report and change state. */
 void QAmqpQueuePrivate::newState(QueueState state)
 {
@@ -536,6 +559,7 @@ QAmqpQueue::~QAmqpQueue()
 void QAmqpQueue::channelOpened()
 {
     Q_D(QAmqpQueue);
+    qAmqpDebug() << "channel now open; delayedDeclare = " << d->delayedDeclare;
     d->resetBindings();
     if (d->delayedDeclare)
         d->declare();
@@ -562,6 +586,7 @@ void QAmqpQueue::declare(int options)
 
     if (d->channelState != QAmqpChannelPrivate::ChannelOpenState) {
         d->delayedDeclare = true;
+        qAmqpDebug() << Q_FUNC_INFO << "channel not yet open, declare later.";
         return;
     }
 
@@ -632,8 +657,11 @@ void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
         return;
     }
 
+    connect(subState.exchange, SIGNAL(declared()),
+            this, SLOT(_q_exchangeDeclared()));
+
     subState.topicsToBind << key;
-    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState)
+    if (d->queueState != QAmqpQueuePrivate::QueueDeclaredState)
         return;
 
     d->processBindings();

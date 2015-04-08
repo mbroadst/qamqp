@@ -116,6 +116,8 @@ private:
     Q_DISABLE_COPY(QAmqpQueue)
     Q_DECLARE_PRIVATE(QAmqpQueue)
 
+    Q_PRIVATE_SLOT(d_func(), void _q_exchangeDeclared())
+
     friend class QAmqpClient;
 };
 

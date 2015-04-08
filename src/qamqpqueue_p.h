@@ -85,6 +85,11 @@ public:
     void getOk(const QAmqpMethodFrame &frame);
     void cancelOk(const QAmqpMethodFrame &frame);
 
+    // Private slots
+
+    /*! Process delayed bindings for a given exchange. */
+    void _q_exchangeDeclared();
+
     QString type;
     int options;
     bool delayedDeclare;
@@ -103,7 +108,8 @@ public:
     /*!
      * Retrieve the state of an exchange's bindings.
      */
-    SubscriptionState& getState(const QString& exchangeName);
+    SubscriptionState& getState(const QString& exchangeName,
+		    QAmqpExchange* exchange=0);
 
     /*!
      * Reset the binding state.  This marks all presently "subscribed" exchanges
