@@ -117,6 +117,11 @@ public:
      */
     void processBindings();
 
+    /*! Report and change state. */
+    virtual void newState(ChannelState state);
+    virtual void newState(QueueState state);
+    virtual void newState(ConsumerState state);
+
     QString consumerTag;
     bool receivingMessage;
     QAmqpMessage currentMessage;
@@ -127,5 +132,8 @@ public:
     Q_DECLARE_PUBLIC(QAmqpQueue)
 
 };
+
+QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s);
+QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::ConsumerState s);
 
 #endif // QAMQPQUEUE_P_H

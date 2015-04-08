@@ -138,8 +138,8 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "declared queue: " << name;
-    queueState = Q_DECLARED;
-    consumerState = C_DECLARED;
+    newState(Q_DECLARED);
+    newState(C_DECLARED);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -175,8 +175,8 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
     qAmqpDebug() << "deleted queue: " << name;
-    queueState = Q_UNDECLARED;
-    consumerState = C_UNDECLARED;
+    newState(Q_UNDECLARED);
+    newState(C_UNDECLARED);
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
@@ -257,7 +257,7 @@ void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
-    consumerState = C_CONSUMING;
+    newState(C_CONSUMING);
     delayedConsume = false;
     processBindings();
     Q_EMIT q->consuming(consumerTag);
@@ -315,7 +315,7 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
     }
 
     consumerTag.clear();
-    consumerState = C_DECLARED;
+    newState(C_DECLARED);
     delayedConsume = false;
     Q_EMIT q->cancelled(consumer);
 }
@@ -438,6 +438,88 @@ void QAmqpQueuePrivate::processBindings()
     }
 }
 
+/*! Report and change state. */
+void QAmqpQueuePrivate::newState(QueueState state)
+{
+    qAmqpDebug() << "Queue"
+                 << name
+                 << "state:"
+                 << queueState
+                 << " -> "
+                 << state;
+    queueState = state;
+    if ((state == Q_CLOSED) || (state == Q_UNDECLARED))
+        newState(C_UNDECLARED);
+    else if (state == Q_DECLARED)
+        newState(C_DECLARED);
+}
+
+void QAmqpQueuePrivate::newState(ConsumerState state)
+{
+    qAmqpDebug() << "Consumer"
+                 << name
+                 << "state:"
+                 << consumerState
+                 << " -> "
+                 << state;
+    consumerState = state;
+}
+
+void QAmqpQueuePrivate::newState(ChannelState state)
+{
+    QAmqpChannelPrivate::newState(state);
+    if (state == QAmqpChannelPrivate::CH_CLOSED)
+        newState(Q_CLOSED);
+}
+
+QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s)
+{
+    switch(s) {
+        case QAmqpQueuePrivate::Q_CLOSED:
+            dbg << "Q_CLOSED";
+            break;
+        case QAmqpQueuePrivate::Q_UNDECLARED:
+            dbg << "Q_UNDECLARED";
+            break;
+        case QAmqpQueuePrivate::Q_DECLARING:
+            dbg << "Q_DECLARING";
+            break;
+        case QAmqpQueuePrivate::Q_DECLARED:
+            dbg << "Q_DECLARED";
+            break;
+        case QAmqpQueuePrivate::Q_REMOVING:
+            dbg << "Q_REMOVING";
+            break;
+        default:
+            dbg << "Q_????";
+    }
+    return dbg;
+}
+
+QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::ConsumerState s)
+{
+    switch(s) {
+        case QAmqpQueuePrivate::C_UNDECLARED:
+            dbg << "C_UNDECLARED";
+            break;
+        case QAmqpQueuePrivate::C_DECLARED:
+            dbg << "C_DECLARED";
+            break;
+        case QAmqpQueuePrivate::C_REQUESTED:
+            dbg << "C_REQUESTED";
+            break;
+        case QAmqpQueuePrivate::C_CONSUMING:
+            dbg << "C_CONSUMING";
+            break;
+        case QAmqpQueuePrivate::C_CANCELLING:
+            dbg << "C_CANCELLING";
+            break;
+        default:
+            dbg << "C_????";
+    }
+    return dbg;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpQueue::QAmqpQueue(int channelNumber, QAmqpClient *parent)
@@ -494,7 +576,7 @@ void QAmqpQueue::remove(int options)
         return;
     }
 
-    d->queueState = QAmqpQueuePrivate::Q_REMOVING;
+    d->newState(QAmqpQueuePrivate::Q_REMOVING);
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
@@ -618,7 +700,7 @@ bool QAmqpQueue::consume(int options)
             break;
     }
 
-    d->consumerState = QAmqpQueuePrivate::C_REQUESTED;
+    d->newState(QAmqpQueuePrivate::C_REQUESTED);
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpQueuePrivate::bmConsume);
     frame.setChannel(d->channelNumber);
 
