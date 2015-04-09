@@ -464,12 +464,7 @@ void QAmqpQueuePrivate::_q_exchangeDeclared()
 /*! Report and change state. */
 void QAmqpQueuePrivate::newState(QueueState state)
 {
-    qAmqpDebug() << "Queue"
-                 << name
-                 << "state:"
-                 << queueState
-                 << " -> "
-                 << state;
+    qAmqpDebug() << "Queue" << name << "state:" << queueState << "->" << state;
     queueState = state;
     if ((state == QueueClosedState) || (state == QueueUndeclaredState))
         newState(ConsumerQueueUndeclaredState);
@@ -479,12 +474,7 @@ void QAmqpQueuePrivate::newState(QueueState state)
 
 void QAmqpQueuePrivate::newState(ConsumerState state)
 {
-    qAmqpDebug() << "Consumer"
-                 << name
-                 << "state:"
-                 << consumerState
-                 << " -> "
-                 << state;
+    qAmqpDebug() << "Consumer" << name << "state:" << consumerState << "->" << state;
     consumerState = state;
 }
 

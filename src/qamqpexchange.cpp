@@ -34,8 +34,7 @@ void QAmqpExchangePrivate::declare()
 {
     Q_Q(QAmqpExchange);
     if (channelState != ChannelClosedState) {
-        qAmqpDebug()    << Q_FUNC_INFO
-                        << "Channel is closed, re-opening and delaying declare.";
+        qAmqpDebug() << Q_FUNC_INFO << "Channel is closed, re-opening and delaying declare.";
         delayedDeclare = true;
         delayedRemove = false;
         needOpen = true;
@@ -344,8 +343,7 @@ void QAmqpExchange::remove(int options)
 {
     Q_D(QAmqpExchange);
     if (!isOpen()) {
-        qAmqpDebug()    << Q_FUNC_INFO
-                        << "Channel is closed, re-opening and delaying remove.";
+        qAmqpDebug() << Q_FUNC_INFO << "Channel is closed, re-opening and delaying remove.";
         d->delayedDeclare = false;
         d->delayedRemove = true;
         d->needOpen = true;
