@@ -672,15 +672,16 @@ QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumbe
 
     if (!name.isEmpty())
         exchange->setName(name);
-    else if (name.isNull())
+    if (name.isNull())
         /*
          * We don't want two copies of the default exchange, one referenced by
          * QString() and the other by QString("").  QString() != QString("")  So
          * if it's null, overwrite with the empty string, since that's its
          * official name.
          */
-        name = "";
-    d->exchanges[name] = exchange;
+        d->exchanges[""] = exchange;
+    else
+        d->exchanges[name] = exchange;
     return exchange;
 }
 
