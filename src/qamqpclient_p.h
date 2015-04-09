@@ -51,6 +51,11 @@ public:
     virtual void _q_connect();
     void _q_disconnect();
 
+    /*!
+     * Iterate through our list of objects and clean up the NULL pointers.
+     */
+    void _q_objectDestroyed();
+
     virtual bool _q_method(const QAmqpMethodFrame &frame);
 
     // method handlers, FROM server

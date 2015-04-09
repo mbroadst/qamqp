@@ -551,6 +551,26 @@ void QAmqpClientPrivate::close(int code, const QString &text, int classId, int m
     sendFrame(frame);
 }
 
+/*!
+ * Iterate through our list of objects and clean up the NULL pointers.
+ */
+void QAmqpClientPrivate::_q_objectDestroyed()
+{
+    /* Clean up Exchanges */
+    QHash<QString, QPointer<QAmqpExchange> > exchanges(this->exchanges);
+    QHash<QString, QPointer<QAmqpExchange> >::iterator ex_it;
+    for (ex_it = exchanges.begin() ; ex_it != exchanges.end(); ex_it++)
+        if (ex_it.value.isNull())
+            this->exchanges.remove(ex_it.key());
+
+    /* Clean up Queues */
+    QHash<QString, QPointer<QAmqpQueue> > queues(this->queues);
+    QHash<QString, QPointer<QAmqpQueue> >::iterator q_it;
+    for (q_it = queues.begin() ; q_it != queues.end(); q_it++)
+        if (q_it.value.isNull())
+            this->queues.remove(q_it.key());
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpClient::QAmqpClient(QObject *parent)
@@ -668,6 +688,7 @@ QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumbe
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
+    connect(exchange, SIGNAL(destroyed()), this, SLOT(_q_objectDestroyed()));
     exchange->d_func()->open();
 
     if (!name.isEmpty())
@@ -703,6 +724,7 @@ QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
     d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     connect(this, SIGNAL(connected()), queue, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), queue, SLOT(_q_disconnected()));
+    connect(queue, SIGNAL(destroyed()), this, SLOT(_q_objectDestroyed()));
     queue->d_func()->open();
 
     if (!name.isEmpty()) {
