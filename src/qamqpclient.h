@@ -133,7 +133,6 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_heartbeat())
     Q_PRIVATE_SLOT(d_func(), void _q_connect())
     Q_PRIVATE_SLOT(d_func(), void _q_disconnect())
-    Q_PRIVATE_SLOT(d_func(), void _q_objectDestroyed())
 
     friend class QAmqpChannelPrivate;
     friend class QAmqpQueuePrivate;
