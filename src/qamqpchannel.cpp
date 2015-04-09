@@ -157,8 +157,7 @@ void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int 
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
     if (channelState != ChannelOpenState) {
-        qAmqpDebug()    << Q_FUNC_INFO
-                        << "Channel is not open.";
+        qAmqpDebug() << Q_FUNC_INFO << "Channel is not open.";
         return;
     }
 
@@ -229,8 +228,7 @@ void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 
     newState(ChannelOpenState);
     if (qosDefined)
-        q->qos(requestedPrefetchCount,
-                requestedPrefetchSize);
+        q->qos(requestedPrefetchCount, requestedPrefetchSize);
 
     Q_EMIT q->opened();
     q->channelOpened();
@@ -255,12 +253,7 @@ void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
 /*! Report and change state. */
 void QAmqpChannelPrivate::newState(ChannelState state)
 {
-    qAmqpDebug() << "Channel"
-                 << name
-                 << "state:"
-                 << channelState
-                 << "->"
-                 << state;
+    qAmqpDebug() << "Channel" << name << "state:" << channelState << "->" << state;
     channelState = state;
 }
 
