@@ -342,7 +342,7 @@ void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const 
 void QAmqpExchange::remove(int options)
 {
     Q_D(QAmqpExchange);
-    if (!isOpen()) {
+    if (d->channelState != QAmqpChannelPrivate::ChannelClosedState) {
         qAmqpDebug() << Q_FUNC_INFO << "Channel is closed, re-opening and delaying remove.";
         d->delayedDeclare = false;
         d->delayedRemove = true;
