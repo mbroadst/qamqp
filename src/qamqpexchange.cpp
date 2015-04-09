@@ -33,7 +33,7 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 void QAmqpExchangePrivate::declare()
 {
     Q_Q(QAmqpExchange);
-    if (!q->isOpen()) {
+    if (channelState != ChannelClosedState) {
         qAmqpDebug()    << Q_FUNC_INFO
                         << "Channel is closed, re-opening and delaying declare.";
         delayedDeclare = true;
