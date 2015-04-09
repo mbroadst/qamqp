@@ -33,6 +33,7 @@ greaterThan(NEED_GCOV_SUPPORT, 0) {
 
 PRIVATE_HEADERS += \
     qamqpchannel_p.h \
+    qamqpchannelhash_p.h \
     qamqpclient_p.h \
     qamqpexchange_p.h \
     qamqpframe_p.h \
@@ -56,6 +57,7 @@ HEADERS += \
 SOURCES += \
     qamqpauthenticator.cpp \
     qamqpchannel.cpp \
+    qamqpchannelhash.cpp \
     qamqpclient.cpp \
     qamqpexchange.cpp \
     qamqpframe.cpp \
