@@ -238,23 +238,23 @@ void QAmqpExchangePrivate::newState(ChannelState state)
 QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s)
 {
     switch(s) {
-        case QAmqpExchangePrivate::ExchangeClosedState:
-            dbg << "ExchangeClosedState";
-            break;
-        case QAmqpExchangePrivate::ExchangeUndeclaredState:
-            dbg << "ExchangeUndeclaredState";
-            break;
-        case QAmqpExchangePrivate::ExchangeDeclaringState:
-            dbg << "ExchangeDeclaringState";
-            break;
-        case QAmqpExchangePrivate::ExchangeDeclaredState:
-            dbg << "ExchangeDeclaredState";
-            break;
-        case QAmqpExchangePrivate::ExchangeRemovingState:
-            dbg << "ExchangeRemovingState";
-            break;
-        default:
-            dbg << "{UNKNOWN EXCHANGE STATE}";
+    case QAmqpExchangePrivate::ExchangeClosedState:
+        dbg << "ExchangeClosedState";
+        break;
+    case QAmqpExchangePrivate::ExchangeUndeclaredState:
+        dbg << "ExchangeUndeclaredState";
+        break;
+    case QAmqpExchangePrivate::ExchangeDeclaringState:
+        dbg << "ExchangeDeclaringState";
+        break;
+    case QAmqpExchangePrivate::ExchangeDeclaredState:
+        dbg << "ExchangeDeclaredState";
+        break;
+    case QAmqpExchangePrivate::ExchangeRemovingState:
+        dbg << "ExchangeRemovingState";
+        break;
+    default:
+        dbg << "{UNKNOWN EXCHANGE STATE}";
     }
     return dbg;
 }

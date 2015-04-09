@@ -498,23 +498,23 @@ void QAmqpQueuePrivate::newState(ChannelState state)
 QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s)
 {
     switch(s) {
-        case QAmqpQueuePrivate::QueueClosedState:
-            dbg << "QueueClosedState";
-            break;
-        case QAmqpQueuePrivate::QueueUndeclaredState:
-            dbg << "QueueUndeclaredState";
-            break;
-        case QAmqpQueuePrivate::QueueDeclaringState:
-            dbg << "QueueDeclaredState";
-            break;
-        case QAmqpQueuePrivate::QueueDeclaredState:
-            dbg << "QueueDeclaredState";
-            break;
-        case QAmqpQueuePrivate::QueueRemovingState:
-            dbg << "QueueRemovingState";
-            break;
-        default:
-            dbg << "{UNKNOWN QUEUE STATE}";
+    case QAmqpQueuePrivate::QueueClosedState:
+        dbg << "QueueClosedState";
+        break;
+    case QAmqpQueuePrivate::QueueUndeclaredState:
+        dbg << "QueueUndeclaredState";
+        break;
+    case QAmqpQueuePrivate::QueueDeclaringState:
+        dbg << "QueueDeclaredState";
+        break;
+    case QAmqpQueuePrivate::QueueDeclaredState:
+        dbg << "QueueDeclaredState";
+        break;
+    case QAmqpQueuePrivate::QueueRemovingState:
+        dbg << "QueueRemovingState";
+        break;
+    default:
+        dbg << "{UNKNOWN QUEUE STATE}";
     }
     return dbg;
 }
@@ -522,23 +522,23 @@ QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::QueueState s)
 QDebug operator<<(QDebug dbg, QAmqpQueuePrivate::ConsumerState s)
 {
     switch(s) {
-        case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
-            dbg << "ConsumerQueueUndeclaredState";
-            break;
-        case QAmqpQueuePrivate::ConsumerQueueDeclaredState:
-            dbg << "ConsumerQueueDeclaredState";
-            break;
-        case QAmqpQueuePrivate::ConsumerRequestedState:
-            dbg << "ConsumerRequestedState";
-            break;
-        case QAmqpQueuePrivate::ConsumerConsumingState:
-            dbg << "ConsumerConsumingState";
-            break;
-        case QAmqpQueuePrivate::ConsumerCancellingState:
-            dbg << "ConsumerCancellingState";
-            break;
-        default:
-            dbg << "{UNKNOWN CONSUMER STATE}";
+    case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
+        dbg << "ConsumerQueueUndeclaredState";
+        break;
+    case QAmqpQueuePrivate::ConsumerQueueDeclaredState:
+        dbg << "ConsumerQueueDeclaredState";
+        break;
+    case QAmqpQueuePrivate::ConsumerRequestedState:
+        dbg << "ConsumerRequestedState";
+        break;
+    case QAmqpQueuePrivate::ConsumerConsumingState:
+        dbg << "ConsumerConsumingState";
+        break;
+    case QAmqpQueuePrivate::ConsumerCancellingState:
+        dbg << "ConsumerCancellingState";
+        break;
+    default:
+        dbg << "{UNKNOWN CONSUMER STATE}";
     }
     return dbg;
 }
@@ -711,21 +711,21 @@ bool QAmqpQueue::consume(int options)
     }
 
     switch(d->consumerState) {
-        case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
-            d->consumeOptions = options;
-            d->delayedConsume = true;
-            return true;
-        case QAmqpQueuePrivate::ConsumerRequestedState:
-            qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
-            return false;
-        case QAmqpQueuePrivate::ConsumerConsumingState:
-            qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
-            return false;
-        case QAmqpQueuePrivate::ConsumerCancellingState:
-            qAmqpDebug() << Q_FUNC_INFO << "attempting to cancel";
-            return false;
-        default:
-            break;
+    case QAmqpQueuePrivate::ConsumerQueueUndeclaredState:
+        d->consumeOptions = options;
+        d->delayedConsume = true;
+        return true;
+    case QAmqpQueuePrivate::ConsumerRequestedState:
+        qAmqpDebug() << Q_FUNC_INFO << "already attempting to consume";
+        return false;
+    case QAmqpQueuePrivate::ConsumerConsumingState:
+        qAmqpDebug() << Q_FUNC_INFO << "already consuming with tag: " << d->consumerTag;
+        return false;
+    case QAmqpQueuePrivate::ConsumerCancellingState:
+        qAmqpDebug() << Q_FUNC_INFO << "attempting to cancel";
+        return false;
+    default:
+        break;
     }
 
     d->newState(QAmqpQueuePrivate::ConsumerRequestedState);

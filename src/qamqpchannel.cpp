@@ -267,20 +267,20 @@ void QAmqpChannelPrivate::newState(ChannelState state)
 QDebug operator<<(QDebug dbg, QAmqpChannelPrivate::ChannelState s)
 {
     switch(s) {
-        case QAmqpChannelPrivate::ChannelClosedState:
-            dbg << "ChannelClosedState";
-            break;
-        case QAmqpChannelPrivate::ChannelOpeningState:
-            dbg << "ChannelOpeningState";
-            break;
-        case QAmqpChannelPrivate::ChannelOpenState:
-            dbg << "ChannelOpenState";
-            break;
-        case QAmqpChannelPrivate::ChannelClosingState:
-            dbg << "ChannelClosingState";
-            break;
-        default:
-            dbg << "{UNKNOWN CHANNEL STATE}";
+    case QAmqpChannelPrivate::ChannelClosedState:
+        dbg << "ChannelClosedState";
+        break;
+    case QAmqpChannelPrivate::ChannelOpeningState:
+        dbg << "ChannelOpeningState";
+        break;
+    case QAmqpChannelPrivate::ChannelOpenState:
+        dbg << "ChannelOpenState";
+        break;
+    case QAmqpChannelPrivate::ChannelClosingState:
+        dbg << "ChannelClosingState";
+        break;
+    default:
+        dbg << "{UNKNOWN CHANNEL STATE}";
     }
     return dbg;
 }
