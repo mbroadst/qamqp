@@ -299,6 +299,12 @@ void QAmqpExchange::channelClosed()
 {
     Q_D(QAmqpExchange);
     qAmqpDebug() << "Channel closed";
+
+    if (!(name().isEmpty() || name().startsWith("amq.")))
+        d->delayedDeclare = (d->exchangeState
+                == QAmqpExchangePrivate::ExchangeDeclaredState)
+            || (d->exchangeState
+                    == QAmqpExchangePrivate::ExchangeDeclaringState);
     d->newState(QAmqpExchangePrivate::ExchangeClosedState);
 }
 
