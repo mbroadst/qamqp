@@ -560,14 +560,14 @@ void QAmqpClientPrivate::_q_objectDestroyed()
     QHash<QString, QPointer<QAmqpExchange> > exchanges(this->exchanges);
     QHash<QString, QPointer<QAmqpExchange> >::iterator ex_it;
     for (ex_it = exchanges.begin() ; ex_it != exchanges.end(); ex_it++)
-        if (ex_it.value.isNull())
+        if (ex_it.value().isNull())
             this->exchanges.remove(ex_it.key());
 
     /* Clean up Queues */
     QHash<QString, QPointer<QAmqpQueue> > queues(this->queues);
     QHash<QString, QPointer<QAmqpQueue> >::iterator q_it;
     for (q_it = queues.begin() ; q_it != queues.end(); q_it++)
-        if (q_it.value.isNull())
+        if (q_it.value().isNull())
             this->queues.remove(q_it.key());
 }
 
