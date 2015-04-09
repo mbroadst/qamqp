@@ -62,11 +62,9 @@ public:
 
 private Q_SLOTS:
     /*!
-     * Handle destruction of a channel.  Retrieve its current name and
-     * remove it from the list, otherwise do a full garbage collection
-     * run.
+     * Handle destruction of a channel.  Do a full garbage collection run.
      */
-    void channelDestroyed();
+    void channelDestroyed(QObject* object);
 
     /*!
      * Handle a queue that has just been declared and given a new name.  The
