@@ -7,6 +7,7 @@
 #include <QAbstractSocket>
 #include <QSslError>
 
+#include "qamqpchannelhash_p.h"
 #include "qamqpglobal.h"
 #include "qamqpauthenticator.h"
 #include "qamqptable.h"
@@ -50,11 +51,6 @@ public:
     void _q_heartbeat();
     virtual void _q_connect();
     void _q_disconnect();
-
-    /*!
-     * Iterate through our list of objects and clean up the NULL pointers.
-     */
-    void _q_objectDestroyed();
 
     virtual bool _q_method(const QAmqpMethodFrame &frame);
 
@@ -106,10 +102,10 @@ public:
     QString errorString;
 
     /*! Exchange objects */
-    QHash<QString, QPointer<QAmqpExchange> > exchanges;
+    QAmqpChannelHash exchanges;
 
     /*! Named queue objects */
-    QHash<QString, QPointer<QAmqpQueue> > queues;
+    QAmqpChannelHash queues;
 
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)

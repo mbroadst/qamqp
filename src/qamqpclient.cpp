@@ -551,26 +551,6 @@ void QAmqpClientPrivate::close(int code, const QString &text, int classId, int m
     sendFrame(frame);
 }
 
-/*!
- * Iterate through our list of objects and clean up the NULL pointers.
- */
-void QAmqpClientPrivate::_q_objectDestroyed()
-{
-    /* Clean up Exchanges */
-    QHash<QString, QPointer<QAmqpExchange> > exchanges(this->exchanges);
-    QHash<QString, QPointer<QAmqpExchange> >::iterator ex_it;
-    for (ex_it = exchanges.begin() ; ex_it != exchanges.end(); ex_it++)
-        if (ex_it.value().isNull())
-            this->exchanges.remove(ex_it.key());
-
-    /* Clean up Queues */
-    QHash<QString, QPointer<QAmqpQueue> > queues(this->queues);
-    QHash<QString, QPointer<QAmqpQueue> >::iterator q_it;
-    for (q_it = queues.begin() ; q_it != queues.end(); q_it++)
-        if (q_it.value().isNull())
-            this->queues.remove(q_it.key());
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpClient::QAmqpClient(QObject *parent)
@@ -680,29 +660,19 @@ QAmqpExchange *QAmqpClient::createExchange(int channelNumber)
 QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    if (!name.isEmpty() && d->exchanges.contains(name)
-                    && (!d->exchanges[name].isNull()))
-        return d->exchanges[name].data();
+    QAmqpExchange *exchange = static_cast<QAmqpExchange*>(d->exchanges.get(name));
+    if (exchange != NULL)
+        return exchange;
 
-    QAmqpExchange *exchange = new QAmqpExchange(channelNumber, this);
+    exchange = new QAmqpExchange(channelNumber, this);
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
-    connect(exchange, SIGNAL(destroyed()), this, SLOT(_q_objectDestroyed()));
     exchange->d_func()->open();
 
     if (!name.isEmpty())
         exchange->setName(name);
-    if (name.isNull())
-        /*
-         * We don't want two copies of the default exchange, one referenced by
-         * QString() and the other by QString("").  QString() != QString("")  So
-         * if it's null, overwrite with the empty string, since that's its
-         * official name.
-         */
-        d->exchanges[""] = exchange;
-    else
-        d->exchanges[name] = exchange;
+    d->exchanges.put(exchange);
     return exchange;
 }
 
@@ -714,23 +684,21 @@ QAmqpQueue *QAmqpClient::createQueue(int channelNumber)
 QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    if (!name.isEmpty() && d->queues.contains(name)
-                    && (!d->queues[name].isNull()))
-        return d->queues[name].data();
+    QAmqpQueue *queue = static_cast<QAmqpQueue*>(d->queues.get(name));
+    if (queue != NULL)
+        return queue;
 
-    QAmqpQueue *queue = new QAmqpQueue(channelNumber, this);
+    queue = new QAmqpQueue(channelNumber, this);
     d->methodHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     d->contentHandlerByChannel[queue->channelNumber()].append(queue->d_func());
     d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     connect(this, SIGNAL(connected()), queue, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), queue, SLOT(_q_disconnected()));
-    connect(queue, SIGNAL(destroyed()), this, SLOT(_q_objectDestroyed()));
     queue->d_func()->open();
 
-    if (!name.isEmpty()) {
+    if (!name.isEmpty())
         queue->setName(name);
-        d->queues[name] = queue;
-    }
+    d->queues.put(queue);
     return queue;
 }
 
