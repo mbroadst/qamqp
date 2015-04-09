@@ -670,10 +670,17 @@ QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumbe
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
     exchange->d_func()->open();
 
-    if (!name.isEmpty()) {
+    if (!name.isEmpty())
         exchange->setName(name);
-        d->exchanges[name] = exchange;
-    }
+    else if (name.isNull())
+        /*
+         * We don't want two copies of the default exchange, one referenced by
+         * QString() and the other by QString("").  QString() != QString("")  So
+         * if it's null, overwrite with the empty string, since that's its
+         * official name.
+         */
+        name = "";
+    d->exchanges[name] = exchange;
     return exchange;
 }
 
