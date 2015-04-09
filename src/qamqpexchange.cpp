@@ -222,10 +222,7 @@ void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
 /*! Report and change state. */
 void QAmqpExchangePrivate::newState(ExchangeState state)
 {
-    qAmqpDebug() << "Exchange state: "
-                 << exchangeState
-                 << " -> "
-                 << state;
+    qAmqpDebug() << "Exchange" << name << "state:" << exchangeState << "->" << state;
     exchangeState = state;
 }
 
