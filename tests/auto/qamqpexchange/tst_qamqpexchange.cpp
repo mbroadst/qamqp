@@ -209,6 +209,7 @@ void tst_QAMQPExchange::cleanupOnDeletion()
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->close();
     exchange->deleteLater();
+    QVERIFY(waitForSignal(exchange, SIGNAL(destroyed())));
 
     // now create, declare, and close the right way
     exchange = client->createExchange("test-deletion");

@@ -683,6 +683,7 @@ void tst_QAMQPQueue::cleanupOnDeletion()
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
     queue->close();
     queue->deleteLater();
+    QVERIFY(waitForSignal(queue, SIGNAL(destroyed())));
 
     // now create, declare, and close the right way
     queue = client->createQueue("test-deletion");

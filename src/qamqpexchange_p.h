@@ -17,6 +17,19 @@ public:
         METHOD_ID_ENUM(cmConfirm, 10)
     };
 
+    enum ExchangeState {
+        /*! Exchange channel is closed */
+        ExchangeClosedState,
+        /*! Exchange is undeclared */
+        ExchangeUndeclaredState,
+        /*! Exchange is being declared */
+        ExchangeDeclaringState,
+        /*! Exchange is declared */
+        ExchangeDeclaredState,
+        /*! Exchange is being removed */
+        ExchangeRemovingState,
+    };
+
     QAmqpExchangePrivate(QAmqpExchange *q);
     static QString typeToString(QAmqpExchange::ExchangeType type);
 
@@ -32,13 +45,21 @@ public:
 
     QString type;
     QAmqpExchange::ExchangeOptions options;
+    int removeOptions;
     QAmqpTable arguments;
     bool delayedDeclare;
-    bool declared;
+    bool delayedRemove;
+    ExchangeState exchangeState;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
 
+    /*! Report and change state. */
+    virtual void newState(ChannelState state);
+    virtual void newState(ExchangeState state);
+
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };
+
+QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s);
 
 #endif // QAMQPEXCHANGE_P_H

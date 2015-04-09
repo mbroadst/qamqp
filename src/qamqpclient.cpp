@@ -660,7 +660,11 @@ QAmqpExchange *QAmqpClient::createExchange(int channelNumber)
 QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    QAmqpExchange *exchange = new QAmqpExchange(channelNumber, this);
+    QAmqpExchange *exchange = static_cast<QAmqpExchange*>(d->exchanges.get(name));
+    if (exchange != NULL)
+        return exchange;
+
+    exchange = new QAmqpExchange(channelNumber, this);
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
@@ -668,6 +672,7 @@ QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumbe
 
     if (!name.isEmpty())
         exchange->setName(name);
+    d->exchanges.put(exchange);
     return exchange;
 }
 
@@ -679,7 +684,11 @@ QAmqpQueue *QAmqpClient::createQueue(int channelNumber)
 QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
 {
     Q_D(QAmqpClient);
-    QAmqpQueue *queue = new QAmqpQueue(channelNumber, this);
+    QAmqpQueue *queue = static_cast<QAmqpQueue*>(d->queues.get(name));
+    if (queue != NULL)
+        return queue;
+
+    queue = new QAmqpQueue(channelNumber, this);
     d->methodHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     d->contentHandlerByChannel[queue->channelNumber()].append(queue->d_func());
     d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
@@ -689,6 +698,7 @@ QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
 
     if (!name.isEmpty())
         queue->setName(name);
+    d->queues.put(queue);
     return queue;
 }
 

@@ -34,6 +34,17 @@ public:
         bmNack = 120
     };
 
+    enum ChannelState {
+        /*! Channel is presently closed */
+        ChannelClosedState,
+        /*! Channel is being opened, pending response. */
+        ChannelOpeningState,
+        /*! Channel is open */
+        ChannelOpenState,
+        /*! Channel is being closed, pending response. */
+        ChannelClosingState,
+    };
+
     QAmqpChannelPrivate(QAmqpChannel *q);
     virtual ~QAmqpChannelPrivate();
 
@@ -62,9 +73,14 @@ public:
     QString name;
     quint16 channelNumber;
     static quint16 nextChannelNumber;
-    bool opened;
+    ChannelState channelState;
     bool needOpen;
 
+    /*! Report and change state. */
+    virtual void newState(ChannelState state);
+
+    /*! Flag: the user has defined QOS settings */
+    bool qosDefined;
     qint32 prefetchSize;
     qint32 requestedPrefetchSize;
     qint16 prefetchCount;
@@ -76,5 +92,7 @@ public:
     Q_DECLARE_PUBLIC(QAmqpChannel)
     QAmqpChannel * const q_ptr;
 };
+
+QDebug operator<<(QDebug dbg, QAmqpChannelPrivate::ChannelState s);
 
 #endif // QAMQPCHANNEL_P_H

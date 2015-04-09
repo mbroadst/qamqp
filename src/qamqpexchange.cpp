@@ -24,15 +24,39 @@ QString QAmqpExchangePrivate::typeToString(QAmqpExchange::ExchangeType type)
 QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
-      declared(false),
+      delayedRemove(false),
+      exchangeState(ExchangeClosedState),
       nextDeliveryTag(0)
 {
 }
 
 void QAmqpExchangePrivate::declare()
 {
-    if (!opened) {
+    Q_Q(QAmqpExchange);
+    if (channelState != ChannelOpenState) {
+        qAmqpDebug() << Q_FUNC_INFO << "Channel is closed, re-opening and delaying declare.";
         delayedDeclare = true;
+        delayedRemove = false;
+        if (channelState == ChannelClosedState) {
+            needOpen = true;
+            q->reopen();
+        }
+        return;
+    }
+
+    if (exchangeState == ExchangeDeclaredState) {
+        qAmqpDebug() << "Re-declaring exchange" << name;
+    } else if (exchangeState != ExchangeUndeclaredState) {
+        if (exchangeState != ExchangeDeclaringState) {
+            qAmqpDebug() << "Delaying declare of exchange"
+                         << name
+                         << "(current state "
+                         << exchangeState
+                         << ")";
+            delayedDeclare = true;
+        } else {
+            qAmqpDebug() << "Exchange" << name << "already declaring";
+        }
         return;
     }
 
@@ -40,6 +64,9 @@ void QAmqpExchangePrivate::declare()
         qAmqpDebug() << Q_FUNC_INFO << "attempting to declare an unnamed exchange, aborting...";
         return;
     }
+
+    qAmqpDebug() << "Declaring exchange" << name;
+    newState(ExchangeDeclaringState);
 
     QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDeclare);
     frame.setChannel(channelNumber);
@@ -108,8 +135,10 @@ void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "declared exchange: " << name;
-    declared = true;
+    newState(ExchangeDeclaredState);
     Q_EMIT q->declared();
+    if (delayedRemove)
+        q->remove(removeOptions);
 }
 
 void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
@@ -118,8 +147,10 @@ void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
 
     Q_Q(QAmqpExchange);
     qAmqpDebug() << "deleted exchange: " << name;
-    declared = false;
+    newState(ExchangeUndeclaredState);
     Q_EMIT q->removed();
+    if (delayedDeclare)
+        declare();
 }
 
 void QAmqpExchangePrivate::_q_disconnected()
@@ -127,7 +158,7 @@ void QAmqpExchangePrivate::_q_disconnected()
     QAmqpChannelPrivate::_q_disconnected();
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
-    declared = false;
+    newState(ExchangeClosedState);
 }
 
 void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
@@ -188,6 +219,44 @@ void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
     }
 }
 
+/*! Report and change state. */
+void QAmqpExchangePrivate::newState(ExchangeState state)
+{
+    qAmqpDebug() << "Exchange" << name << "state:" << exchangeState << "->" << state;
+    exchangeState = state;
+}
+
+void QAmqpExchangePrivate::newState(ChannelState state)
+{
+    QAmqpChannelPrivate::newState(state);
+    if (state == QAmqpChannelPrivate::ChannelClosedState)
+        newState(ExchangeClosedState);
+}
+
+QDebug operator<<(QDebug dbg, QAmqpExchangePrivate::ExchangeState s)
+{
+    switch(s) {
+    case QAmqpExchangePrivate::ExchangeClosedState:
+        dbg << "ExchangeClosedState";
+        break;
+    case QAmqpExchangePrivate::ExchangeUndeclaredState:
+        dbg << "ExchangeUndeclaredState";
+        break;
+    case QAmqpExchangePrivate::ExchangeDeclaringState:
+        dbg << "ExchangeDeclaringState";
+        break;
+    case QAmqpExchangePrivate::ExchangeDeclaredState:
+        dbg << "ExchangeDeclaredState";
+        break;
+    case QAmqpExchangePrivate::ExchangeRemovingState:
+        dbg << "ExchangeRemovingState";
+        break;
+    default:
+        dbg << "{UNKNOWN EXCHANGE STATE}";
+    }
+    return dbg;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 QAmqpExchange::QAmqpExchange(int channelNumber, QAmqpClient *parent)
@@ -204,12 +273,37 @@ QAmqpExchange::~QAmqpExchange()
 void QAmqpExchange::channelOpened()
 {
     Q_D(QAmqpExchange);
-    if (d->delayedDeclare)
+    qAmqpDebug() << "Channel open";
+
+    if (!d->delayedDeclare && (name().isEmpty() || name().startsWith("amq."))) {
+        /* Nameless exchange, we should consider this declared by default */
+        qAmqpDebug() << "Automatically declaring built-in exchange:" << name();
+        d->newState(QAmqpExchangePrivate::ExchangeDeclaredState);
+        Q_EMIT declared();
+        return;
+    } else {
+        d->newState(QAmqpExchangePrivate::ExchangeUndeclaredState);
+    }
+
+    if (d->delayedRemove)
+        remove(d->removeOptions);
+    else if (d->delayedDeclare)
         d->declare();
+    else
+        qAmqpDebug() << "No delayed declare pending for" << name();
 }
 
 void QAmqpExchange::channelClosed()
 {
+    Q_D(QAmqpExchange);
+    qAmqpDebug() << "Channel closed";
+
+    if (!(name().isEmpty() || name().startsWith("amq.")))
+        d->delayedDeclare = (d->exchangeState
+                == QAmqpExchangePrivate::ExchangeDeclaredState)
+            || (d->exchangeState
+                    == QAmqpExchangePrivate::ExchangeDeclaringState);
+    d->newState(QAmqpExchangePrivate::ExchangeClosedState);
 }
 
 QAmqpExchange::ExchangeOptions QAmqpExchange::options() const
@@ -227,7 +321,7 @@ QString QAmqpExchange::type() const
 bool QAmqpExchange::isDeclared() const
 {
     Q_D(const QAmqpExchange);
-    return d->declared;
+    return (d->exchangeState == QAmqpExchangePrivate::ExchangeDeclaredState);
 }
 
 void QAmqpExchange::declare(ExchangeType type, ExchangeOptions options, const QAmqpTable &args)
@@ -247,6 +341,18 @@ void QAmqpExchange::declare(const QString &type, ExchangeOptions options, const 
 void QAmqpExchange::remove(int options)
 {
     Q_D(QAmqpExchange);
+    if (d->channelState != QAmqpChannelPrivate::ChannelOpenState) {
+        qAmqpDebug() << Q_FUNC_INFO << "Channel is closed, re-opening and delaying remove.";
+        d->delayedDeclare = false;
+        d->delayedRemove = true;
+        d->removeOptions = options;
+        if (d->channelState == QAmqpChannelPrivate::ChannelClosedState) {
+            d->needOpen = true;
+            reopen();
+        }
+        return;
+    }
+
     QAmqpMethodFrame frame(QAmqpFrame::Exchange, QAmqpExchangePrivate::miDelete);
     frame.setChannel(d->channelNumber);
 
@@ -259,6 +365,7 @@ void QAmqpExchange::remove(int options)
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
+    d->delayedRemove = false;
 }
 
 void QAmqpExchange::publish(const QString &message, const QString &routingKey,
