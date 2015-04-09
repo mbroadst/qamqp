@@ -62,17 +62,16 @@ void QAmqpChannelHash::put(QAmqpQueue* queue)
 }
 
 /*!
-* Handle destruction of a channel.  Retrieve its current name and
-* remove it from the list, otherwise do a full garbage collection
-* run.
+* Handle destruction of a channel.  Do a full garbage collection run.
 */
-void QAmqpChannelHash::channelDestroyed()
+void QAmqpChannelHash::channelDestroyed(QObject* object)
 {
-    QAmqpChannel* ch = static_cast<QAmqpChannel*>(sender());
-    if (!channels.contains(ch->name()))
-        return;
-    if (channels[ch->name()] == ch)
-        channels.remove(ch->name());
+    QList<QString> names(channels.keys());
+    QList<QString>::iterator it;
+    for (it = names.begin(); it != names.end(); it++) {
+        if (channels.value(*it) == object)
+            channels.remove(*it);
+    }
 }
 
 /*!
@@ -91,8 +90,8 @@ void QAmqpChannelHash::queueDeclared()
 */
 void QAmqpChannelHash::put(const QString& name, QAmqpChannel* channel)
 {
-    connect(channel,    SIGNAL(destroyed()),
-            this,       SLOT(channelDestroyed()));
+    connect(channel,    SIGNAL(destroyed(QObject*)),
+            this,       SLOT(channelDestroyed(QObject*)));
     channels[name] = channel;
 }
 
