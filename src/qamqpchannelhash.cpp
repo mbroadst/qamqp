@@ -90,7 +90,9 @@ void QAmqpChannelHash::channelDestroyed(QObject* object)
 */
 void QAmqpChannelHash::queueDeclared()
 {
-    put(static_cast<QAmqpQueue*>(sender()));
+    QAmqpQueue *queue = qobject_cast<QAmqpQueue*>(sender());
+    if (queue)
+        put(queue);
 }
 
 /*!
