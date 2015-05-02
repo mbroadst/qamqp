@@ -55,8 +55,7 @@ void QAmqpChannelHash::put(QAmqpExchange* exchange)
 void QAmqpChannelHash::put(QAmqpQueue* queue)
 {
     if (queue->name().isEmpty())
-        connect(queue,  SIGNAL(declared()),
-                this,   SLOT(queueDeclared()));
+        connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
     else
         put(queue->name(), queue);
 }
@@ -90,8 +89,7 @@ void QAmqpChannelHash::queueDeclared()
 */
 void QAmqpChannelHash::put(const QString& name, QAmqpChannel* channel)
 {
-    connect(channel,    SIGNAL(destroyed(QObject*)),
-            this,       SLOT(channelDestroyed(QObject*)));
+    connect(channel, SIGNAL(destroyed(QObject*)), this, SLOT(channelDestroyed(QObject*)));
     channels[name] = channel;
 }
 
