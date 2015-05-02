@@ -30,8 +30,8 @@
 */
 QAmqpChannel* QAmqpChannelHash::get(const QString& name) const
 {
-    if (name.isNull())
-        return channels.value(QString(""));
+    if (name.isEmpty())
+        return channels.value(QString());
     return channels.value(name);
 }
 
@@ -41,8 +41,8 @@ QAmqpChannel* QAmqpChannelHash::get(const QString& name) const
 */
 bool QAmqpChannelHash::contains(const QString& name) const
 {
-    if (name.isNull())
-        return channels.contains(QString(""));
+    if (name.isEmpty())
+        return channels.contains(QString());
     return channels.contains(name);
 }
 
@@ -53,7 +53,7 @@ bool QAmqpChannelHash::contains(const QString& name) const
 void QAmqpChannelHash::put(QAmqpExchange* exchange)
 {
     if (exchange->name().isEmpty())
-        put(QString(""), exchange);
+        put(QString(), exchange);
     else
         put(exchange->name(), exchange);
 }
