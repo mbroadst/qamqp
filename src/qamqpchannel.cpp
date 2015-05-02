@@ -203,9 +203,17 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     QAmqpMethodFrame closeOkFrame(QAmqpFrame::Channel, miCloseOk);
     closeOkFrame.setChannel(channelNumber);
     sendFrame(closeOkFrame);
+
+    // notify everyone that the channel was closed on us.
+    notifyClosed();
 }
 
 void QAmqpChannelPrivate::closeOk(const QAmqpMethodFrame &)
+{
+    notifyClosed();
+}
+
+void QAmqpChannelPrivate::notifyClosed()
 {
     Q_Q(QAmqpChannel);
     Q_EMIT q->closed();
