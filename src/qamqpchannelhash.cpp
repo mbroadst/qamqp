@@ -35,6 +35,17 @@ QAmqpChannel* QAmqpChannelHash::get(const QString& name) const
     return channels.value(name);
 }
 
+
+/*!
+* Return true if the named channel exists.
+*/
+bool QAmqpChannelHash::contains(const QString& name) const
+{
+    if (name.isNull())
+        return channels.contains(QString(""));
+    return channels.contains(name);
+}
+
 /*!
 * Store an exchange in the hash.  The nameless exchange is stored under
 * the name "".

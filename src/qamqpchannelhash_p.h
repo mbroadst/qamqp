@@ -48,6 +48,11 @@ public:
     QAmqpChannel* get(const QString& name) const;
 
     /*!
+     * Return true if the named channel exists.
+     */
+    bool contains(const QString& name) const;
+
+    /*!
      * Store an exchange in the hash.  The nameless exchange is stored under
      * the name "".
      */
