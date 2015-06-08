@@ -129,6 +129,12 @@ void tst_QAMQPExchange::invalidRedeclaration()
     // this is for rabbitmq:
     QCOMPARE(redeclared->error(), QAMQP::PreconditionFailedError);
 
+    // Server has probably closed the channel on us, if so, re-open it.
+    if (!exchange->isOpen()) {
+        exchange->reopen();
+        QVERIFY(waitForSignal(exchange, SIGNAL(opened())));
+    }
+
     // cleanup
     exchange->remove();
     QVERIFY(waitForSignal(exchange, SIGNAL(removed())));
@@ -209,6 +215,7 @@ void tst_QAMQPExchange::cleanupOnDeletion()
     QVERIFY(waitForSignal(exchange, SIGNAL(declared())));
     exchange->close();
     exchange->deleteLater();
+    QVERIFY(waitForSignal(exchange, SIGNAL(destroyed())));
 
     // now create, declare, and close the right way
     exchange = client->createExchange("test-deletion");

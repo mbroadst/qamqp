@@ -7,6 +7,7 @@
 #include <QAbstractSocket>
 #include <QSslError>
 
+#include "qamqpchannelhash_p.h"
 #include "qamqpglobal.h"
 #include "qamqpauthenticator.h"
 #include "qamqptable.h"
@@ -99,6 +100,12 @@ public:
 
     QAMQP::Error error;
     QString errorString;
+
+    /*! Exchange objects */
+    QAmqpChannelHash exchanges;
+
+    /*! Named queue objects */
+    QAmqpChannelHash queues;
 
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)

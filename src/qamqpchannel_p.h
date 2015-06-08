@@ -44,6 +44,7 @@ public:
     void flow(bool active);
     void flowOk();
     void close(int code, const QString &text, int classId, int methodId);
+    void notifyClosed();
 
     // reimp MethodHandler
     virtual bool _q_method(const QAmqpMethodFrame &frame);
