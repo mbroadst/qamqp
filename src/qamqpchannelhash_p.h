@@ -52,6 +52,11 @@ public:
      */
     bool contains(const QString& name) const;
 
+    /**
+     * Returns a list of channels tracked by this hash
+     */
+    QStringList channels() const;
+
     /*!
      * Store an exchange in the hash.  The nameless exchange is stored under
      * the name "".
@@ -85,7 +90,7 @@ private:
     void put(const QString& name, QAmqpChannel* channel);
 
     /*! A collection of channels.  Key is the channel's "name". */
-    QHash<QString, QAmqpChannel*> channels;
+    QHash<QString, QAmqpChannel*> m_channels;
 };
 
 /* vim: set ts=4 sw=4 et */

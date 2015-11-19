@@ -603,4 +603,16 @@ bool QAmqpQueue::cancel(bool noWait)
     return true;
 }
 
+void QAmqpQueue::resetInternalState()
+{
+  Q_D(QAmqpQueue);
+  QAmqpChannel::resetInternalState();
+
+  d->delayedDeclare = false;
+  d->declared = false;
+  d->recievingMessage = false;
+  d->consuming = false;
+  d->consumeRequested = false;
+}
+
 #include "moc_qamqpqueue.cpp"

@@ -106,6 +106,7 @@ public Q_SLOTS:
 protected:
     virtual void channelOpened();
     virtual void channelClosed();
+    virtual void resetInternalState();
 
 private:
     explicit QAmqpExchange(int channelNumber = -1, QAmqpClient *parent = 0);
@@ -113,6 +114,7 @@ private:
     Q_DISABLE_COPY(QAmqpExchange)
     Q_DECLARE_PRIVATE(QAmqpExchange)
     friend class QAmqpClient;
+    friend class QAmqpClientPrivate;
 
 };
 

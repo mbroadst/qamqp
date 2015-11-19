@@ -38,6 +38,7 @@ public:
 
     virtual void init();
     virtual void initSocket();
+    void resetChannelState();
     void setUsername(const QString &username);
     void setPassword(const QString &password);
     void parseConnectionString(const QString &uri);

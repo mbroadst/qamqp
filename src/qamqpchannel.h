@@ -63,6 +63,7 @@ Q_SIGNALS:
 protected:
     virtual void channelOpened() = 0;
     virtual void channelClosed() = 0;
+    virtual void resetInternalState();
 
 protected:
     explicit QAmqpChannel(QAmqpChannelPrivate *dd, QAmqpClient *client);

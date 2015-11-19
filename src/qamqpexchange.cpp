@@ -351,3 +351,13 @@ bool QAmqpExchange::waitForConfirms(int msecs)
 
     return (d->unconfirmedDeliveryTags.isEmpty());
 }
+
+void QAmqpExchange::resetInternalState()
+{
+  Q_D(QAmqpExchange);
+  QAmqpChannel::resetInternalState();
+
+  d->delayedDeclare = false;
+  d->declared = false;
+  d->nextDeliveryTag = 0;
+}

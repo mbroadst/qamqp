@@ -55,7 +55,6 @@ void QAmqpClientPrivate::initSocket()
     socket = new QSslSocket(q);
     socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
     socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
-
     QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
     QObject::connect(socket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
@@ -67,6 +66,23 @@ void QAmqpClientPrivate::initSocket()
                           q, SIGNAL(socketStateChanged(QAbstractSocket::SocketState)));
     QObject::connect(socket, SIGNAL(sslErrors(QList<QSslError>)),
                           q, SIGNAL(sslErrors(QList<QSslError>)));
+}
+
+void QAmqpClientPrivate::resetChannelState()
+{
+    foreach (QString exchangeName, exchanges.channels()) {
+      QAmqpExchange *exchange =
+        qobject_cast<QAmqpExchange*>(exchanges.get(exchangeName));
+      if (exchange) exchange->resetInternalState();
+      else qDebug() << "INVALID EXCHANGE: " << exchangeName;
+    }
+
+    foreach (QString queueName, queues.channels()) {
+      QAmqpQueue *queue =
+        qobject_cast<QAmqpQueue*>(queues.get(queueName));
+      if (queue) queue->resetInternalState();
+      else qDebug() << "INVALID QUEUE: " << queueName;
+    }
 }
 
 void QAmqpClientPrivate::setUsername(const QString &username)
@@ -156,6 +172,7 @@ void QAmqpClientPrivate::_q_socketDisconnected()
 {
     Q_Q(QAmqpClient);
     buffer.clear();
+    resetChannelState();
     if (connected) {
         connected = false;
         Q_EMIT q->disconnected();

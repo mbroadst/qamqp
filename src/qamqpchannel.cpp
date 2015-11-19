@@ -348,4 +348,11 @@ void QAmqpChannel::resume()
     d->flow(true);
 }
 
+void QAmqpChannel::resetInternalState()
+{
+  Q_D(QAmqpChannel);
+  d->opened = false;
+  d->needOpen = true;
+}
+
 #include "moc_qamqpchannel.cpp"

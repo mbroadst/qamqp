@@ -31,10 +31,14 @@
 QAmqpChannel* QAmqpChannelHash::get(const QString& name) const
 {
     if (name.isEmpty())
-        return channels.value(QString());
-    return channels.value(name);
+        return m_channels.value(QString());
+    return m_channels.value(name);
 }
 
+QStringList QAmqpChannelHash::channels() const
+{
+  return m_channels.keys();
+}
 
 /*!
 * Return true if the named channel exists.
@@ -42,8 +46,8 @@ QAmqpChannel* QAmqpChannelHash::get(const QString& name) const
 bool QAmqpChannelHash::contains(const QString& name) const
 {
     if (name.isEmpty())
-        return channels.contains(QString());
-    return channels.contains(name);
+        return m_channels.contains(QString());
+    return m_channels.contains(name);
 }
 
 /*!
@@ -76,11 +80,11 @@ void QAmqpChannelHash::put(QAmqpQueue* queue)
 */
 void QAmqpChannelHash::channelDestroyed(QObject* object)
 {
-    QList<QString> names(channels.keys());
+    QList<QString> names(m_channels.keys());
     QList<QString>::iterator it;
     for (it = names.begin(); it != names.end(); it++) {
-        if (channels.value(*it) == object)
-            channels.remove(*it);
+        if (m_channels.value(*it) == object)
+            m_channels.remove(*it);
     }
 }
 
@@ -103,7 +107,7 @@ void QAmqpChannelHash::queueDeclared()
 void QAmqpChannelHash::put(const QString& name, QAmqpChannel* channel)
 {
     connect(channel, SIGNAL(destroyed(QObject*)), this, SLOT(channelDestroyed(QObject*)));
-    channels[name] = channel;
+    m_channels[name] = channel;
 }
 
 #include "moc_qamqpchannelhash_p.cpp"

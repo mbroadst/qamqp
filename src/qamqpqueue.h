@@ -109,14 +109,16 @@ protected:
     // reimp Channel
     virtual void channelOpened();
     virtual void channelClosed();
+    virtual void resetInternalState();
 
 private:
     explicit QAmqpQueue(int channelNumber = -1, QAmqpClient *parent = 0);
 
     Q_DISABLE_COPY(QAmqpQueue)
     Q_DECLARE_PRIVATE(QAmqpQueue)
-
     friend class QAmqpClient;
+    friend class QAmqpClientPrivate;
+
 };
 
 #endif  // QAMQPQUEUE_H
