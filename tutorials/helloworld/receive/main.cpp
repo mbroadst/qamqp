@@ -9,7 +9,9 @@ class Receiver : public QObject
 {
     Q_OBJECT
 public:
-    Receiver(QObject *parent = 0) : QObject(parent) {}
+    Receiver(QObject *parent = 0) : QObject(parent) {
+      m_client.setAutoReconnect(true);
+    }
 
 public Q_SLOTS:
     void start() {
@@ -20,6 +22,7 @@ public Q_SLOTS:
 private Q_SLOTS:
     void clientConnected() {
         QAmqpQueue *queue = m_client.createQueue("hello");
+        disconnect(queue, 0, 0, 0); // in case this is a reconnect
         connect(queue, SIGNAL(declared()), this, SLOT(queueDeclared()));
         queue->declare();
     }
