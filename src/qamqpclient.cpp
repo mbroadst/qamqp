@@ -477,7 +477,13 @@ void QAmqpClientPrivate::close(const QAmqpMethodFrame &frame)
 
         // if it was a force disconnect, simulate receiving a closeOk
         if (checkError == QAMQP::ConnectionForcedError) {
-          return closeOk(QAmqpMethodFrame());
+          closeOk(QAmqpMethodFrame());
+          if (autoReconnect) {
+            qAmqpDebug() << "trying to reconnect after: " << timeout << "ms";
+            QTimer::singleShot(timeout, q, SLOT(_q_connect()));
+          }
+
+          return;
         }
     }
 
