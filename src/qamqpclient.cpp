@@ -464,17 +464,23 @@ void QAmqpClientPrivate::close(const QAmqpMethodFrame &frame)
     stream >> classId;
     stream >> methodId;
 
+    qAmqpDebug(">> code: %d", code);
+    qAmqpDebug(">> text: %s", qPrintable(text));
+    qAmqpDebug(">> class-id: %d", classId);
+    qAmqpDebug(">> method-id: %d", methodId);
+
     QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
         Q_EMIT q->error(error);
+
+        // if it was a force disconnect, simulate receiving a closeOk
+        if (checkError == QAMQP::ConnectionForcedError) {
+          return closeOk(QAmqpMethodFrame());
+        }
     }
 
-    qAmqpDebug(">> code: %d", code);
-    qAmqpDebug(">> text: %s", qPrintable(text));
-    qAmqpDebug(">> class-id: %d", classId);
-    qAmqpDebug(">> method-id: %d", methodId);
     connected = false;
     Q_EMIT q->disconnected();
 
