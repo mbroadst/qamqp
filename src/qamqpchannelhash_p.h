@@ -20,6 +20,7 @@
 
 #include <QHash>
 #include <QString>
+#include <QStringList>
 #include <QObject>
 
 /* Forward declarations */
