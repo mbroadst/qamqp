@@ -22,6 +22,8 @@ public:
     QAmqpQueuePrivate(QAmqpQueue *q);
     ~QAmqpQueuePrivate();
 
+    virtual void resetInternalState();
+
     void declare();
     virtual bool _q_method(const QAmqpMethodFrame &frame);
 

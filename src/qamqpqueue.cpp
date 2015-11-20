@@ -31,6 +31,17 @@ QAmqpQueuePrivate::~QAmqpQueuePrivate()
     }
 }
 
+
+void QAmqpQueuePrivate::resetInternalState()
+{
+  QAmqpChannelPrivate::resetInternalState();
+  delayedDeclare = false;
+  declared = false;
+  recievingMessage = false;
+  consuming = false;
+  consumeRequested = false;
+}
+
 bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
@@ -601,18 +612,6 @@ bool QAmqpQueue::cancel(bool noWait)
     frame.setArguments(arguments);
     d->sendFrame(frame);
     return true;
-}
-
-void QAmqpQueue::resetInternalState()
-{
-  Q_D(QAmqpQueue);
-  QAmqpChannel::resetInternalState();
-
-  d->delayedDeclare = false;
-  d->declared = false;
-  d->recievingMessage = false;
-  d->consuming = false;
-  d->consumeRequested = false;
 }
 
 #include "moc_qamqpqueue.cpp"

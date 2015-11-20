@@ -73,15 +73,13 @@ void QAmqpClientPrivate::resetChannelState()
     foreach (QString exchangeName, exchanges.channels()) {
       QAmqpExchange *exchange =
         qobject_cast<QAmqpExchange*>(exchanges.get(exchangeName));
-      if (exchange) exchange->resetInternalState();
-      else qDebug() << "INVALID EXCHANGE: " << exchangeName;
+      if (exchange) exchange->d_ptr->resetInternalState();
     }
 
     foreach (QString queueName, queues.channels()) {
       QAmqpQueue *queue =
         qobject_cast<QAmqpQueue*>(queues.get(queueName));
-      if (queue) queue->resetInternalState();
-      else qDebug() << "INVALID QUEUE: " << queueName;
+      if (queue) queue->d_ptr->resetInternalState();
     }
 }
 

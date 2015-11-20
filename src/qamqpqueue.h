@@ -109,7 +109,6 @@ protected:
     // reimp Channel
     virtual void channelOpened();
     virtual void channelClosed();
-    virtual void resetInternalState();
 
 private:
     explicit QAmqpQueue(int channelNumber = -1, QAmqpClient *parent = 0);

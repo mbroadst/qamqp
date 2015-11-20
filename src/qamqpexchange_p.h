@@ -20,6 +20,8 @@ public:
     QAmqpExchangePrivate(QAmqpExchange *q);
     static QString typeToString(QAmqpExchange::ExchangeType type);
 
+    virtual void resetInternalState();
+
     void declare();
 
     // method handler related

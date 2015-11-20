@@ -29,6 +29,14 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 {
 }
 
+void QAmqpExchangePrivate::resetInternalState()
+{
+  QAmqpChannelPrivate::resetInternalState();
+  delayedDeclare = false;
+  declared = false;
+  nextDeliveryTag = 0;
+}
+
 void QAmqpExchangePrivate::declare()
 {
     if (!opened) {
@@ -350,14 +358,4 @@ bool QAmqpExchange::waitForConfirms(int msecs)
     loop.exec();
 
     return (d->unconfirmedDeliveryTags.isEmpty());
-}
-
-void QAmqpExchange::resetInternalState()
-{
-  Q_D(QAmqpExchange);
-  QAmqpChannel::resetInternalState();
-
-  d->delayedDeclare = false;
-  d->declared = false;
-  d->nextDeliveryTag = 0;
 }

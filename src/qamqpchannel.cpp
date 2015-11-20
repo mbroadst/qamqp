@@ -92,6 +92,12 @@ void QAmqpChannelPrivate::sendFrame(const QAmqpFrame &frame)
     client->d_func()->sendFrame(frame);
 }
 
+void QAmqpChannelPrivate::resetInternalState()
+{
+  opened = false;
+  needOpen = true;
+}
+
 void QAmqpChannelPrivate::open()
 {
     if (!needOpen || opened)
@@ -346,13 +352,6 @@ void QAmqpChannel::resume()
 {
     Q_D(QAmqpChannel);
     d->flow(true);
-}
-
-void QAmqpChannel::resetInternalState()
-{
-  Q_D(QAmqpChannel);
-  d->opened = false;
-  d->needOpen = true;
 }
 
 #include "moc_qamqpchannel.cpp"

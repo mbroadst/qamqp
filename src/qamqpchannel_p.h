@@ -39,6 +39,7 @@ public:
 
     void init(int channel, QAmqpClient *client);
     void sendFrame(const QAmqpFrame &frame);
+    virtual void resetInternalState();
 
     void open();
     void flow(bool active);
