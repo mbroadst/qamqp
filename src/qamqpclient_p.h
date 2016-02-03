@@ -110,6 +110,9 @@ public:
 
     QAmqpClient * const q_ptr;
     Q_DECLARE_PUBLIC(QAmqpClient)
+    
+    private:
+    QAmqpTable arguments;
 
 };
 
