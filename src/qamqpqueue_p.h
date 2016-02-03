@@ -56,6 +56,9 @@ public:
 
     Q_DECLARE_PUBLIC(QAmqpQueue)
 
+    private:
+    QAmqpTable arguments;
+
 };
 
 #endif // QAMQPQUEUE_P_H
