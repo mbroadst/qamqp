@@ -328,7 +328,7 @@ int QAmqpQueue::options() const
     return d->options;
 }
 
-void QAmqpQueue::declare(int options, const QAmqpTable arguments)
+void QAmqpQueue::declare(int options, const QAmqpTable &arguments)
 {
     Q_D(QAmqpQueue);
     d->options = options;
