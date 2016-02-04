@@ -89,7 +89,7 @@ Q_SIGNALS:
 
 public Q_SLOTS:
     // AMQP Queue
-    void declare(int options = Durable|AutoDelete, const QAmqpTable arguments = QAmqpTable());
+    void declare(int options = Durable|AutoDelete, const QAmqpTable& arguments);
     void bind(const QString &exchangeName, const QString &key);
     void bind(QAmqpExchange *exchange, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
