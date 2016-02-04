@@ -18,8 +18,7 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
       declared(false),
       recievingMessage(false),
       consuming(false),
-      consumeRequested(false),
-      arguments(QAmqpTable())
+      consumeRequested(false)
 {
 }
 
