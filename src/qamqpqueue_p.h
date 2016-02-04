@@ -55,6 +55,8 @@ public:
     bool consumeRequested;
 
     Q_DECLARE_PUBLIC(QAmqpQueue)
+    private:
+    QAmqpTable arguments;
 
 };
 
