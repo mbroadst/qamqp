@@ -264,7 +264,7 @@ void QAmqpQueuePrivate::declare()
     out << qint16(0);   //reserved 1
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, name);
     out << qint8(options);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, arguments);
 
     frame.setArguments(arguments);
     sendFrame(frame);
@@ -328,10 +328,11 @@ int QAmqpQueue::options() const
     return d->options;
 }
 
-void QAmqpQueue::declare(int options)
+void QAmqpQueue::declare(int options, const QAmqpTable &arguments)
 {
     Q_D(QAmqpQueue);
     d->options = options;
+    d->arguments = arguments;
 
     if (!d->opened) {
         d->delayedDeclare = true;

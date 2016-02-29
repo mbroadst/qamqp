@@ -3,6 +3,7 @@
 
 #include <QPointer>
 #include "qamqpframe_p.h"
+#include "qamqptable.h"
 
 #define METHOD_ID_ENUM(name, id) name = id, name ## Ok
 
@@ -77,6 +78,7 @@ public:
 
     Q_DECLARE_PUBLIC(QAmqpChannel)
     QAmqpChannel * const q_ptr;
+    QAmqpTable arguments;
 };
 
 #endif // QAMQPCHANNEL_P_H

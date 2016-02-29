@@ -23,6 +23,7 @@
 #include "qamqpchannel.h"
 #include "qamqpmessage.h"
 #include "qamqpglobal.h"
+#include "qamqptable.h"
 
 class QAmqpClient;
 class QAmqpClientPrivate;
@@ -88,7 +89,7 @@ Q_SIGNALS:
 
 public Q_SLOTS:
     // AMQP Queue
-    void declare(int options = Durable|AutoDelete);
+    void declare(int options = Durable|AutoDelete, const QAmqpTable &arguments = QAmqpTable());
     void bind(const QString &exchangeName, const QString &key);
     void bind(QAmqpExchange *exchange, const QString &key);
     void unbind(const QString &exchangeName, const QString &key);
