@@ -34,7 +34,6 @@ public:
 
     QString type;
     QAmqpExchange::ExchangeOptions options;
-    QAmqpTable arguments;
     bool delayedDeclare;
     bool declared;
     qlonglong nextDeliveryTag;
