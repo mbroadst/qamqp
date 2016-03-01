@@ -136,6 +136,7 @@ void QAmqpExchangePrivate::_q_disconnected()
     qAmqpDebug() << "exchange " << name << " disconnected";
     delayedDeclare = false;
     declared = false;
+    unconfirmedDeliveryTags.clear();
 }
 
 void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
