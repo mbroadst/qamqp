@@ -3,6 +3,9 @@ include(../qamqp.pri)
 INCLUDEPATH += .
 TEMPLATE = lib
 TARGET = qamqp
+build_pass:CONFIG(debug, debug|release) {
+    TARGET = $$join(TARGET,,,d)
+}
 QT += core network
 QT -= gui
 DEFINES += QAMQP_BUILD
