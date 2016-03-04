@@ -369,7 +369,6 @@ bool QAmqpClientPrivate::_q_method(const QAmqpMethodFrame &frame)
 
 void QAmqpClientPrivate::start(const QAmqpMethodFrame &frame)
 {
-    Q_Q(QAmqpClient);
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
@@ -385,7 +384,7 @@ void QAmqpClientPrivate::start(const QAmqpMethodFrame &frame)
     QString locales = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::LongString).toString();
 
     qAmqpDebug("-> connection#start( version_major=%d, version_minor=%d, mechanisms=(%s), locales=%s",
-               version_major, version_minor, qPrintable(mechanisms.join(',')), qPrintable(locales));
+           version_major, version_minor, qPrintable(mechanisms.join(",")), qPrintable(locales));
 
     if (!mechanisms.contains(authenticator->type())) {
         socket->disconnectFromHost();
