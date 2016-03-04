@@ -147,7 +147,6 @@ void QAmqpQueuePrivate::_q_body(const QAmqpContentBodyFrame &frame)
 void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << "declared queue: " << name;
     declared = true;
 
     QByteArray data = frame.arguments();
@@ -156,7 +155,9 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
     name = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     qint32 messageCount = 0, consumerCount = 0;
     stream >> messageCount >> consumerCount;
-    qAmqpDebug("message count %d\nConsumer count: %d", messageCount, consumerCount);
+
+    qAmqpDebug("-> queue#declareOk( queue-name=%s, message-count=%d, consumer-count=%d )",
+               qPrintable(name), messageCount, consumerCount);
 
     Q_EMIT q->declared();
 }
@@ -164,13 +165,14 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
 void QAmqpQueuePrivate::purgeOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << "purged queue: " << name;
-
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
     qint32 messageCount = 0;
     stream >> messageCount;
+
+    qAmqpDebug("-> queue#purgeOk( queue-name=%s, message-count=%d )",
+               qPrintable(name), messageCount);
 
     Q_EMIT q->purged(messageCount);
 }
@@ -178,14 +180,16 @@ void QAmqpQueuePrivate::purgeOk(const QAmqpMethodFrame &frame)
 void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << "deleted queue: " << name;
     declared = false;
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint32 messageCount = 0;
     stream >> messageCount;
-    qAmqpDebug("Message count %d", messageCount);
+
+    qAmqpDebug("-> queue#deleteOk( queue-name=%s, message-count=%d )",
+               qPrintable(name), messageCount);
+
 
     Q_EMIT q->removed();
 }
@@ -193,23 +197,23 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 void QAmqpQueuePrivate::bindOk(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame)
-
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << Q_FUNC_INFO << "bound to exchange";
+    qAmqpDebug("-> queue[ %s ]#bindOk()", qPrintable(name));
     Q_EMIT q->bound();
 }
 
 void QAmqpQueuePrivate::unbindOk(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame)
-
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << Q_FUNC_INFO << "unbound from exchange";
+    qAmqpDebug("-> queue[ %s ]#unbindOk()", qPrintable(name));
     Q_EMIT q->unbound();
 }
 
 void QAmqpQueuePrivate::getOk(const QAmqpMethodFrame &frame)
 {
+    qAmqpDebug("-> queue[ %s ]#getOk()", qPrintable(name));
+
     QByteArray data = frame.arguments();
     QDataStream in(&data, QIODevice::ReadOnly);
 
@@ -224,13 +228,14 @@ void QAmqpQueuePrivate::getOk(const QAmqpMethodFrame &frame)
 void QAmqpQueuePrivate::consumeOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
-    qAmqpDebug() << "consume ok: " << name;
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     consumerTag = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
-    qAmqpDebug("consumer tag = %s", qPrintable(consumerTag));
     consuming = true;
     consumeRequested = false;
+
+    qAmqpDebug("-> queue[ %s ]#consumeOk( consumer-tag=%s )", qPrintable(name), qPrintable(consumerTag));
+
     Q_EMIT q->consuming(consumerTag);
 }
 
@@ -266,6 +271,11 @@ void QAmqpQueuePrivate::declare()
     out << qint8(options);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, arguments);
 
+    qAmqpDebug("<- queue#declare( queue=%s, passive=%d, durable=%d, exclusive=%d, auto-delete=%d, no-wait=%d )",
+               qPrintable(name), options & QAmqpQueue::Passive, options & QAmqpQueue::Durable,
+               options & QAmqpQueue::Exclusive, options & QAmqpQueue::AutoDelete,
+               options & QAmqpQueue::NoWait);
+
     frame.setArguments(arguments);
     sendFrame(frame);
 
@@ -284,6 +294,8 @@ void QAmqpQueuePrivate::cancelOk(const QAmqpMethodFrame &frame)
         qAmqpDebug() << Q_FUNC_INFO << "invalid consumer tag: " << consumer;
         return;
     }
+
+    qAmqpDebug("-> queue[ %s ]#cancelOk( consumer-tag=%s )", qPrintable(name), qPrintable(consumerTag));
 
     consumerTag.clear();
     consuming = false;
@@ -360,6 +372,9 @@ void QAmqpQueue::remove(int options)
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
     out << qint8(options);
 
+    qAmqpDebug("<- queue#delete( queue=%s, if-unused=%d, if-empty=%d )",
+               qPrintable(d->name), options & QAmqpQueue::roIfUnused, options & QAmqpQueue::roIfEmpty);
+
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
@@ -379,6 +394,8 @@ void QAmqpQueue::purge()
     out << qint16(0);   //reserved 1
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
     out << qint8(0);    // no-wait
+
+    qAmqpDebug("<- queue#purge( queue=%s, no-wait=%d )", qPrintable(d->name), 0);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -416,6 +433,10 @@ void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
     out << qint8(0);    //  no-wait
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
 
+    qAmqpDebug("<- queue#bind( queue=%s, exchange=%s, routing-key=%s, no-wait=%d )",
+               qPrintable(d->name), qPrintable(exchangeName), qPrintable(key),
+               0);
+
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
@@ -448,6 +469,9 @@ void QAmqpQueue::unbind(const QString &exchangeName, const QString &key)
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+
+    qAmqpDebug("<- queue#unbind( queue=%s, exchange=%s, routing-key=%s )",
+               qPrintable(d->name), qPrintable(exchangeName), qPrintable(key));
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -483,6 +507,11 @@ bool QAmqpQueue::consume(int options)
 
     out << qint8(options);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+
+    qAmqpDebug("<- basic#consume( queue=%s, consumer-tag=%s, no-local=%d, no-ack=%d, exclusive=%d, no-wait=%d )",
+               qPrintable(d->name), qPrintable(d->consumerTag),
+               options & QAmqpQueue::coNoLocal, options & QAmqpQueue::coNoAck,
+               options & QAmqpQueue::coExclusive, options & QAmqpQueue::coNoWait);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -532,6 +561,8 @@ void QAmqpQueue::get(bool noAck)
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
     out << qint8(noAck ? 1 : 0); // no-ack
 
+    qAmqpDebug("<- basic#get( queue=%s, no-ack=%d )", qPrintable(d->name), noAck);
+
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
@@ -557,6 +588,8 @@ void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
 
     out << deliveryTag;
     out << qint8(multiple ? 1 : 0); // multiple
+
+    qAmqpDebug("<- basic#ack( delivery-tag=%llu, multiple=%d )", deliveryTag, multiple);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -584,6 +617,8 @@ void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
     out << deliveryTag;
     out << qint8(requeue ? 1 : 0);
 
+    qAmqpDebug("<- basic#reject( delivery-tag=%llu, requeue=%d )", deliveryTag, requeue);
+
     frame.setArguments(arguments);
     d->sendFrame(frame);
 }
@@ -609,6 +644,8 @@ bool QAmqpQueue::cancel(bool noWait)
 
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->consumerTag);
     out << (noWait ? qint8(0x01) : qint8(0x0));
+
+    qAmqpDebug("<- basic#cancel( consumer-tag=%s, no-wait=%d )", qPrintable(d->consumerTag), noWait);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);

@@ -54,8 +54,6 @@ bool QAmqpChannelPrivate::_q_method(const QAmqpMethodFrame &frame)
     if (frame.methodClass() != QAmqpFrame::Channel)
         return false;
 
-    qAmqpDebug("Channel#%d:", channelNumber);
-
     switch (frame.id()) {
     case miOpenOk:
         openOk(frame);
@@ -94,8 +92,9 @@ void QAmqpChannelPrivate::sendFrame(const QAmqpFrame &frame)
 
 void QAmqpChannelPrivate::resetInternalState()
 {
-  opened = false;
-  needOpen = true;
+    if (!opened) return;
+    opened = false;
+    needOpen = true;
 }
 
 void QAmqpChannelPrivate::open()
@@ -106,7 +105,7 @@ void QAmqpChannelPrivate::open()
     if (!client->isConnected())
         return;
 
-    qAmqpDebug("Open channel #%d", channelNumber);
+    qAmqpDebug("<- channel#open( channel=%d )", channelNumber);
     QAmqpMethodFrame frame(QAmqpFrame::Channel, miOpen);
     frame.setChannel(channelNumber);
 
@@ -136,17 +135,19 @@ void QAmqpChannelPrivate::flow(bool active)
 void QAmqpChannelPrivate::flow(const QAmqpMethodFrame &frame)
 {
     Q_UNUSED(frame);
-    qAmqpDebug() << Q_FUNC_INFO;
+    qAmqpDebug("-> channel#flow( channel=%d )", channelNumber);
 }
 
 void QAmqpChannelPrivate::flowOk()
 {
-    qAmqpDebug() << Q_FUNC_INFO;
+    qAmqpDebug("<- channel#flowOk( channel=%d )", channelNumber);
 }
 
 void QAmqpChannelPrivate::flowOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpChannel);
+    qAmqpDebug("-> channel#flowOk( channel=%d )", channelNumber);
+
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     bool active = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
@@ -158,6 +159,9 @@ void QAmqpChannelPrivate::flowOk(const QAmqpMethodFrame &frame)
 
 void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int methodId)
 {
+    qAmqpDebug("<- channel#close( channel=%d, reply-code=%d, text=%s class-id=%d, method-id:%d, )",
+               channelNumber, code, qPrintable(text), classId, methodId);
+
     QByteArray arguments;
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
@@ -181,7 +185,6 @@ void QAmqpChannelPrivate::close(int code, const QString &text, int classId, int 
 void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpChannel);
-    qAmqpDebug(">> CLOSE");
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint16 code = 0, classId, methodId;
@@ -199,11 +202,8 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
         Q_EMIT q->error(error);
     }
 
-    qAmqpDebug(">> code: %d", code);
-    qAmqpDebug(">> text: %s", qPrintable(text));
-    qAmqpDebug(">> class-id: %d", classId);
-    qAmqpDebug(">> method-id: %d", methodId);
-    Q_EMIT q->closed();
+    qAmqpDebug("-> channel#close( channel=%d, reply-code=%d, reply-text=%s, class-id=%d, method-id=%d, )",
+               channelNumber, code, qPrintable(text), classId, methodId);
 
     // complete handshake
     QAmqpMethodFrame closeOkFrame(QAmqpFrame::Channel, miCloseOk);
@@ -216,6 +216,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
 
 void QAmqpChannelPrivate::closeOk(const QAmqpMethodFrame &)
 {
+    qAmqpDebug("-> channel#closeOk( channel=%d )", channelNumber);
     notifyClosed();
 }
 
@@ -230,7 +231,7 @@ void QAmqpChannelPrivate::notifyClosed()
 void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 {
     Q_Q(QAmqpChannel);
-    qAmqpDebug(">> OpenOK");
+    qAmqpDebug("-> channel#openOk( channel=%d )", channelNumber);
     opened = true;
     Q_EMIT q->opened();
     q->channelOpened();
@@ -246,6 +247,7 @@ void QAmqpChannelPrivate::qosOk(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpChannel);
     Q_UNUSED(frame)
+    qAmqpDebug("-> basic#qosOk( channel=%d )", channelNumber);
 
     prefetchCount = requestedPrefetchCount;
     prefetchSize = requestedPrefetchSize;
@@ -319,6 +321,9 @@ void QAmqpChannel::qos(qint16 prefetchCount, qint32 prefetchSize)
     stream << qint32(prefetchSize);
     stream << qint16(prefetchCount);
     stream << qint8(0x0);   // global
+
+    qAmqpDebug("<- basic#qos( channel=%d, prefetch-size=%d, prefetch-count=%d, global=%d )",
+               d->channelNumber, prefetchSize, prefetchCount, 0);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
