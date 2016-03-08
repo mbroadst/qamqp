@@ -4,6 +4,8 @@
 
 #include "qamqptestcase.h"
 #include "qamqpauthenticator.h"
+#include "qamqpexchange.h"
+#include "qamqpqueue.h"
 #include "qamqpclient_p.h"
 #include "qamqpclient.h"
 
@@ -20,6 +22,7 @@ private Q_SLOTS:
     void socketError();
     void validateUri_data();
     void validateUri();
+    void issue38();
 
 public Q_SLOTS:     // temporarily disabled
     void autoReconnect();
@@ -27,6 +30,7 @@ public Q_SLOTS:     // temporarily disabled
 
 private:
     QSslConfiguration createSslConfiguration();
+    void issue38_helper(QAmqpClient *client);
 
 };
 
@@ -220,6 +224,35 @@ void tst_QAMQPClient::validateUri()
     QCOMPARE(clientPrivate.host, expectedHost);
     QCOMPARE(clientPrivate.port, expectedPort);
     QCOMPARE(clientPrivate.virtualHost, expectedVirtualHost);
+}
+
+void tst_QAMQPClient::issue38_helper(QAmqpClient *client)
+{
+    // connect
+    client->connectToHost();
+    QVERIFY(waitForSignal(client, SIGNAL(connected())));
+
+    // create then declare, remove and close queue
+    QAmqpQueue *queue = client->createQueue();
+    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    queue->remove(QAmqpExchange::roForce);
+    QVERIFY(waitForSignal(queue, SIGNAL(removed())));
+    queue->close();
+    QVERIFY(waitForSignal(queue, SIGNAL(closed())));
+    queue->deleteLater();
+
+    // disconnect
+    client->disconnectFromHost();
+    QVERIFY(waitForSignal(client, SIGNAL(disconnected())));
+}
+
+void tst_QAMQPClient::issue38()
+{
+    QAmqpClient client;
+    issue38_helper(&client);
+    issue38_helper(&client);
 }
 
 QTEST_MAIN(tst_QAMQPClient)
