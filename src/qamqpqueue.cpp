@@ -34,12 +34,12 @@ QAmqpQueuePrivate::~QAmqpQueuePrivate()
 
 void QAmqpQueuePrivate::resetInternalState()
 {
-  QAmqpChannelPrivate::resetInternalState();
-  delayedDeclare = false;
-  declared = false;
-  recievingMessage = false;
-  consuming = false;
-  consumeRequested = false;
+    QAmqpChannelPrivate::resetInternalState();
+    delayedDeclare = false;
+    declared = false;
+    recievingMessage = false;
+    consuming = false;
+    consumeRequested = false;
 }
 
 bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)

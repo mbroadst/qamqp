@@ -31,10 +31,10 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
 
 void QAmqpExchangePrivate::resetInternalState()
 {
-  QAmqpChannelPrivate::resetInternalState();
-  delayedDeclare = false;
-  declared = false;
-  nextDeliveryTag = 0;
+    QAmqpChannelPrivate::resetInternalState();
+    delayedDeclare = false;
+    declared = false;
+    nextDeliveryTag = 0;
 }
 
 void QAmqpExchangePrivate::declare()
