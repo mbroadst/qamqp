@@ -383,7 +383,7 @@ void QAmqpClientPrivate::start(const QAmqpMethodFrame &frame)
         QAmqpFrame::readAmqpField(stream, QAmqpMetaType::LongString).toString().split(' ');
     QString locales = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::LongString).toString();
 
-    qAmqpDebug("-> connection#start( version_major=%d, version_minor=%d, mechanisms=(%s), locales=%s",
+    qAmqpDebug("-> connection#start( version_major=%d, version_minor=%d, mechanisms=(%s), locales=%s )",
            version_major, version_minor, qPrintable(mechanisms.join(",")), qPrintable(locales));
 
     if (!mechanisms.contains(authenticator->type())) {
@@ -530,7 +530,7 @@ void QAmqpClientPrivate::tuneOk()
     stream << qint32(frameMax);
     stream << qint16(heartbeatDelay);
 
-    qAmqpDebug("<- connection#tuneOk( channelMax=%d, frameMax=%d, heartbeatDelay=%d",
+    qAmqpDebug("<- connection#tuneOk( channelMax=%d, frameMax=%d, heartbeatDelay=%d )",
                channelMax, frameMax, heartbeatDelay);
 
     frame.setArguments(arguments);
@@ -548,7 +548,7 @@ void QAmqpClientPrivate::open()
     stream << qint8(0);
     stream << qint8(0);
 
-    qAmqpDebug("<- connection#open( virtualHost=%s, reserved-1=%d, reserved-2=%d",
+    qAmqpDebug("<- connection#open( virtualHost=%s, reserved-1=%d, reserved-2=%d )",
                qPrintable(virtualHost), 0, 0);
 
     frame.setArguments(arguments);
