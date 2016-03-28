@@ -17,6 +17,7 @@ private Q_SLOTS:
     void close();
     void resume();
     void sharedChannel();
+    void defineWithChannelNumber();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -82,6 +83,14 @@ void tst_QAMQPChannel::sharedChannel()
     QAmqpMessage message = queue->dequeue();
     verifyStandardMessageHeaders(message, routingKey);
     QCOMPARE(message.payload(), QByteArray("first message"));
+}
+
+void tst_QAMQPChannel::defineWithChannelNumber()
+{
+    QString routingKey = "test-specific-channel-number";
+    QAmqpQueue *queue = client->createQueue(routingKey, 25);
+    declareQueueAndVerifyConsuming(queue);
+    QCOMPARE(queue->channelNumber(), 25);
 }
 
 QTEST_MAIN(tst_QAMQPChannel)

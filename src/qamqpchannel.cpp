@@ -31,7 +31,7 @@ QAmqpChannelPrivate::~QAmqpChannelPrivate()
 void QAmqpChannelPrivate::init(int channel, QAmqpClient *c)
 {
     client = c;
-    needOpen = channel == -1 ? true : false;
+    needOpen = true;
     channelNumber = channel == -1 ? ++nextChannelNumber : channel;
     nextChannelNumber = qMax(channelNumber, nextChannelNumber);
 }
