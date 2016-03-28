@@ -28,6 +28,7 @@ private Q_SLOTS:
     void passiveDeclareNotFound();
     void cleanupOnDeletion();
     void testQueuedPublish();
+    void sendPendingConnection();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -240,6 +241,29 @@ void tst_QAMQPExchange::testQueuedPublish()
     }
 
     QVERIFY(defaultExchange->waitForConfirms());
+}
+
+void tst_QAMQPExchange::sendPendingConnection()
+{
+    // first create and declare queue, then disconnect client
+    QAmqpQueue *queue = client->createQueue("test-pending-sends");
+    declareQueueAndVerifyConsuming(queue);
+    client->disconnectFromHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(disconnected())));
+
+    // create queue and exchange, send message
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("testing", "test-pending-sends");
+
+    // reconnect client, wait for exchange to declare
+    client->connectToHost();
+    QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    queue->get();
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    QAmqpMessage message = queue->dequeue();
+    QCOMPARE(message.payload(), QByteArray("testing"));
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

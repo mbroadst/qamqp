@@ -37,6 +37,24 @@ void QAmqpExchangePrivate::resetInternalState()
     nextDeliveryTag = 0;
 }
 
+bool QAmqpExchangePrivate::canPublish() const
+{
+    return (name.isEmpty() || name.isNull()) ? opened : declared;
+}
+
+void QAmqpExchangePrivate::publishPendingMessages()
+{
+    Q_Q(QAmqpExchange);
+    if (!pendingSends.isEmpty()) {
+        while (pendingSends.size()) {
+            PendingSend info = pendingSends.takeFirst();
+            q->publish(info.message, info.routingKey, info.mimeType, info.headers, info.properties, info.publishOptions);
+        }
+
+        pendingSends.clear();
+    }
+}
+
 void QAmqpExchangePrivate::declare()
 {
     if (!opened) {
@@ -122,6 +140,7 @@ void QAmqpExchangePrivate::declareOk(const QAmqpMethodFrame &frame)
     qAmqpDebug("-> exchange[ %s ]#declareOk()", qPrintable(name));
     declared = true;
     Q_EMIT q->declared();
+    publishPendingMessages();
 }
 
 void QAmqpExchangePrivate::deleteOk(const QAmqpMethodFrame &frame)
@@ -216,6 +235,9 @@ void QAmqpExchange::channelOpened()
     Q_D(QAmqpExchange);
     if (d->delayedDeclare)
         d->declare();
+
+    if (d->name.isEmpty() || d->name.isNull())
+        d->publishPendingMessages();
 }
 
 void QAmqpExchange::channelClosed()
@@ -293,6 +315,19 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
+    if (!d->canPublish()) {
+        PendingSend info;
+        info.message = message;
+        info.routingKey = routingKey;
+        info.mimeType = mimeType;
+        info.headers = headers;
+        info.properties = properties;
+        info.publishOptions = publishOptions;
+
+        d->pendingSends.append(info);
+        return;
+    }
+
     if (d->nextDeliveryTag > 0) {
         d->unconfirmedDeliveryTags.append(d->nextDeliveryTag);
         d->nextDeliveryTag++;

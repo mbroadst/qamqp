@@ -5,6 +5,15 @@
 #include "qamqpexchange.h"
 #include "qamqpchannel_p.h"
 
+struct PendingSend {
+    QByteArray message;
+    QString routingKey;
+    QString mimeType;
+    QAmqpTable headers;
+    QAmqpMessage::PropertyHash properties;
+    int publishOptions;
+};
+
 class QAmqpExchangePrivate: public QAmqpChannelPrivate
 {
 public:
@@ -21,8 +30,10 @@ public:
     static QString typeToString(QAmqpExchange::ExchangeType type);
 
     virtual void resetInternalState();
-
     void declare();
+
+    bool canPublish() const;
+    void publishPendingMessages();
 
     // method handler related
     virtual void _q_disconnected();
@@ -38,6 +49,7 @@ public:
     bool declared;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
+    QVector<PendingSend> pendingSends;
 
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };

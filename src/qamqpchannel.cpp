@@ -95,6 +95,7 @@ void QAmqpChannelPrivate::resetInternalState()
     if (!opened) return;
     opened = false;
     needOpen = true;
+    channelNumber = ++nextChannelNumber;
 }
 
 void QAmqpChannelPrivate::open()
@@ -105,6 +106,7 @@ void QAmqpChannelPrivate::open()
     if (!client->isConnected())
         return;
 
+    qDebug() << "channel name: " << this->name;
     qAmqpDebug("<- channel#open( channel=%d )", channelNumber);
     QAmqpMethodFrame frame(QAmqpFrame::Channel, miOpen);
     frame.setChannel(channelNumber);
