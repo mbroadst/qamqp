@@ -47,7 +47,7 @@
 #define AMQP_BASIC_APP_ID_FLAG (1 << 3)
 #define AMQP_BASIC_CLUSTER_ID_FLAG (1 << 2)
 
-#define QAMQP_VERSION "0.4.0"
+#define QAMQP_VERSION "0.5.0"
 
 #define AMQP_CONNECTION_FORCED 320
 
