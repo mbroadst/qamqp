@@ -202,7 +202,7 @@ QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type
     {
         qulonglong tmp_value;
         s >> tmp_value;
-        return QDateTime::fromMSecsSinceEpoch(tmp_value);
+        return QDateTime::fromTime_t(tmp_value);
     }
     case QAmqpMetaType::Hash:
     {
@@ -256,7 +256,7 @@ void QAmqpFrame::writeAmqpField(QDataStream &s, QAmqpMetaType::ValueType type, c
     }
         break;
     case QAmqpMetaType::Timestamp:
-        s << qulonglong(value.toDateTime().toMSecsSinceEpoch());
+        s << qulonglong(value.toDateTime().toTime_t());
         break;
     case QAmqpMetaType::Hash:
     {
