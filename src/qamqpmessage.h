@@ -67,6 +67,7 @@ public:
     bool hasHeader(const QString &header) const;
     void setHeader(const QString &header, const QVariant &value);
     QVariant header(const QString &header, const QVariant &defaultValue = QVariant()) const;
+    const QHash<QString, QVariant>& headers() const;
 
     bool isValid() const;
     bool isRedelivered() const;
