@@ -108,7 +108,7 @@ QVariant QAmqpMessage::header(const QString &header, const QVariant &defaultValu
     return d->headers.value(header, defaultValue);
 }
 
-const QHash<QString, QVariant>& QAmqpMessage::headers() const
+QHash<QString, QVariant> QAmqpMessage::headers() const
 {
     return d->headers;
 }
