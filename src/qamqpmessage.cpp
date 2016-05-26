@@ -108,6 +108,11 @@ QVariant QAmqpMessage::header(const QString &header, const QVariant &defaultValu
     return d->headers.value(header, defaultValue);
 }
 
+QHash<QString, QVariant> QAmqpMessage::headers() const
+{
+    return d->headers;
+}
+
 #if QT_VERSION < 0x050000
 bool QAmqpMessage::isDetached() const
 {
