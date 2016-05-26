@@ -560,7 +560,7 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     array.append(true);
     array.append(qint32(-65536));
 
-    QDateTime timestamp = QDateTime::currentDateTime().toTime_t();
+    QDateTime timestamp = QDateTime::currentDateTime();
 
     QAmqpTable headers;
     headers.insert("boolean", true);
@@ -601,7 +601,7 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     QCOMPARE(message.header("double").toDouble(), double(FLT_MAX));
     QCOMPARE(message.header("short-string").toString(), QLatin1String("test"));
     QCOMPARE(message.header("long-string").toString(), QLatin1String("test"));
-    QCOMPARE(message.header("timestamp").toDateTime(), timestamp);
+    QCOMPARE(message.header("timestamp").toDateTime().toTime_t(), timestamp.toTime_t());
     QCOMPARE(message.header("bytes").toByteArray(), QByteArray("abcdefg1234567"));
 
     QVERIFY(message.hasHeader("nested-table"));
@@ -654,7 +654,7 @@ void tst_QAMQPQueue::messageProperties()
     QCOMPARE(message.property(QAmqpMessage::ReplyTo).toString(), QLatin1String("another-queue"));
     QCOMPARE(message.property(QAmqpMessage::MessageId).toString(), QLatin1String("some-message-id"));
     QCOMPARE(message.property(QAmqpMessage::Expiration).toString(), QLatin1String("60000"));
-    QCOMPARE(message.property(QAmqpMessage::Timestamp).toDateTime(), timestamp);
+    QCOMPARE(message.property(QAmqpMessage::Timestamp).toDateTime().toTime_t(), timestamp.toTime_t());
     QCOMPARE(message.property(QAmqpMessage::Type).toString(), QLatin1String("some-message-type"));
     QCOMPARE(message.property(QAmqpMessage::UserId).toString(), QLatin1String("guest"));
     QCOMPARE(message.property(QAmqpMessage::AppId).toString(), QLatin1String("some-app-id"));
