@@ -560,7 +560,7 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     array.append(true);
     array.append(qint32(-65536));
 
-    QDateTime timestamp = QDateTime::currentDateTime();
+    QDateTime timestamp = QDateTime::currentDateTime().toTime_t();
 
     QAmqpTable headers;
     headers.insert("boolean", true);
