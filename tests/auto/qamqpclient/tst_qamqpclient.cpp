@@ -313,7 +313,7 @@ void tst_QAMQPClient::networkDownThenUp()
     client.setPort(5672);
     client.setVirtualHost("/");
     client.setUsername("guest");
-    client.setPassword("gutest");
+    client.setPassword("guest");
     client.setAutoReconnect(false);
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
