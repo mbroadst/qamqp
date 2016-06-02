@@ -319,7 +319,9 @@ void tst_QAMQPClient::networkDownThenUp()
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
     qDebug() << "Connection connected";
 
-    while (true) {
+    int i = 10; // during the 5 minutes test, please disable the ethernet connection and enabled it mannualy.
+
+    while (i > 0) {
         client.disconnectFromHost();
         if (waitForSignal(&client,SIGNAL(disconnected()))) {
             qDebug() << "Connection disconnected";
@@ -335,6 +337,8 @@ void tst_QAMQPClient::networkDownThenUp()
         }
 
         QTest::qSleep(30000);
+
+        i--;
     }
 }
 
