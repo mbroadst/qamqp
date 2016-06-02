@@ -138,6 +138,7 @@ void QAmqpClientPrivate::_q_connect()
     if (socket->state() != QAbstractSocket::UnconnectedState) {
         qAmqpDebug() << Q_FUNC_INFO << "socket already connected, disconnecting..";
         _q_disconnect();
+        socket->abort();
     }
 
     qAmqpDebug() << "connecting to host: " << host << ", port: " << port;
