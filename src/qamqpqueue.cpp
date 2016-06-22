@@ -263,8 +263,8 @@ void QAmqpQueuePrivate::declare()
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miDeclare);
     frame.setChannel(channelNumber);
 
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
+    QByteArray args;
+    QDataStream out(&args, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, name);
@@ -276,7 +276,7 @@ void QAmqpQueuePrivate::declare()
                options & QAmqpQueue::Exclusive, options & QAmqpQueue::AutoDelete,
                options & QAmqpQueue::NoWait);
 
-    frame.setArguments(arguments);
+    frame.setArguments(args);
     sendFrame(frame);
 
     if (delayedDeclare)
