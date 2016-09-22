@@ -321,7 +321,6 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
     content.setProperty(QAmqpMessage::ContentType, mimeType);
     content.setProperty(QAmqpMessage::ContentEncoding, "utf-8");
     content.setProperty(QAmqpMessage::Headers, headers);
-    content.setProperty(QAmqpMessage::MessageId, "0");
 
     QAmqpMessage::PropertyHash::ConstIterator it;
     QAmqpMessage::PropertyHash::ConstIterator itEnd = properties.constEnd();
