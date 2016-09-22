@@ -42,6 +42,8 @@ class QAMQP_EXPORT QAmqpClient : public QObject
     Q_PROPERTY(qint16 channelMax READ channelMax WRITE setChannelMax)
     Q_PROPERTY(qint32 frameMax READ frameMax WRITE setFrameMax)
     Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay)
+    Q_PROPERTY(qint16 heartbeatLosts READ heartbeatLosts() WRITE setHeartbeatLosts)
+
 
 public:
     explicit QAmqpClient(QObject *parent = 0);
@@ -79,6 +81,9 @@ public:
 
     qint16 heartbeatDelay() const;
     void setHeartbeatDelay(qint16 delay);
+
+    quint16 heartbeatLosts() const;
+    void setHeartbeatLosts(qint16 lostCount);
 
     int writeTimeout() const;
     void setWriteTimeout(int msecs);
