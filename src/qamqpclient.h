@@ -67,7 +67,7 @@ public:
     QAmqpAuthenticator *auth() const;
 
     bool autoReconnect() const;
-    void setAutoReconnect(bool value);
+    void setAutoReconnect(bool value, int timeout = 0);
 
     bool isConnected() const;
 

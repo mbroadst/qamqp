@@ -23,6 +23,7 @@ private Q_SLOTS:
 
 public Q_SLOTS:     // temporarily disabled
     void autoReconnect();
+    void autoReconnectTimeout();
     void sslConnect();
 
 private:
@@ -140,6 +141,25 @@ void tst_QAMQPClient::autoReconnect()
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));
     QProcess::execute("rabbitmqctl", QStringList() << "start_app");
     QVERIFY(waitForSignal(&client, SIGNAL(connected()), 2));
+}
+
+void tst_QAMQPClient::autoReconnectTimeout()
+{
+    // TODO: this is a fairly crude way of testing this, research
+    //       better alternatives
+
+    QAmqpClient client;
+    client.setAutoReconnect(true, 3);
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected()), 60));
+    qDebug() <<"connected" ;
+    QProcess::execute("rabbitmqctl", QStringList() << "stop_app");
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected()), 60));
+    qDebug() <<"disconnected" ;
+    QProcess::execute("rabbitmqctl", QStringList() << "start_app");
+    QVERIFY(waitForSignal(&client, SIGNAL(connected()), 60));
+    qDebug() <<"connected" ;
+
 }
 
 void tst_QAMQPClient::tune()

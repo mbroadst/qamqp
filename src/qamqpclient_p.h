@@ -81,6 +81,7 @@ public:
     // Network
     QByteArray buffer;
     bool autoReconnect;
+    bool reconnectFixedTimeout;
     int timeout;
     bool connecting;
     bool useSsl;
