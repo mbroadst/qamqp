@@ -162,7 +162,10 @@ void QAmqpClientPrivate::_q_disconnect()
 // private slots
 void QAmqpClientPrivate::_q_socketConnected()
 {
-    timeout = 0;
+    if(reconnectFixedTimeout == false)
+    {
+        timeout = 0;
+    }
     char header[8] = {'A', 'M', 'Q', 'P', 0, 0, 9, 1};
     socket->write(header, 8);
 }
@@ -885,6 +888,11 @@ void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
         d->port = AMQP_SSL_PORT;
         d->socket->setSslConfiguration(config);
     }
+}
+
+QString QAmqpClient::getGitVersion()
+{
+    return QString(GIT_VERSION);
 }
 
 void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)

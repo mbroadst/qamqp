@@ -160,6 +160,9 @@ void tst_QAMQPClient::autoReconnectTimeout()
     QVERIFY(waitForSignal(&client, SIGNAL(connected()), 60));
     qDebug() <<"connected" ;
 
+    QVERIFY(waitForSignal(&client, SIGNAL(disconnected()), 60));
+    QProcess::execute("rabbitmqctl", QStringList() << "start_app");
+    QVERIFY(waitForSignal(&client, SIGNAL(connected()), 60));
 }
 
 void tst_QAMQPClient::tune()
