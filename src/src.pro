@@ -34,6 +34,13 @@ greaterThan(NEED_GCOV_SUPPORT, 0) {
     }
 }
 
+#Define GIT Macros
+GIT_VERSION = $$system(git describe --long --dirty --tags)
+DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
+
+GIT_TAG = $$system(git describe --abbrev=0)
+VERSION = $$replace(GIT_TAG, v,)
+
 PRIVATE_HEADERS += \
     qamqpchannel_p.h \
     qamqpchannelhash_p.h \

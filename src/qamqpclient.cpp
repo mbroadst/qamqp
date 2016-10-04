@@ -19,6 +19,7 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       host(AMQP_HOST),
       virtualHost(AMQP_VHOST),
       autoReconnect(false),
+      reconnectFixedTimeout(false),
       timeout(0),
       connecting(false),
       useSsl(false),
@@ -161,7 +162,10 @@ void QAmqpClientPrivate::_q_disconnect()
 // private slots
 void QAmqpClientPrivate::_q_socketConnected()
 {
-    timeout = 0;
+    if(reconnectFixedTimeout == false)
+    {
+        timeout = 0;
+    }
     char header[8] = {'A', 'M', 'Q', 'P', 0, 0, 9, 1};
     socket->write(header, 8);
 }
@@ -185,11 +189,14 @@ void QAmqpClientPrivate::_q_heartbeat()
 void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 {
     Q_Q(QAmqpClient);
-    if (timeout <= 0) {
-        timeout = 1000;
-    } else {
-        if (timeout < 120000)
-            timeout *= 5;
+    if(reconnectFixedTimeout == false)
+    {
+        if (timeout <= 0) {
+            timeout = 1000;
+        } else {
+            if (timeout < 120000)
+                timeout *= 5;
+        }
     }
 
     switch (error) {
@@ -747,10 +754,21 @@ bool QAmqpClient::autoReconnect() const
     return d->autoReconnect;
 }
 
-void QAmqpClient::setAutoReconnect(bool value)
+void QAmqpClient::setAutoReconnect(bool value, int timeout)
 {
     Q_D(QAmqpClient);
     d->autoReconnect = value;
+
+    if((value == true) && (timeout > 0))
+    {
+        d->timeout = timeout;
+        d->reconnectFixedTimeout = true;
+    }
+    else
+    {
+        d->timeout = 0;
+        d->reconnectFixedTimeout = false;
+    }
 }
 
 qint16 QAmqpClient::channelMax() const
@@ -864,6 +882,11 @@ void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
         d->port = AMQP_SSL_PORT;
         d->socket->setSslConfiguration(config);
     }
+}
+
+QString QAmqpClient::gitVersion()
+{
+    return QString(GIT_VERSION);
 }
 
 void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)

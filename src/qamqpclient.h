@@ -67,7 +67,7 @@ public:
     QAmqpAuthenticator *auth() const;
 
     bool autoReconnect() const;
-    void setAutoReconnect(bool value);
+    void setAutoReconnect(bool value, int timeout = 0);
 
     bool isConnected() const;
 
@@ -94,6 +94,8 @@ public:
 
     QSslConfiguration sslConfiguration() const;
     void setSslConfiguration(const QSslConfiguration &config);
+
+    static QString gitVersion();
 
     // channels
     QAmqpExchange *createExchange(int channelNumber = -1);
