@@ -890,7 +890,7 @@ void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
     }
 }
 
-QString QAmqpClient::getGitVersion()
+QString QAmqpClient::gitVersion()
 {
     return QString(GIT_VERSION);
 }
