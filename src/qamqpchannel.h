@@ -44,6 +44,8 @@ public:
     qint32 prefetchSize() const;
     qint16 prefetchCount() const;
 
+    void reset();
+
     // AMQP Basic
     void qos(qint16 prefetchCount, qint32 prefetchSize = 0);
 
