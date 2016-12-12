@@ -341,6 +341,12 @@ qint16 QAmqpChannel::prefetchCount() const
     return d->prefetchCount;
 }
 
+void QAmqpChannel::reset()
+{
+    Q_D(QAmqpChannel);
+    d->resetInternalState();
+}
+
 QAMQP::Error QAmqpChannel::error() const
 {
     Q_D(const QAmqpChannel);
