@@ -153,7 +153,7 @@ void QAmqpQueuePrivate::declareOk(const QAmqpMethodFrame &frame)
     QDataStream stream(&data, QIODevice::ReadOnly);
 
     name = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
-    qint32 messageCount = 0, consumerCount = 0;
+
     stream >> messageCount >> consumerCount;
 
     qAmqpDebug("-> queue#declareOk( queue-name=%s, message-count=%d, consumer-count=%d )",
@@ -168,7 +168,7 @@ void QAmqpQueuePrivate::purgeOk(const QAmqpMethodFrame &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    qint32 messageCount = 0;
+
     stream >> messageCount;
 
     qAmqpDebug("-> queue#purgeOk( queue-name=%s, message-count=%d )",
@@ -184,7 +184,7 @@ void QAmqpQueuePrivate::deleteOk(const QAmqpMethodFrame &frame)
 
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
-    qint32 messageCount = 0;
+
     stream >> messageCount;
 
     qAmqpDebug("-> queue#deleteOk( queue-name=%s, message-count=%d )",
@@ -338,6 +338,18 @@ int QAmqpQueue::options() const
 {
     Q_D(const QAmqpQueue);
     return d->options;
+}
+
+qint32 QAmqpQueue::messageCount() const
+{
+    Q_D(const QAmqpQueue);
+    return d->messageCount;
+}
+
+qint32 QAmqpQueue::consumerCount() const
+{
+    Q_D(const QAmqpQueue);
+    return d->consumerCount;
 }
 
 void QAmqpQueue::declare(int options, const QAmqpTable &arguments)

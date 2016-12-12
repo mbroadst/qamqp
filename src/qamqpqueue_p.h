@@ -54,6 +54,9 @@ public:
     bool consuming;
     bool consumeRequested;
 
+    qint32 messageCount;
+    qint32 consumerCount;
+
     Q_DECLARE_PUBLIC(QAmqpQueue)
 
 };
