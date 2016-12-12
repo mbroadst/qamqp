@@ -75,6 +75,9 @@ public:
     void setConsumerTag(const QString &consumerTag);
     QString consumerTag() const;
 
+    qint32 messageCount() const;
+    qint32 consumerCount() const;
+
 Q_SIGNALS:
     void declared();
     void bound();
