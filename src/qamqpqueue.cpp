@@ -18,7 +18,9 @@ QAmqpQueuePrivate::QAmqpQueuePrivate(QAmqpQueue *q)
       declared(false),
       recievingMessage(false),
       consuming(false),
-      consumeRequested(false)
+      consumeRequested(false),
+      messageCount(0),
+      consumerCount(0)
 {
 }
 
