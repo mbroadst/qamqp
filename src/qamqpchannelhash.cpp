@@ -110,5 +110,4 @@ void QAmqpChannelHash::put(const QString& name, QAmqpChannel* channel)
     m_channels[name] = channel;
 }
 
-#include "moc_qamqpchannelhash_p.cpp"
 /* vim: set ts=4 sw=4 et */
