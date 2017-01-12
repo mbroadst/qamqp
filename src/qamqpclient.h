@@ -108,6 +108,7 @@ public:
     void connectToHost(const QString &uri = QString());
     void connectToHost(const QHostAddress &address, quint16 port = AMQP_PORT);
     void disconnectFromHost();
+    void forceDisconnectFromHost();
 
 Q_SIGNALS:
     void connected();
