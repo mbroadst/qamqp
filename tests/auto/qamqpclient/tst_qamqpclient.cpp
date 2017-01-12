@@ -24,6 +24,7 @@ private Q_SLOTS:
     void validateUri();
     void issue38();
     void issue38_take2();
+    void networkDownThenUp();
 
 public Q_SLOTS:     // temporarily disabled
     void autoReconnect();
@@ -328,6 +329,41 @@ void tst_QAMQPClient::issue38_take2()
     QVERIFY(waitForSignal(&client,SIGNAL(disconnected())));
 }
 
+void tst_QAMQPClient::networkDownThenUp()
+{
+    QAmqpClient client;
+    client.setHost("localhost"); // this should be changed to your server OTHER THAN localhost, as we test the network connection down and up
+    client.setPort(5672);
+    client.setVirtualHost("/");
+    client.setUsername("guest");
+    client.setPassword("guest");
+    client.setAutoReconnect(false);
+    client.connectToHost();
+    QVERIFY(waitForSignal(&client, SIGNAL(connected())));
+    qDebug() << "Connection connected";
+
+    int i = 10; // during the 5 minutes test, please disable the ethernet connection and enabled it mannualy.
+
+    while (i > 0) {
+        client.disconnectFromHost();
+        if (waitForSignal(&client,SIGNAL(disconnected()))) {
+            qDebug() << "Connection disconnected";
+        } else {
+            qDebug() << "Disconnect timeout";
+        }
+
+        client.connectToHost();
+        if (waitForSignal(&client, SIGNAL(connected()))) {
+            qDebug() << "Connection connected";
+        } else {
+            qDebug() << "Connection timeout";
+        }
+
+        QTest::qSleep(30000);
+
+        i--;
+    }
+}
 
 QTEST_MAIN(tst_QAMQPClient)
 #include "tst_qamqpclient.moc"
