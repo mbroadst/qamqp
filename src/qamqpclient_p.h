@@ -44,6 +44,8 @@ public:
     void parseConnectionString(const QString &uri);
     void sendFrame(const QAmqpFrame &frame);
 
+    void closeConnection();
+
     // private slots
     void _q_socketConnected();
     void _q_socketDisconnected();
@@ -95,6 +97,7 @@ public:
     bool closed;
     bool connected;
     QPointer<QTimer> heartbeatTimer;
+    QPointer<QTimer> reconnectTimer;
     QAmqpTable customProperties;
     qint16 channelMax;
     qint16 heartbeatDelay;
