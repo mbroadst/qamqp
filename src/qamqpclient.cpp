@@ -938,10 +938,9 @@ void QAmqpClient::disconnectFromHost()
     d->_q_disconnect();
 }
 
-void QAmqpClient::forceDisconnectFromHost()
+void QAmqpClient::abort()
 {
     Q_D(QAmqpClient);
-    d->_q_disconnect();
     d->closeConnection();
 }
 
