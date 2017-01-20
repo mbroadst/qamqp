@@ -1,0 +1,8 @@
+debug/*
+release/*
+*.lib
+*.so
+*.a
+*.prl
+*.pdb
+Makefile*
