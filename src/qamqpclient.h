@@ -113,11 +113,12 @@ public:
 Q_SIGNALS:
     void connected();
     void disconnected();
+    void heartbeat();
     void error(QAMQP::Error error);
     void socketError(QAbstractSocket::SocketError error);
     void socketStateChanged(QAbstractSocket::SocketState state);
     void sslErrors(const QList<QSslError> &errors);
-
+    
 public Q_SLOTS:
     void ignoreSslErrors(const QList<QSslError> &errors);
 
