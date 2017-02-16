@@ -239,6 +239,8 @@ void QAmqpClientPrivate::_q_socketError(QAbstractSocket::SocketError error)
 
 void QAmqpClientPrivate::_q_readyRead()
 {
+    Q_Q(QAmqpClient);
+    
     while (socket->bytesAvailable() >= QAmqpFrame::HEADER_SIZE) {
         unsigned char headerData[QAmqpFrame::HEADER_SIZE];
         socket->peek((char*)headerData, QAmqpFrame::HEADER_SIZE);
@@ -323,6 +325,7 @@ void QAmqpClientPrivate::_q_readyRead()
             }
 
             qAmqpDebug("AMQP: Heartbeat");
+            Q_EMIT q->heartbeat();
         }
             break;
         default:
