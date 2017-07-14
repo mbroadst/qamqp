@@ -611,7 +611,7 @@ void QAmqpQueue::ack(qlonglong deliveryTag, bool multiple)
 
 void QAmqpQueue::reject(const QAmqpMessage &message, bool requeue)
 {
-    ack(message.deliveryTag(), requeue);
+    reject(message.deliveryTag(), requeue);
 }
 
 void QAmqpQueue::reject(qlonglong deliveryTag, bool requeue)
