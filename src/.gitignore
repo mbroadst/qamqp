@@ -7,3 +7,5 @@ release/*
 *.prl
 *.pdb
 Makefile*
+.qmake.stash
+pkgconfig/*
