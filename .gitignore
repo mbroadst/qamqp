@@ -4,3 +4,7 @@
 /Debug
 /GeneratedFiles
 build
+debug
+release
+Makefile*
+*.bat
