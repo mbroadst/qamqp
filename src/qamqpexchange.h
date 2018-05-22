@@ -80,6 +80,10 @@ Q_SIGNALS:
 
     void confirmsEnabled();
     void allMessagesDelivered();
+    void messageDeliveryFinished(const QVector<qlonglong> &rejectedDeliveryTags);
+
+    void deliveryConfirmed(qlonglong deliveryTag);
+    void deliveryRejected(qlonglong deliveryTag);
 
 public Q_SLOTS:
     // AMQP Exchange
@@ -92,13 +96,21 @@ public Q_SLOTS:
     void remove(int options = roIfUnused|roNoWait);
 
     // AMQP Basic
-    void publish(const QString &message, const QString &routingKey,
+
+    qlonglong publish(const QString &message, const QString &routingKey,
                  const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
-    void publish(const QByteArray &message, const QString &routingKey, const QString &mimeType,
+
+    qlonglong publish(const QByteArray &message, const QString &routingKey, const QString &mimeType,
                  const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);
-    void publish(const QByteArray &message, const QString &routingKey,
+
+    /**
+     * Publish a message.
+     * @returns The delivery tag which can be used to identify the messsage for success/failure signals
+     * if confirms are enabled. Otherwise returns 0.
+     */
+    qlonglong publish(const QByteArray &message, const QString &routingKey,
                  const QString &mimeType, const QAmqpTable &headers,
                  const QAmqpMessage::PropertyHash &properties = QAmqpMessage::PropertyHash(),
                  int publishOptions = poNoOptions);

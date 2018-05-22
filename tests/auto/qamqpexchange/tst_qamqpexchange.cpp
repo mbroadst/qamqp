@@ -7,6 +7,8 @@
 #include "qamqpexchange.h"
 #include "qamqpqueue.h"
 
+Q_DECLARE_METATYPE(QVector< qlonglong >)
+
 class tst_QAMQPExchange : public TestCase
 {
     Q_OBJECT
@@ -28,6 +30,7 @@ private Q_SLOTS:
     void passiveDeclareNotFound();
     void cleanupOnDeletion();
     void testQueuedPublish();
+    void testRejectedMessagePublish();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -231,6 +234,10 @@ void tst_QAMQPExchange::testQueuedPublish()
     defaultExchange->enableConfirms();
     QVERIFY(waitForSignal(defaultExchange, SIGNAL(confirmsEnabled())));
 
+    SignalSpy deliveryConfirmedSpy(defaultExchange, SIGNAL(deliveryConfirmed(qlonglong)));
+    SignalSpy allMessagesDeliveredSpy(defaultExchange, SIGNAL(allMessagesDelivered()));
+    SignalSpy messageDeliveryFinishedSpy(defaultExchange, SIGNAL(messageDeliveryFinished(QVector<qlonglong>)));
+
     QAmqpMessage::PropertyHash properties;
     properties[QAmqpMessage::DeliveryMode] = "2";   // make message persistent
     for (int i = 0; i < 10000; ++i) {
@@ -240,6 +247,56 @@ void tst_QAMQPExchange::testQueuedPublish()
     }
 
     QVERIFY(defaultExchange->waitForConfirms());
+
+    QCOMPARE(allMessagesDeliveredSpy.count(), 1);
+
+    QCOMPARE(messageDeliveryFinishedSpy.count(), 1);
+    QVector< qlonglong > rejectedDeliveryTags = messageDeliveryFinishedSpy.first().first().value< QVector< qlonglong > >();
+    QVERIFY(rejectedDeliveryTags.isEmpty());
+
+    QCOMPARE(deliveryConfirmedSpy.count(), 10000);
+    for (qlonglong i = 0; i < 10000; ++i) {
+        qlonglong deliveryTag = deliveryConfirmedSpy.at(i).first().toLongLong();
+        QCOMPARE(deliveryTag, i+1);
+      }
+}
+
+void tst_QAMQPExchange::testRejectedMessagePublish()
+{
+    QAmqpTable queueArguments;
+    queueArguments["x-max-length"] = 1;  // queue can only accept one message!
+    queueArguments["x-overflow"] = "reject-publish";  // more messages will be rejected
+    QAmqpQueue *queue = client->createQueue("small_queue");
+    queue->declare(QAmqpQueue::Exclusive | QAmqpQueue::AutoDelete, queueArguments);
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+    QAmqpExchange *exchange = client->createExchange();
+    exchange->enableConfirms();
+    QVERIFY(waitForSignal(exchange, SIGNAL(confirmsEnabled())));
+
+    SignalSpy deliveryConfirmedSpy(exchange, SIGNAL(deliveryConfirmed(qlonglong)));
+    SignalSpy deliveryRejectedSpy(exchange, SIGNAL(deliveryRejected(qlonglong)));
+    SignalSpy allMessagesDeliveredSpy(exchange, SIGNAL(allMessagesDelivered()));
+    SignalSpy messageDeliveryFinishedSpy(exchange, SIGNAL(messageDeliveryFinished(QVector<qlonglong>)));
+
+    qlonglong firstDeliveryTag = exchange->publish("message", "small_queue");
+    qlonglong secondDeliveryTag = exchange->publish("message", "small_queue");
+    QVERIFY(firstDeliveryTag != secondDeliveryTag);
+
+    QVERIFY(exchange->waitForConfirms());
+
+    QCOMPARE(deliveryConfirmedSpy.count(), 1);
+    QCOMPARE(deliveryConfirmedSpy.first().first().toLongLong(), firstDeliveryTag);
+
+    QCOMPARE(deliveryRejectedSpy.count(), 1);
+    QCOMPARE(deliveryRejectedSpy.first().first().toLongLong(), secondDeliveryTag);
+
+    QCOMPARE(allMessagesDeliveredSpy.count(), 0); // not all messages were delivered
+
+    QCOMPARE(messageDeliveryFinishedSpy.count(), 1);
+    QVector< qlonglong > rejectedDeliveryTags = messageDeliveryFinishedSpy.first().first().value< QVector< qlonglong > >();
+    QCOMPARE(rejectedDeliveryTags.count(), 1);
+    QCOMPARE(rejectedDeliveryTags.first(), secondDeliveryTag);
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

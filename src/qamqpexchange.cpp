@@ -82,9 +82,13 @@ bool QAmqpExchangePrivate::_q_method(const QAmqpMethodFrame &frame)
         switch (frame.id()) {
         case bmAck:
         case bmNack:
-            handleAckOrNack(frame);
+        case bmReject:
+            handlePublishReply(frame);
             break;
-        case bmReturn: basicReturn(frame); break;
+
+        case bmReturn:
+            basicReturn(frame);
+            break;
 
         default:
             break;
@@ -165,7 +169,7 @@ void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
                replyCode, qPrintable(replyText), qPrintable(exchangeName), qPrintable(routingKey));
 }
 
-void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
+void QAmqpExchangePrivate::handlePublishReply(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpExchange);
     QByteArray data = frame.arguments();
@@ -173,29 +177,80 @@ void QAmqpExchangePrivate::handleAckOrNack(const QAmqpMethodFrame &frame)
 
     qlonglong deliveryTag =
         QAmqpFrame::readAmqpField(stream, QAmqpMetaType::LongLongUint).toLongLong();
-    bool multiple = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
-    if (frame.id() == QAmqpExchangePrivate::bmAck) {
-        if (deliveryTag == 0) {
-            unconfirmedDeliveryTags.clear();
-        } else {
-            int idx = unconfirmedDeliveryTags.indexOf(deliveryTag);
-            if (idx == -1) {
-                return;
-            }
 
-            if (multiple) {
-                unconfirmedDeliveryTags.remove(0, idx + 1);
-            } else {
-                unconfirmedDeliveryTags.remove(idx);
-            }
+    bool success = false;
+    bool multiple = false;
+    const char *methodName = "???";
+
+    switch (frame.id())
+      {
+        case bmAck:
+          success = true;
+          methodName = "ack";
+          multiple = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
+          break;
+
+        case bmNack:
+          methodName = "nack";
+          multiple = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean).toBool();
+          break;
+
+        case bmReject:
+          methodName = "reject";
+          break;
+
+        default:
+          qAmqpDebug("Error: PublishReply was called with invalid frame id (%d)", frame.id());
+          break;
+      }
+
+    qAmqpDebug("-> basic#%s( delivery-tag=%lld, multiple=%d )", methodName, deliveryTag, multiple);
+
+    QVector<qlonglong> tags = takeUnconfirmedDeliveryTags(deliveryTag, multiple);
+
+    if (success) {
+        foreach (qlonglong tag, tags)
+            Q_EMIT q->deliveryConfirmed(tag);
+    } else {
+        rejectedDeliveryTags += tags;
+        foreach (qlonglong tag, tags)
+            Q_EMIT q->deliveryRejected(tag);
+    }
+
+    if (unconfirmedDeliveryTags.isEmpty()) {
+        if (rejectedDeliveryTags.isEmpty()) {
+            Q_EMIT q->allMessagesDelivered();
         }
 
-        if (unconfirmedDeliveryTags.isEmpty())
-            Q_EMIT q->allMessagesDelivered();
-
-    } else {
-        qAmqpDebug() << "nacked(" << deliveryTag << "), multiple=" << multiple;
+        Q_EMIT q->messageDeliveryFinished(rejectedDeliveryTags);
+        rejectedDeliveryTags.clear();
     }
+}
+
+QVector<qlonglong> QAmqpExchangePrivate::takeUnconfirmedDeliveryTags(qlonglong deliveryTag, bool multiple)
+{
+  QVector<qlonglong> results;
+
+  if (deliveryTag == 0) {
+      results = unconfirmedDeliveryTags;
+      unconfirmedDeliveryTags.clear();
+
+  } else {
+      int idx = unconfirmedDeliveryTags.indexOf(deliveryTag);
+
+      if (idx >= 0) {
+          if (multiple) {
+              results = unconfirmedDeliveryTags.mid(0, idx + 1);
+              unconfirmedDeliveryTags.remove(0, idx + 1);
+
+          } else {
+              results.append(deliveryTag);
+              unconfirmedDeliveryTags.remove(idx);
+          }
+      }
+  }
+
+  return results;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -274,27 +329,28 @@ void QAmqpExchange::remove(int options)
     d->sendFrame(frame);
 }
 
-void QAmqpExchange::publish(const QString &message, const QString &routingKey,
+qlonglong QAmqpExchange::publish(const QString &message, const QString &routingKey,
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
-    publish(message.toUtf8(), routingKey, QLatin1String("text.plain"),
+    return publish(message.toUtf8(), routingKey, QLatin1String("text.plain"),
             QAmqpTable(), properties, publishOptions);
 }
 
-void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
+qlonglong QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
                             const QString &mimeType, const QAmqpMessage::PropertyHash &properties,
                             int publishOptions)
 {
-    publish(message, routingKey, mimeType, QAmqpTable(), properties, publishOptions);
+    return publish(message, routingKey, mimeType, QAmqpTable(), properties, publishOptions);
 }
 
-void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
+qlonglong QAmqpExchange::publish(const QByteArray &message, const QString &routingKey,
                             const QString &mimeType, const QAmqpTable &headers,
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
+    qlonglong deliveryTag = d->nextDeliveryTag;
     if (d->nextDeliveryTag > 0) {
-        d->unconfirmedDeliveryTags.append(d->nextDeliveryTag);
+        d->unconfirmedDeliveryTags.append(deliveryTag);
         d->nextDeliveryTag++;
     }
 
@@ -309,9 +365,10 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, routingKey);
     out << qint8(publishOptions);
 
-    qAmqpDebug("<- basic#publish( exchange=%s, routing-key=%s, mandatory=%d, immediate=%d )",
+    qAmqpDebug("<- basic#publish( exchange=%s, routing-key=%s, mandatory=%d, immediate=%d, delivery-tag=%lld )",
                qPrintable(d->name), qPrintable(routingKey),
-               publishOptions & QAmqpExchange::poMandatory, publishOptions & QAmqpExchange::poImmediate);
+               publishOptions & QAmqpExchange::poMandatory, publishOptions & QAmqpExchange::poImmediate,
+               deliveryTag);
 
     frame.setArguments(arguments);
     d->sendFrame(frame);
@@ -337,6 +394,8 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
         body.setBody(partition);
         d->sendFrame(body);
     }
+
+    return deliveryTag;
 }
 
 void QAmqpExchange::enableConfirms(bool noWait)
@@ -361,7 +420,7 @@ bool QAmqpExchange::waitForConfirms(int msecs)
     Q_D(QAmqpExchange);
 
     QEventLoop loop;
-    connect(this, SIGNAL(allMessagesDelivered()), &loop, SLOT(quit()));
+    connect(this, SIGNAL(messageDeliveryFinished(QVector<qlonglong>)), &loop, SLOT(quit()));
     QTimer::singleShot(msecs, &loop, SLOT(quit()));
     loop.exec();
 

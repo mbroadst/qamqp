@@ -30,7 +30,8 @@ public:
     void declareOk(const QAmqpMethodFrame &frame);
     void deleteOk(const QAmqpMethodFrame &frame);
     void basicReturn(const QAmqpMethodFrame &frame);
-    void handleAckOrNack(const QAmqpMethodFrame &frame);
+    void handlePublishReply(const QAmqpMethodFrame &frame);
+    QVector<qlonglong> takeUnconfirmedDeliveryTags(qlonglong deliveryTag, bool multiple);
 
     QString type;
     QAmqpExchange::ExchangeOptions options;
@@ -38,6 +39,7 @@ public:
     bool declared;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
+    QVector<qlonglong> rejectedDeliveryTags;
 
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };
