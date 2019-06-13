@@ -124,14 +124,18 @@ void QAmqpClientPrivate::parseConnectionString(const QString &uri)
     host = connectionString.host();
 
     QString vhost = connectionString.path();
-    if (vhost.startsWith("/") && vhost.size() > 1)
+    if (vhost.startsWith("/") && vhost.size() > 1) {
         vhost = vhost.mid(1);
 #if QT_VERSION <= 0x050200
-    virtualHost = QUrl::fromPercentEncoding(vhost.toUtf8());
+        virtualHost = QUrl::fromPercentEncoding(vhost.toUtf8());
+#else
+        virtualHost = vhost;
+#endif
+    }
+#if QT_VERSION <= 0x050200
     setPassword(QUrl::fromPercentEncoding(connectionString.password().toUtf8()));
     setUsername(QUrl::fromPercentEncoding(connectionString.userName().toUtf8()));
 #else
-    virtualHost = vhost;
     setPassword(connectionString.password());
     setUsername(connectionString.userName());
 #endif
