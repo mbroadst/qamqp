@@ -14,6 +14,47 @@ Usage
 * [topics](https://github.com/mbroadst/qamqp/tree/master/tutorials/topics)
 * [work queues](https://github.com/mbroadst/qamqp/tree/master/tutorials/workqueues)
 
+Building with CMake
+------------
+- ensure you have the following packages on the `PATH`
+    - **CMake** >= 3.12 
+    - **Qt** >= 5.9
+    - **lcov**
+
+- checkout sources
+```sh
+$ cd ~/src
+$ git clone git@github.com:ssproessig/qamqp.git
+```
+
+- we are going to build in a separate out-of-tree build directory
+    - building `Debug` build with default compiler
+    ```sh
+    $ mkdir -p ~/build/qamqp-debug && cd ~/build/qamqp-debug
+    $ cmake ~/src/qamqp
+    $ cmake --build .
+    ```
+
+    - building `Release` build with **clang** compiler and **ninja** generator
+    ```sh
+    $ mkdir -p ~/build/qamqp-clang-release && cd ~/build/qamqp-clang-release
+    $
+    $ EXPORT CXX=clang++-10
+    $
+    $ cmake -G Ninja ~/src/qamqp
+    $ cmake --build .
+    ```
+
+- running tests with coverage from inside the build directory
+```sh
+$                               # ... after building, in the build directory
+$ ctest -V                      # -V for verbose output of QTest
+$ sh generate_coverage.sh
+$ ...
+$ firefox coverage/index.html
+```
+
+
 Documentation
 ------------
 Coming soon!
