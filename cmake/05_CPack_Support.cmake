@@ -22,4 +22,7 @@ set(CPACK_PACKAGE_NAME "qamqp")
 set(CPACK_PACKAGE_VENDOR "Matt Broadstone and contributors")
 set(CPACK_PACKAGE_CONTACT mbroadst@gmail.com)
 
+# when packaging unter Debian (cpack -G DEB) we can auto-detect .deb dependencies
+set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
 # NOTE: 'include(CPack)'  MUST happen after all CPACK_ variables are set in the including sub directories (e.g. for menu links)
