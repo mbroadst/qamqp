@@ -3,6 +3,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/00_CMake_Policies.cmake NO_POLICY_SCOPE)
 
 # adding some helpers for CMake et.al.
 include(${CMAKE_CURRENT_LIST_DIR}/01_git_Integration.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/05_CPack_Support.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/06_CTest_Support.cmake)
 
 # define the default build type

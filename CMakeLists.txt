@@ -7,3 +7,5 @@ include(${QAMQP_PATH}/cmake/CMakeSettings.cmake)
 
 add_subdirectory(src)
 add_subdirectory(tests/auto)
+
+include(CPack)
