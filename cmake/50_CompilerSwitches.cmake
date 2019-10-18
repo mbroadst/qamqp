@@ -4,6 +4,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # we aim for C++14
 set(CMAKE_CXX_STANDARD 14)
 
+
+# declare some "empty default implementation" macros that can be specialized per compiler
+macro(_enable_compiler_coverage_flags_for __target)
+endmacro()
+
+
 # compiler specific settings
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     include(${CMAKE_CURRENT_LIST_DIR}/51_CompilerSwitches_GCC.cmake)
