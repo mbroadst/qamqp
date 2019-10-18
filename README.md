@@ -54,6 +54,25 @@ $ ...
 $ firefox coverage/index.html
 ```
 
+- building a release with **Visual Studio 2019 Win64**  (make sure to have **[OpenCppCoverage](https://github.com/OpenCppCoverage/OpenCppCoverage)** on the `PATH`)
+```bat
+F:\2019\qamqp>cmake G:\_projects\qamqp
+...
+
+F:\2019\qamqp>cmake --build . --parallel 8 --config RelWithDebInfo
+...
+
+F:\2019\qamqp>Opencppcoverage --export_type html:coverage --modules "qamqp*.exe" --sources G:\_projects\qamqp\src --optimized_build --cover_children  -- ctest -C RelWithDebInfo
+...
+... open coverage/index.html in your browser ....
+...
+
+F:\2019\qamqp>cpack -G ZIP
+...
+CPack: - package: F:/2019/qamqp/qamqp-0.5.0-ee2bfd8-win64.zip generated.
+```
+
+
 
 Documentation
 ------------
