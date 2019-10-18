@@ -435,8 +435,8 @@ void QAmqpClientPrivate::tune(const QAmqpMethodFrame &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    qint16 channel_max = 0,
-           heartbeat_delay = 0;
+    qint16 channel_max = 0;
+    qint16 heartbeat_delay = 0;
     qint32 frame_max = 0;
 
     stream >> channel_max;
