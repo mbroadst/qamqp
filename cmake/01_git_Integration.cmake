@@ -52,3 +52,14 @@ if (GIT_FOUND)
 else()
     message(WARNING "! No git executable found. Unable to determine VCS_BRANCH and VCS_COMMIT_ID. Provide them manually.")
 endif()
+
+
+# a helper function to add VCS information to the FILE_NAME passed
+function(_add_vcs_info_to_file FILE_NAME)
+    set_property(
+        SOURCE ${FILE_NAME}
+        APPEND
+        PROPERTY COMPILE_DEFINITIONS
+        VCS_BRANCH="${VCS_BRANCH}" VCS_COMMIT_ID="${VCS_COMMIT_ID}"
+    )
+endfunction()
