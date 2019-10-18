@@ -5,14 +5,6 @@ QAMQP
 =============
 A Qt4/Qt5 implementation of AMQP 0.9.1, focusing primarily on RabbitMQ support.
 
-Usage
-------------
-* [hello world](https://github.com/mbroadst/qamqp/tree/master/tutorials/helloworld)
-* [pubsub](https://github.com/mbroadst/qamqp/tree/master/tutorials/pubsub)
-* [routing](https://github.com/mbroadst/qamqp/tree/master/tutorials/routing)
-* [rpc](https://github.com/mbroadst/qamqp/tree/master/tutorials/rpc)
-* [topics](https://github.com/mbroadst/qamqp/tree/master/tutorials/topics)
-* [work queues](https://github.com/mbroadst/qamqp/tree/master/tutorials/workqueues)
 
 Building with CMake
 ------------
@@ -72,6 +64,17 @@ F:\2019\qamqp>cpack -G ZIP
 CPack: - package: F:/2019/qamqp/qamqp-0.5.0-ee2bfd8-win64.zip generated.
 ```
 
+
+Usage
+------------
+Use `-DWITH_TUTORIALS=ON` to enable the tutorials in CMake.
+
+* [hello world](https://github.com/mbroadst/qamqp/tree/master/tutorials/helloworld)
+* [pubsub](https://github.com/mbroadst/qamqp/tree/master/tutorials/pubsub)
+* [routing](https://github.com/mbroadst/qamqp/tree/master/tutorials/routing)
+* [rpc](https://github.com/mbroadst/qamqp/tree/master/tutorials/rpc)
+* [topics](https://github.com/mbroadst/qamqp/tree/master/tutorials/topics)
+* [work queues](https://github.com/mbroadst/qamqp/tree/master/tutorials/workqueues)
 
 
 Documentation

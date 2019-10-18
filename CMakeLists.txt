@@ -8,4 +8,11 @@ include(${QAMQP_PATH}/cmake/CMakeSettings.cmake)
 add_subdirectory(src)
 add_subdirectory(tests/auto)
 
+if (${WITH_TUTORIALS})
+    message(STATUS "Adding tutorials...")
+    add_subdirectory(tutorials)
+else()
+    message(STATUS "Not adding tutorials (use -DWITH_TUTORIALS=ON for that)...")
+endif()
+
 include(CPack)
