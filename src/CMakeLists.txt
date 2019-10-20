@@ -9,13 +9,13 @@ _add_vcs_info_to_file(qamqpclient.cpp)
 
 set(LNK Qt5::Core Qt5::Network)
 
-add_library(${LIB_NAME}-static ${API} ${SRC})
+add_library(${LIB_NAME}-static ${HDR} ${SRC})
 target_link_libraries(${LIB_NAME}-static ${LNK})
 
-add_library(${LIB_NAME} SHARED ${API} ${SRC})
+add_library(${LIB_NAME} SHARED ${HDR} ${SRC})
 target_link_libraries(${LIB_NAME} ${LNK})
 
-add_library(${LIB_NAME}-coverage OBJECT ${API} ${SRC})
+add_library(${LIB_NAME}-coverage OBJECT ${HDR} ${SRC})
 target_link_libraries(${LIB_NAME}-coverage ${LNK})
 _enable_compiler_coverage_flags_for(${LIB_NAME}-coverage)
 
