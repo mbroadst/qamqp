@@ -60,6 +60,6 @@ function(_add_vcs_info_to_file FILE_NAME)
         SOURCE ${FILE_NAME}
         APPEND
         PROPERTY COMPILE_DEFINITIONS
-        VCS_BRANCH="${VCS_BRANCH}" VCS_COMMIT_ID="${VCS_COMMIT_ID}"
+        GIT_BRANCH="${VCS_BRANCH}" GIT_VERSION="${VCS_COMMIT_ID}"
     )
 endfunction()

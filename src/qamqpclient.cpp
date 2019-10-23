@@ -906,7 +906,7 @@ void QAmqpClient::setSslConfiguration(const QSslConfiguration &config)
 
 QString QAmqpClient::gitVersion()
 {
-    return QString(VCS_COMMIT_ID);
+    return QString(GIT_VERSION);
 }
 
 void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)
