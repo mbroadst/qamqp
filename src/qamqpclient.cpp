@@ -435,18 +435,21 @@ void QAmqpClientPrivate::tune(const QAmqpMethodFrame &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    qint16 channel_max = 0,
-           heartbeat_delay = 0;
-    qint32 frame_max = 0;
+    qint16 peerChannelMax = 0;
+    qint16 peerHeartbeatDelay = 0;
+    qint32 peerFrameMax = 0;
 
-    stream >> channel_max;
-    stream >> frame_max;
-    stream >> heartbeat_delay;
+    stream >> peerChannelMax;
+    stream >> peerFrameMax;
+    stream >> peerHeartbeatDelay;
 
-    if (!frameMax)
-        frameMax = frame_max;
-    channelMax = !channelMax ? channel_max : qMax(channel_max, channelMax);
-    heartbeatDelay = !heartbeatDelay ? heartbeat_delay: heartbeatDelay;
+	// resolve tune parameters to use on the connection:
+	// a) if we did not configure parameters manually, use the received peer parameters
+	// b) if we configured them, use the smaller value, as otherwise the peer providing this value may not work
+	frameMax        = !frameMax          ? peerFrameMax        : qMin(frameMax, peerFrameMax);
+    channelMax      = !channelMax        ? peerChannelMax      : qMin(channelMax, peerChannelMax);
+    // c) heartbeat delay is not relevant framing layer, so use whatever value is configured
+    heartbeatDelay  = !heartbeatDelay    ? peerHeartbeatDelay  : heartbeatDelay;
 
     qAmqpDebug("-> connection#tune( channel_max=%d, frame_max=%d, heartbeat=%d )",
                channelMax, frameMax, heartbeatDelay);

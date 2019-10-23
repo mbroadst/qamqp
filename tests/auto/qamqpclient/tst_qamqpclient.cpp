@@ -179,9 +179,9 @@ void tst_QAMQPClient::tune()
 
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
-    QCOMPARE((int)client.channelMax(), 15);
-    QCOMPARE((int)client.heartbeatDelay(), 600);
-    QCOMPARE((int)client.frameMax(), 5000);
+    QCOMPARE(client.channelMax(), qint16(15));
+    QCOMPARE(client.heartbeatDelay(), qint16(600));
+    QCOMPARE(client.frameMax(), qint32(5000));
 
     client.disconnectFromHost();
     QVERIFY(waitForSignal(&client, SIGNAL(disconnected())));

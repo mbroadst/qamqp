@@ -1,5 +1,9 @@
 QAMQP_VERSION = 0.5.0
 
+contains(QT_MAJOR_VERSION, 4) {
+    DEFINES += Q_NULLPTR=0
+}
+
 isEmpty(QAMQP_LIBRARY_TYPE) {
     QAMQP_LIBRARY_TYPE = shared
 }
