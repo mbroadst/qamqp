@@ -28,7 +28,7 @@ class QAMQP_EXPORT QAmqpChannel : public QObject
     Q_OBJECT
     Q_PROPERTY(int number READ channelNumber CONSTANT)
     Q_PROPERTY(bool open READ isOpen CONSTANT)
-    Q_PROPERTY(QString name READ name WRITE setName)
+    Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
 public:
     virtual ~QAmqpChannel();
 
@@ -61,6 +61,7 @@ Q_SIGNALS:
     void paused();
     void error(QAMQP::Error error);
     void qosDefined();
+    void nameChanged(const QString &name);
 
 protected:
     virtual void channelOpened() = 0;

@@ -528,9 +528,9 @@ void QAmqpClientPrivate::startOk()
     QDataStream stream(&arguments, QIODevice::WriteOnly);
 
     QAmqpTable clientProperties;
-    clientProperties["version"] = QString(QAMQP_VERSION);
-    clientProperties["platform"] = QString("Qt %1").arg(qVersion());
-    clientProperties["product"] = QString("QAMQP");
+    clientProperties.insert("version", QString(QAMQP_VERSION));
+    clientProperties.insert("platform", QString("Qt %1").arg(qVersion()));
+    clientProperties.insert("product", QString("QAMQP"));
     clientProperties.unite(customProperties);
     stream << clientProperties;
 

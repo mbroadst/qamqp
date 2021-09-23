@@ -33,15 +33,15 @@ class QAmqpClientPrivate;
 class QAMQP_EXPORT QAmqpClient : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(quint32 port READ port WRITE setPort)
-    Q_PROPERTY(QString host READ host WRITE setHost)
-    Q_PROPERTY(QString virtualHost READ virtualHost WRITE setVirtualHost)
-    Q_PROPERTY(QString user READ username WRITE setUsername)
-    Q_PROPERTY(QString password READ password WRITE setPassword)
-    Q_PROPERTY(bool autoReconnect READ autoReconnect WRITE setAutoReconnect)
-    Q_PROPERTY(qint16 channelMax READ channelMax WRITE setChannelMax)
-    Q_PROPERTY(qint32 frameMax READ frameMax WRITE setFrameMax)
-    Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay)
+    Q_PROPERTY(quint32 port READ port WRITE setPort NOTIFY portChanged)
+    Q_PROPERTY(QString host READ host WRITE setHost NOTIFY hostChanged)
+    Q_PROPERTY(QString virtualHost READ virtualHost WRITE setVirtualHost NOTIFY virtualHostChanged)
+    Q_PROPERTY(QString user READ username WRITE setUsername NOTIFY userChanged)
+    Q_PROPERTY(QString password READ password WRITE setPassword NOTIFY passwordChanged)
+    Q_PROPERTY(bool autoReconnect READ autoReconnect WRITE setAutoReconnect NOTIFY autoReconnectChanged)
+    Q_PROPERTY(qint16 channelMax READ channelMax WRITE setChannelMax NOTIFY channelMaxChanged)
+    Q_PROPERTY(qint32 frameMax READ frameMax WRITE setFrameMax NOTIFY frameMaxChanged)
+    Q_PROPERTY(qint16 heartbeatDelay READ heartbeatDelay() WRITE setHeartbeatDelay NOTIFY heartbeatDelayChanged)
 
 public:
     explicit QAmqpClient(QObject *parent = 0);
@@ -119,6 +119,16 @@ Q_SIGNALS:
     void socketStateChanged(QAbstractSocket::SocketState state);
     void sslErrors(const QList<QSslError> &errors);
     
+    void portChanged(int);
+    void hostChanged(const QString &);
+    void virtualHostChanged(const QString &);
+    void userChanged(const QString &);
+    void passwordChanged(const QString &);
+    void autoReconnectChanged(bool value);
+    void channelMaxChanged(qint16 channelMax);
+    void frameMaxChanged(qint32 frameMax);
+    void heartbeatDelayChanged(qint16 delay);
+
 public Q_SLOTS:
     void ignoreSslErrors(const QList<QSslError> &errors);
 
