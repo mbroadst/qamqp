@@ -61,7 +61,7 @@
 #   define QAMQP_EXPORT
 #endif
 
-#define qAmqpDebug if (qgetenv("QAMQP_DEBUG").isEmpty()); else qDebug
+#define qAmqpDebug if (qEnvironmentVariableIsEmpty("QAMQP_DEBUG")); else qDebug
 
 namespace QAmqpMetaType {
 

@@ -41,7 +41,7 @@ void QAmqpPlainAuthenticator::write(QDataStream &out)
 {
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, type());
     QAmqpTable response;
-    response["LOGIN"] = login_;
-    response["PASSWORD"] = password_;
+    response.insert("LOGIN", login_);
+    response.insert("PASSWORD", password_);
     out << response;
 }

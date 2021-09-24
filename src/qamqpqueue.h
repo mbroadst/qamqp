@@ -32,12 +32,8 @@ class QAmqpQueuePrivate;
 class QAMQP_EXPORT QAmqpQueue : public QAmqpChannel, public QQueue<QAmqpMessage>
 {
     Q_OBJECT
-    Q_ENUMS(QueueOptions)
     Q_PROPERTY(int options READ options CONSTANT)
-    Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
-    Q_ENUMS(QueueOption)
-    Q_ENUMS(ConsumeOption)
-    Q_ENUMS(RemoveOption)
+    Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag NOTIFY consumerTagChanged)
 
 public:
     enum QueueOption {
@@ -78,6 +74,11 @@ public:
     qint32 messageCount() const;
     qint32 consumerCount() const;
 
+    Q_ENUM(QueueOptions)
+    Q_ENUM(QueueOption)
+    Q_ENUM(ConsumeOption)
+    Q_ENUM(RemoveOption)
+
 Q_SIGNALS:
     void declared();
     void bound();
@@ -89,6 +90,7 @@ Q_SIGNALS:
     void empty();
     void consuming(const QString &consumerTag);
     void cancelled(const QString &consumerTag);
+    void consumerTagChanged(const QString &consumerTag);
 
 public Q_SLOTS:
     // AMQP Queue

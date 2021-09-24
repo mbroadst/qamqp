@@ -363,7 +363,7 @@ QDataStream &operator>>(QDataStream &stream, QAmqpTable &table)
         qint8 octet = 0;
         QString field = QAmqpFrame::readAmqpField(tableStream, QAmqpMetaType::ShortString).toString();
         tableStream >> octet;
-        table[field] = QAmqpTable::readFieldValue(tableStream, valueTypeForOctet(octet));
+        table.insert(field, QAmqpTable::readFieldValue(tableStream, valueTypeForOctet(octet)));
     }
 
     return stream;

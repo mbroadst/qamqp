@@ -22,12 +22,12 @@
 
 #include "qamqpglobal.h"
 
-class QAMQP_EXPORT QAmqpTable : public QVariantHash
+class QAMQP_EXPORT QAmqpTable : public QMultiHash<QString, QVariant>
 {
 public:
     QAmqpTable() {}
-    inline QAmqpTable(const QVariantHash &variantHash)
-        : QVariantHash(variantHash)
+    inline QAmqpTable(const QMultiHash<QString, QVariant> &variantHash)
+        : QMultiHash<QString, QVariant>(variantHash)
     {
     }
 

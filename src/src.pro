@@ -4,7 +4,7 @@ INCLUDEPATH += .
 TEMPLATE = lib
 TARGET = qamqp
 build_pass:CONFIG(debug, debug|release) {
-    TARGET = $$join(TARGET,,,d)
+    win32:TARGET = $$join(TARGET,,,d)
 }
 QT += core network
 QT -= gui

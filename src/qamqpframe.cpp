@@ -302,8 +302,11 @@ qint32 QAmqpContentFrame::size() const
     out << qlonglong(bodySize_);
 
     qint16 prop_ = 0;
-    foreach (int p, properties_.keys())
-        prop_ |= p;
+    QHashIterator<QAmqpMessage::Property, QVariant> p(properties_);
+    while (p.hasNext()) {
+        p.next();
+        prop_ |= p.key();
+    }
     out << prop_;
 
     if (prop_ & QAmqpMessage::ContentType)
