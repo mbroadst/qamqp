@@ -4,3 +4,10 @@
 /Debug
 /GeneratedFiles
 build
+/.vs/**
+*.ilk
+*.exp
+*.vcxproj.filters
+*.vcxproj
+*.sln
+*.qmake.stash

@@ -628,6 +628,19 @@ bool QAmqpClient::isConnected() const
     return d->connected;
 }
 
+void QAmqpClient::setProxy(const QNetworkProxy& networkProxy)
+{
+    Q_D(QAmqpClient);
+	d->socket->setProxy(networkProxy);
+}
+
+QNetworkProxy QAmqpClient::proxy() const
+{
+    Q_D(const QAmqpClient);
+    return d->socket->proxy();
+}
+
+
 quint16 QAmqpClient::port() const
 {
     Q_D(const QAmqpClient);
