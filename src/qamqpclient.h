@@ -23,6 +23,7 @@
 #include <QHostAddress>
 #include <QSslConfiguration>
 #include <QSslError>
+#include <QNetworkProxy>
 
 #include "qamqpglobal.h"
 
@@ -70,6 +71,9 @@ public:
     void setAutoReconnect(bool value, int timeout = 0);
 
     bool isConnected() const;
+    
+    void setProxy(const QNetworkProxy& networkProxy);
+    QNetworkProxy proxy() const;
 
     qint16 channelMax() const;
     void setChannelMax(qint16 channelMax);
