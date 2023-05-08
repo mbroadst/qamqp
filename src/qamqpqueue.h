@@ -46,7 +46,8 @@ public:
     };
     Q_DECLARE_FLAGS(QueueOptions, QueueOption)
     Q_ENUM(QueueOption)
-    Q_ENUM(QueueOptions)    int options() const;
+    Q_ENUM(QueueOptions)
+    int options() const;
 
     enum ConsumeOption {
         coNoLocal = 0x01,
