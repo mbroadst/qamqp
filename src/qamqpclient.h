@@ -115,7 +115,7 @@ Q_SIGNALS:
     void disconnected();
     void heartbeat();
     void error(QAMQP::Error error);
-    void socketError(QAbstractSocket::SocketError error);
+    void socketErrorOccurred(QAbstractSocket::SocketError error);
     void socketStateChanged(QAbstractSocket::SocketState state);
     void sslErrors(const QList<QSslError> &errors);
     

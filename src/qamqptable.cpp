@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QIODevice>
 
 #include "qamqpframe_p.h"
 #include "qamqptable.h"

@@ -62,10 +62,25 @@ void QAmqpClientPrivate::initSocket()
     QObject::connect(socket, SIGNAL(connected()), q, SLOT(_q_socketConnected()));
     QObject::connect(socket, SIGNAL(disconnected()), q, SLOT(_q_socketDisconnected()));
     QObject::connect(socket, SIGNAL(readyRead()), q, SLOT(_q_readyRead()));
-    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
-                          q, SLOT(_q_socketError(QAbstractSocket::SocketError)));
-    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
-                          q, SIGNAL(socketError(QAbstractSocket::SocketError)));
+#if QT_VERSION >= 0x060000
+    QObject::connect(socket,
+                     SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
+                     q,
+                     SLOT(_q_socketError(QAbstractSocket::SocketError)));
+    QObject::connect(socket,
+                     SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
+                     q,
+                     SIGNAL(socketErrorOccurred(QAbstractSocket::SocketError)));
+#else
+    QObject::connect(socket,
+                     SIGNAL(error(QAbstractSocket::SocketError)),
+                     q,
+                     SLOT(_q_socketError(QAbstractSocket::SocketError)));
+    QObject::connect(socket,
+                     SIGNAL(error(QAbstractSocket::SocketError)),
+                     q,
+                     SIGNAL(socketErrorOccurred(QAbstractSocket::SocketError)));
+#endif
     QObject::connect(socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
                           q, SIGNAL(socketStateChanged(QAbstractSocket::SocketState)));
     QObject::connect(socket, SIGNAL(sslErrors(QList<QSslError>)),
@@ -107,11 +122,7 @@ void QAmqpClientPrivate::setPassword(const QString &password)
 
 void QAmqpClientPrivate::parseConnectionString(const QString &uri)
 {
-#if QT_VERSION > 0x040801
     QUrl connectionString = QUrl::fromUserInput(uri);
-#else
-    QUrl connectionString(uri, QUrl::TolerantMode);
-#endif
 
     if (connectionString.scheme() != AMQP_SCHEME &&
         connectionString.scheme() != AMQP_SSL_SCHEME) {
@@ -126,15 +137,9 @@ void QAmqpClientPrivate::parseConnectionString(const QString &uri)
     QString vhost = connectionString.path();
     if (vhost.startsWith("/") && vhost.size() > 1)
         vhost = vhost.mid(1);
-#if QT_VERSION <= 0x050200
-    virtualHost = QUrl::fromPercentEncoding(vhost.toUtf8());
-    setPassword(QUrl::fromPercentEncoding(connectionString.password().toUtf8()));
-    setUsername(QUrl::fromPercentEncoding(connectionString.userName().toUtf8()));
-#else
     virtualHost = vhost;
     setPassword(connectionString.password());
     setUsername(connectionString.userName());
-#endif
 }
 
 void QAmqpClientPrivate::_q_connect()
@@ -531,7 +536,11 @@ void QAmqpClientPrivate::startOk()
     clientProperties["version"] = QString(QAMQP_VERSION);
     clientProperties["platform"] = QString("Qt %1").arg(qVersion());
     clientProperties["product"] = QString("QAMQP");
+#if QT_VERSION >= 0x060000
+    clientProperties.insert(customProperties);
+#else
     clientProperties.unite(customProperties);
+#endif
     stream << clientProperties;
 
     authenticator->write(stream);

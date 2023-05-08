@@ -34,9 +34,7 @@ public:
     QAmqpMessage &operator=(const QAmqpMessage &other);
     ~QAmqpMessage();
 
-#if QT_VERSION >= 0x050000
     inline void swap(QAmqpMessage &other) { qSwap(d, other.d); }
-#endif
 
     bool operator==(const QAmqpMessage &message) const;
     inline bool operator!=(const QAmqpMessage &message) const { return !(operator==(message)); }
@@ -80,22 +78,9 @@ private:
     QSharedDataPointer<QAmqpMessagePrivate> d;
     friend class QAmqpQueuePrivate;
     friend class QAmqpQueue;
-
-#if QT_VERSION < 0x050000
-public:
-    typedef QSharedDataPointer<QAmqpMessagePrivate> DataPtr;
-    inline DataPtr &data_ptr() { return d; }
-
-    // internal
-    bool isDetached() const;
-#endif
 };
 
 Q_DECLARE_METATYPE(QAmqpMessage::PropertyHash)
-
-#if QT_VERSION < 0x050000
-Q_DECLARE_TYPEINFO(QAmqpMessage, Q_MOVABLE_TYPE);
-#endif
 Q_DECLARE_SHARED(QAmqpMessage)
 
 // NOTE: needed only for MSVC support, don't depend on this hash

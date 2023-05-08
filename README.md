@@ -3,7 +3,7 @@
 
 QAMQP
 =============
-A Qt4/Qt5 implementation of AMQP 0.9.1, focusing primarily on RabbitMQ support.
+A Qt5/Qt6 implementation of AMQP 0.9.1, focusing primarily on RabbitMQ support.
 
 Usage
 ------------
@@ -16,8 +16,16 @@ Usage
 
 Documentation
 ------------
-Coming soon!
+Tests checked and integrated against rabbitmq 3.11 (August 1, 2022)
+Qt5.6.3 (MSVC2017) 32Bit
+Qt5.15.2 (MSVC2019, MSVC2022, MinGW, Clang) 32 and 64Bit
+Qt6.5 (MSVC2019, MSVC2022) 64Bit
 
+A good starting point is:
+* running a local RabbitMQ,
+* browse to http://localhost:15672/#/queues  (guest/guest)
+* Start the "receive" sample and see in your browser the "hello" queue appear
+* publish a message there
 
 AMQP Support
 ------------
