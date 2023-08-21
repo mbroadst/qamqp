@@ -179,7 +179,7 @@ void tst_QAMQPClient::tune()
 
     client.connectToHost();
     QVERIFY(waitForSignal(&client, SIGNAL(connected())));
-    QCOMPARE((int)client.channelMax(), 15);
+    QCOMPARE((int) client.channelMax(), 2047);
     QCOMPARE((int)client.heartbeatDelay(), 600);
     QCOMPARE((int)client.frameMax(), 5000);
 
@@ -191,7 +191,7 @@ void tst_QAMQPClient::socketError()
 {
     QAmqpClient client;
     client.connectToHost("amqp://127.0.0.1:56725/");
-    QVERIFY(waitForSignal(&client, SIGNAL(socketError(QAbstractSocket::SocketError))));
+    QVERIFY(waitForSignal(&client, SIGNAL(socketErrorOccurred(QAbstractSocket::SocketError))));
     QCOMPARE(client.socketError(), QAbstractSocket::ConnectionRefusedError);
 }
 
@@ -208,10 +208,8 @@ void tst_QAMQPClient::validateUri_data()
         << "guest" << "guest" << "192.168.1.10" << quint16(5672) << "/";
     QTest::newRow("standard") << "amqp://user:pass@host:10000/vhost"
         << "user" << "pass" << "host" << quint16(10000) << "vhost";
-#if QT_VERSION >= 0x040806
     QTest::newRow("urlencoded") << "amqp://user%61:%61pass@ho%61st:10000/v%2fhost"
         << "usera" << "apass" << "hoast" << quint16(10000) << "v/host";
-#endif
     QTest::newRow("empty") << "amqp://" << "" << "" << "" << quint16(AMQP_PORT) << "";
     QTest::newRow("empty2") << "amqp://:@/" << "" << "" << "" << quint16(AMQP_PORT) << "/";
     QTest::newRow("onlyuser") << "amqp://user@" << "user" << "" << "" << quint16(AMQP_PORT) << "";

@@ -32,12 +32,8 @@ class QAmqpQueuePrivate;
 class QAMQP_EXPORT QAmqpQueue : public QAmqpChannel, public QQueue<QAmqpMessage>
 {
     Q_OBJECT
-    Q_ENUMS(QueueOptions)
     Q_PROPERTY(int options READ options CONSTANT)
     Q_PROPERTY(QString consumerTag READ consumerTag WRITE setConsumerTag)
-    Q_ENUMS(QueueOption)
-    Q_ENUMS(ConsumeOption)
-    Q_ENUMS(RemoveOption)
 
 public:
     enum QueueOption {
@@ -49,6 +45,8 @@ public:
         NoWait = 0x10
     };
     Q_DECLARE_FLAGS(QueueOptions, QueueOption)
+    Q_ENUM(QueueOption)
+    Q_ENUM(QueueOptions)
     int options() const;
 
     enum ConsumeOption {
@@ -58,6 +56,7 @@ public:
         coNoWait = 0x08
     };
     Q_DECLARE_FLAGS(ConsumeOptions, ConsumeOption)
+    Q_ENUM(ConsumeOption)
 
     enum RemoveOption {
         roForce = 0x0,
@@ -66,6 +65,7 @@ public:
         roNoWait = 0x04
     };
     Q_DECLARE_FLAGS(RemoveOptions, RemoveOption)
+    Q_ENUM(RemoveOption)
 
     ~QAmqpQueue();
 

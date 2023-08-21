@@ -1,8 +1,8 @@
 language: cpp
 cache: apt
 env:
-  - QT_SELECT=qt4
   - QT_SELECT=qt5
+  - QT_SELECT=qt6
 services:
   - rabbitmq
 before_install:

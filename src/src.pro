@@ -64,16 +64,12 @@ HEADERS += \
     $${INSTALL_HEADERS} \
     $${PRIVATE_HEADERS}
 
-SOURCES += \
-    qamqpauthenticator.cpp \
-    qamqpchannel.cpp \
-    qamqpchannelhash.cpp \
-    qamqpclient.cpp \
-    qamqpexchange.cpp \
-    qamqpframe.cpp \
-    qamqpmessage.cpp \
-    qamqpqueue.cpp \
-    qamqptable.cpp
+SOURCES += $$files($$PWD/*.cpp)
+
+DISTFILES += \
+    ../.travis.yml \
+    ../LICENSE \
+    ../README.md
 
 # install
 headers.files = $${INSTALL_HEADERS}

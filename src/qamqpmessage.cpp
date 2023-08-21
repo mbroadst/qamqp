@@ -113,13 +113,6 @@ QHash<QString, QVariant> QAmqpMessage::headers() const
     return d->headers;
 }
 
-#if QT_VERSION < 0x050000
-bool QAmqpMessage::isDetached() const
-{
-    return d && d->ref == 1;
-}
-#endif
-
 uint qHash(const QAmqpMessage &message, uint seed)
 {
     Q_UNUSED(seed);

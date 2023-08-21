@@ -356,7 +356,7 @@ void tst_QAMQPQueue::canOnlyStartConsumingOnce()
 void tst_QAMQPQueue::ensureConsumeOnlySentOnce()
 {
     QAmqpQueue *queue = client->createQueue("test-single-consumer");
-    SignalSpy spy(queue, SIGNAL(consuming(QString)));
+    QSignalSpy spy(queue, SIGNAL(consuming(QString)));
     queue->declare();
     QVERIFY(waitForSignal(queue, SIGNAL(declared())));
 
@@ -601,8 +601,13 @@ void tst_QAMQPQueue::tableFieldDataTypes()
     QCOMPARE(message.header("double").toDouble(), double(FLT_MAX));
     QCOMPARE(message.header("short-string").toString(), QLatin1String("test"));
     QCOMPARE(message.header("long-string").toString(), QLatin1String("test"));
-    QCOMPARE(message.header("timestamp").toDateTime().toTime_t(), timestamp.toTime_t());
     QCOMPARE(message.header("bytes").toByteArray(), QByteArray("abcdefg1234567"));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 8, 0))
+    QCOMPARE(message.header("timestamp").toDateTime().toSecsSinceEpoch(),
+             timestamp.toSecsSinceEpoch());
+#else
+    QCOMPARE(message.header("timestamp").toDateTime().toTime_t(), timestamp.toTime_t());
+#endif
 
     QVERIFY(message.hasHeader("nested-table"));
     QAmqpTable compareTable(message.header("nested-table").toHash());
@@ -654,11 +659,17 @@ void tst_QAMQPQueue::messageProperties()
     QCOMPARE(message.property(QAmqpMessage::ReplyTo).toString(), QLatin1String("another-queue"));
     QCOMPARE(message.property(QAmqpMessage::MessageId).toString(), QLatin1String("some-message-id"));
     QCOMPARE(message.property(QAmqpMessage::Expiration).toString(), QLatin1String("60000"));
-    QCOMPARE(message.property(QAmqpMessage::Timestamp).toDateTime().toTime_t(), timestamp.toTime_t());
     QCOMPARE(message.property(QAmqpMessage::Type).toString(), QLatin1String("some-message-type"));
     QCOMPARE(message.property(QAmqpMessage::UserId).toString(), QLatin1String("guest"));
     QCOMPARE(message.property(QAmqpMessage::AppId).toString(), QLatin1String("some-app-id"));
     QCOMPARE(message.property(QAmqpMessage::ClusterID).toString(), QLatin1String("some-cluster-id"));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 8, 0))
+    QCOMPARE(message.property(QAmqpMessage::Timestamp).toDateTime().toSecsSinceEpoch(),
+             timestamp.toSecsSinceEpoch());
+#else
+    QCOMPARE(message.property(QAmqpMessage::Timestamp).toDateTime().toTime_t(),
+             timestamp.toTime_t());
+#endif
 }
 
 void tst_QAMQPQueue::emptyMessage()

@@ -31,7 +31,6 @@ class QAMQP_EXPORT QAmqpExchange : public QAmqpChannel
     Q_OBJECT
     Q_PROPERTY(QString type READ type CONSTANT)
     Q_PROPERTY(ExchangeOptions options READ options CONSTANT)
-    Q_ENUMS(ExchangeOptions)
 
 public:
     virtual ~QAmqpExchange();
@@ -68,6 +67,7 @@ public:
     };
     Q_DECLARE_FLAGS(ExchangeOptions, ExchangeOption)
     ExchangeOptions options() const;
+    Q_ENUM(ExchangeOptions)
 
     bool isDeclared() const;
 
@@ -83,11 +83,11 @@ Q_SIGNALS:
 
 public Q_SLOTS:
     // AMQP Exchange
-    void declare(ExchangeType type = Direct,
-                 ExchangeOptions options = NoOptions,
+    void declare(QAmqpExchange::ExchangeType type = Direct,
+                 QAmqpExchange::ExchangeOptions options = NoOptions,
                  const QAmqpTable &args = QAmqpTable());
     void declare(const QString &type,
-                 ExchangeOptions options = NoOptions,
+                 QAmqpExchange::ExchangeOptions options = NoOptions,
                  const QAmqpTable &args = QAmqpTable());
     void remove(int options = roIfUnused|roNoWait);
 
