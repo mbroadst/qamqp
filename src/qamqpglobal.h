@@ -117,7 +117,8 @@ enum Error
     ResourceError = 506,
     NotAllowedError = 530,
     NotImplementedError = 540,
-    InternalError = 541
+    InternalError = 541,
+    HeartbeatMissed =542
 };
 
 struct Decimal

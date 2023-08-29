@@ -6,6 +6,7 @@
 #include <QPointer>
 #include <QAbstractSocket>
 #include <QSslError>
+#include <QDateTime>
 
 #include "qamqpchannelhash_p.h"
 #include "qamqpglobal.h"
@@ -101,6 +102,7 @@ public:
     QAmqpTable customProperties;
     qint16 channelMax;
     qint16 heartbeatDelay;
+    qint16 heartbeatLosts;
     qint32 frameMax;
 
     QAMQP::Error error;
@@ -113,8 +115,11 @@ public:
     QAmqpChannelHash queues;
 
     QAmqpClient * const q_ptr;
-    Q_DECLARE_PUBLIC(QAmqpClient)
 
+    QDateTime sendHeartbitTime;
+    QDateTime reciveHeartbitTime;
+
+    Q_DECLARE_PUBLIC(QAmqpClient)
 };
 
 #endif // QAMQPCLIENT_P_H

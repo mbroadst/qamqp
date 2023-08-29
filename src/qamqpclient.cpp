@@ -28,9 +28,12 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       connected(false),
       channelMax(0),
       heartbeatDelay(0),
+      heartbeatLosts(0),
       frameMax(AMQP_FRAME_MAX),
       error(QAMQP::NoError),
-      q_ptr(q)
+      q_ptr(q),
+      sendHeartbitTime(QDateTime::currentDateTime()),
+      reciveHeartbitTime(QDateTime::currentDateTime())
 {
     qRegisterMetaType<QAmqpMessage::PropertyHash>();
 }
@@ -196,6 +199,14 @@ void QAmqpClientPrivate::_q_socketDisconnected()
 
 void QAmqpClientPrivate::_q_heartbeat()
 {
+    sendHeartbitTime=QDateTime::currentDateTime();
+
+    if(    heartbeatLosts > 0
+        && qAbs( sendHeartbitTime.secsTo( reciveHeartbitTime ) ) > (heartbeatDelay*heartbeatLosts)  )
+    {
+        emit q_ptr->error(QAMQP::HeartbeatMissed);
+    }
+
     QAmqpHeartbeatFrame frame;
     sendFrame(frame);
 }
@@ -264,7 +275,7 @@ void QAmqpClientPrivate::_q_readyRead()
             close(QAMQP::UnexpectedFrameError, "wrong end of frame");
             return;
         }
-
+        reciveHeartbitTime=QDateTime::currentDateTime();
         QDataStream streamB(&buffer, QIODevice::ReadOnly);
         switch (static_cast<QAmqpFrame::FrameType>(type)) {
         case QAmqpFrame::Method:
@@ -851,9 +862,26 @@ void QAmqpClient::setHeartbeatDelay(qint16 delay)
     d->heartbeatDelay = delay;
 }
 
+quint16 QAmqpClient::heartbeatLosts() const
+{
+    Q_D(const QAmqpClient);
+    return d->heartbeatLosts;
+}
+
 int QAmqpClient::writeTimeout() const
 {
     return QAmqpFrame::writeTimeout();
+}
+
+void QAmqpClient::setHeartbeatLosts(qint16 lostCount)
+{
+    Q_D(QAmqpClient);
+    if (d->connected) {
+        qAmqpDebug() << Q_FUNC_INFO << "can't modify value while connected";
+        return;
+    }
+
+    d->heartbeatLosts = lostCount;
 }
 
 void QAmqpClient::setWriteTimeout(int msecs)
