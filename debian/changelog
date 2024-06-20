@@ -1,0 +1,5 @@
+qamqp (0.3.0) unstable; urgency=low
+
+  * Initial release based on commit 5c7eca5f0775296be4a6faf3e0867004c4f5b3cc
+
+ -- Stuart Longland <stuartl@vrt.com.au>  Wed, 25 Mar 2015 20:39:28 +0000
