@@ -48,6 +48,7 @@ private Q_SLOTS:
     void tableFieldDataTypes();
     void messageProperties();
     void emptyMessage();
+    void sendUnicodeString();
     void cleanupOnDeletion();
 
 private:
@@ -684,6 +685,17 @@ void tst_QAMQPQueue::emptyMessage()
     QAmqpMessage message = queue->dequeue();
     verifyStandardMessageHeaders(message, "test-issue-43");
     QVERIFY(message.payload().isEmpty());
+}
+
+void tst_QAMQPQueue::sendUnicodeString()
+{
+  QAmqpQueue *queue = client->createQueue("テストファイル");
+  queue->declare();
+  QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+
+  // clean up queue
+  queue->remove(QAmqpQueue::roForce);
+  QVERIFY(waitForSignal(queue, SIGNAL(removed())));
 }
 
 void tst_QAMQPQueue::cleanupOnDeletion()
