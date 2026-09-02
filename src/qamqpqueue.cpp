@@ -224,6 +224,7 @@ void QAmqpQueuePrivate::getOk(const QAmqpMethodFrame &frame)
     message.d->redelivered = QAmqpFrame::readAmqpField(in, QAmqpMetaType::Boolean).toBool();
     message.d->exchangeName = QAmqpFrame::readAmqpField(in, QAmqpMetaType::ShortString).toString();
     message.d->routingKey = QAmqpFrame::readAmqpField(in, QAmqpMetaType::ShortString).toString();
+    messageCount = QAmqpFrame::readAmqpField(in, QAmqpMetaType::LongUint).toInt();
     currentMessage = message;
 }
 
