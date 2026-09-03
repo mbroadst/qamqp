@@ -25,7 +25,8 @@ QAmqpExchangePrivate::QAmqpExchangePrivate(QAmqpExchange *q)
     : QAmqpChannelPrivate(q),
       delayedDeclare(false),
       declared(false),
-      nextDeliveryTag(0)
+      nextDeliveryTag(0),
+      pendingPublishBytes(0)
 {
 }
 
@@ -216,6 +217,12 @@ void QAmqpExchange::channelOpened()
     Q_D(QAmqpExchange);
     if (d->delayedDeclare)
         d->declare();
+
+    while (!d->pendingPublishes.isEmpty()) {
+        QAmqpExchangePrivate::PendingPublish publish = d->pendingPublishes.dequeue();
+        d->pendingPublishBytes -= publish.message.size();
+        d->sendPublish(publish);
+    }
 }
 
 void QAmqpExchange::channelClosed()
@@ -293,49 +300,76 @@ void QAmqpExchange::publish(const QByteArray &message, const QString &routingKey
                             const QAmqpMessage::PropertyHash &properties, int publishOptions)
 {
     Q_D(QAmqpExchange);
-    if (d->nextDeliveryTag > 0) {
-        d->unconfirmedDeliveryTags.append(d->nextDeliveryTag);
-        d->nextDeliveryTag++;
+    QAmqpExchangePrivate::PendingPublish publish;
+    publish.message = message;
+    publish.routingKey = routingKey;
+    publish.mimeType = mimeType;
+    publish.headers = headers;
+    publish.properties = properties;
+    publish.publishOptions = publishOptions;
+
+    if (!d->opened) {
+        // Bound pending publishes so a permanently unavailable broker cannot exhaust memory.
+        if (d->pendingPublishes.size() >= 1000 ||
+            d->pendingPublishBytes + message.size() > 16 * 1024 * 1024) {
+            qAmqpDebug() << Q_FUNC_INFO << "pending publish limit reached, dropping message";
+            return;
+        }
+
+        d->pendingPublishes.enqueue(publish);
+        d->pendingPublishBytes += message.size();
+        return;
+    }
+
+    d->sendPublish(publish);
+}
+
+void QAmqpExchangePrivate::sendPublish(const PendingPublish &publish)
+{
+    if (nextDeliveryTag > 0) {
+        unconfirmedDeliveryTags.append(nextDeliveryTag);
+        nextDeliveryTag++;
     }
 
     QAmqpMethodFrame frame(QAmqpFrame::Basic, QAmqpExchangePrivate::bmPublish);
-    frame.setChannel(d->channelNumber);
+    frame.setChannel(channelNumber);
 
     QByteArray arguments;
     QDataStream out(&arguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //reserved 1
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, routingKey);
-    out << qint8(publishOptions);
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, name);
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, publish.routingKey);
+    out << qint8(publish.publishOptions);
 
     qAmqpDebug("<- basic#publish( exchange=%s, routing-key=%s, mandatory=%d, immediate=%d )",
-               qPrintable(d->name), qPrintable(routingKey),
-               publishOptions & QAmqpExchange::poMandatory, publishOptions & QAmqpExchange::poImmediate);
+               qPrintable(name), qPrintable(publish.routingKey),
+               publish.publishOptions & QAmqpExchange::poMandatory,
+               publish.publishOptions & QAmqpExchange::poImmediate);
 
     frame.setArguments(arguments);
-    d->sendFrame(frame);
+    sendFrame(frame);
 
     QAmqpContentFrame content(QAmqpFrame::Basic);
-    content.setChannel(d->channelNumber);
-    content.setProperty(QAmqpMessage::ContentType, mimeType);
+    content.setChannel(channelNumber);
+    content.setProperty(QAmqpMessage::ContentType, publish.mimeType);
     content.setProperty(QAmqpMessage::ContentEncoding, "utf-8");
-    content.setProperty(QAmqpMessage::Headers, headers);
+    content.setProperty(QAmqpMessage::Headers, publish.headers);
 
     QAmqpMessage::PropertyHash::ConstIterator it;
-    QAmqpMessage::PropertyHash::ConstIterator itEnd = properties.constEnd();
-    for (it = properties.constBegin(); it != itEnd; ++it)
+    QAmqpMessage::PropertyHash::ConstIterator itEnd = publish.properties.constEnd();
+    for (it = publish.properties.constBegin(); it != itEnd; ++it)
         content.setProperty(it.key(), it.value());
-    content.setBodySize(message.size());
-    d->sendFrame(content);
+    content.setBodySize(publish.message.size());
+    sendFrame(content);
 
-    int fullSize = message.size();
-    for (int sent = 0; sent < fullSize; sent += (d->client->frameMax() - 7)) {
+    int fullSize = publish.message.size();
+    for (int sent = 0; sent < fullSize; sent += (client->frameMax() - 7)) {
         QAmqpContentBodyFrame body;
-        QByteArray partition = message.mid(sent, (d->client->frameMax() - 7));
-        body.setChannel(d->channelNumber);
+        QByteArray partition = publish.message.mid(sent, (client->frameMax() - 7));
+        body.setChannel(channelNumber);
         body.setBody(partition);
-        d->sendFrame(body);
+        sendFrame(body);
     }
 }
 
