@@ -95,6 +95,10 @@ public Q_SLOTS:
     void declare(int options = Durable|AutoDelete, const QAmqpTable &arguments = QAmqpTable());
     void bind(const QString &exchangeName, const QString &key);
     void bind(QAmqpExchange *exchange, const QString &key);
+    void bind(const QString &exchangeName, const QString &key, bool noWait,
+              const QAmqpTable &arguments);
+    void bind(QAmqpExchange *exchange, const QString &key, bool noWait,
+              const QAmqpTable &arguments);
     void unbind(const QString &exchangeName, const QString &key);
     void unbind(QAmqpExchange *exchange, const QString &key);
     void purge();
