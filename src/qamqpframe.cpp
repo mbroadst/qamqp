@@ -187,7 +187,7 @@ QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type
     }
     case QAmqpMetaType::ShortString:
     {
-        qint8 size = 0;
+        quint8 size = 0;
         QByteArray buffer;
 
         s >> size;
