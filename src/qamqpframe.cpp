@@ -75,11 +75,8 @@ QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame)
     // write end
     stream << qint8(QAmqpFrame::FRAME_END);
     
-    int writeTimeout = QAmqpFrame::writeTimeout();
-    if(writeTimeout >= -1)
-    {
-        stream.device()->waitForBytesWritten(writeTimeout);
-    }
+    // rely on Qt's async write buffering (QIODevice::bytesWritten()) instead of
+    // blocking the event loop here; writeTimeout is kept only for API compatibility
 
     return stream;
 }
