@@ -26,8 +26,6 @@
 #define AMQP_SSL_PORT           5671
 #define AMQP_HOST               "localhost"
 #define AMQP_VHOST              "/"
-#define AMQP_LOGIN              "guest"
-#define AMQP_PSWD               "guest"
 
 #define AMQP_FRAME_MAX 131072
 #define AMQP_FRAME_MIN_SIZE 4096

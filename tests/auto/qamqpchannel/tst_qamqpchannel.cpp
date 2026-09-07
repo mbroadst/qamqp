@@ -27,6 +27,8 @@ private:
 void tst_QAMQPChannel::init()
 {
     client.reset(new QAmqpClient);
+    client->setUsername("guest");
+    client->setPassword("guest");
     client->connectToHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
 }

@@ -16,6 +16,8 @@ public Q_SLOTS:
     void start(const QStringList &bindingKeys) {
         m_bindingKeys = bindingKeys;
         connect(&m_client, SIGNAL(connected()), this, SLOT(clientConnected()));
+        m_client.setUsername("guest");
+        m_client.setPassword("guest");
         m_client.connectToHost();
     }
 

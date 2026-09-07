@@ -49,8 +49,10 @@ void QAmqpClientPrivate::init()
     reconnectTimer->setSingleShot(true);
     QObject::connect(reconnectTimer, SIGNAL(timeout()), q, SLOT(_q_connect()));
 
+    // no default credentials: callers must explicitly configure a username/password
+    // (or a custom QAmqpAuthenticator) before connecting
     authenticator = QSharedPointer<QAmqpAuthenticator>(
-        new QAmqpPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
+        new QAmqpPlainAuthenticator(QString(), QString()));
 }
 
 void QAmqpClientPrivate::initSocket()
@@ -151,6 +153,14 @@ void QAmqpClientPrivate::_q_connect()
         _q_disconnect();
         // We need to explicitly close connection here because either way it will not be closed until we receive closeOk
         closeConnection();
+    }
+
+    if (const QAmqpPlainAuthenticator *a = dynamic_cast<const QAmqpPlainAuthenticator*>(authenticator.data())) {
+        if (a->login().isEmpty()) {
+            qAmqpDebug() << Q_FUNC_INFO
+                         << "connecting with no username/password configured; call setUsername()/setPassword() "
+                            "(or setAuth()) explicitly - there is no default guest/guest credential anymore";
+        }
     }
 
     qAmqpDebug() << "connecting to host: " << host << ", port: " << port;
@@ -921,6 +931,15 @@ QString QAmqpClient::gitVersion()
 void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)
 {
     Q_D(QAmqpClient);
+
+    if (errors.isEmpty()) {
+        qAmqpDebug() << Q_FUNC_INFO << "clearing ignored SSL errors";
+    } else {
+        foreach (const QSslError &sslError, errors) {
+            qAmqpDebug() << Q_FUNC_INFO << "ignoring SSL error:" << sslError.errorString();
+        }
+    }
+
     d->socket->ignoreSslErrors(errors);
 }
 
