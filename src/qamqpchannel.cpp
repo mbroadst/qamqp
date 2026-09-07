@@ -195,7 +195,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     stream >> classId;
     stream >> methodId;
 
-    QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
+    QAMQP::Error checkError = QAMQP::errorFromCode(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);

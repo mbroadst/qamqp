@@ -498,7 +498,7 @@ void QAmqpClientPrivate::close(const QAmqpMethodFrame &frame)
     qAmqpDebug("-> connection#close( reply-code=%d, reply-text=%s, class-id=%d, method-id:%d )",
                code, qPrintable(text), classId, methodId);
 
-    QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
+    QAMQP::Error checkError = QAMQP::errorFromCode(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);

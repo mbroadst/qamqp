@@ -154,7 +154,7 @@ void QAmqpExchangePrivate::basicReturn(const QAmqpMethodFrame &frame)
     QString exchangeName = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
     QString routingKey = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::ShortString).toString();
 
-    QAMQP::Error checkError = static_cast<QAMQP::Error>(replyCode);
+    QAMQP::Error checkError = QAMQP::errorFromCode(replyCode);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(replyText);

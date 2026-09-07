@@ -120,6 +120,36 @@ enum Error
     InternalError = 541
 };
 
+// maps a wire-supplied reply code to a known Error value, avoiding a static_cast
+// of an unvalidated network int into the enum; unrecognized codes map to InternalError
+inline Error errorFromCode(int code)
+{
+    switch (code) {
+    case NoError:
+    case ContentTooLargeError:
+    case NoRouteError:
+    case NoConsumersError:
+    case ConnectionForcedError:
+    case InvalidPathError:
+    case AccessRefusedError:
+    case NotFoundError:
+    case ResourceLockedError:
+    case PreconditionFailedError:
+    case FrameError:
+    case SyntaxError:
+    case CommandInvalidError:
+    case ChannelError:
+    case UnexpectedFrameError:
+    case ResourceError:
+    case NotAllowedError:
+    case NotImplementedError:
+    case InternalError:
+        return static_cast<Error>(code);
+    default:
+        return InternalError;
+    }
+}
+
 struct Decimal
 {
     qint8 scale;
