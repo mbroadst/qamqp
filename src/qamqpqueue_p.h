@@ -6,11 +6,18 @@
 
 #include "qamqpchannel_p.h"
 
-class QAmqpQueuePrivate: public QAmqpChannelPrivate,
+class QAMQP_EXPORT QAmqpQueuePrivate: public QAmqpChannelPrivate,
                          public QAmqpContentFrameHandler,
                          public QAmqpContentBodyFrameHandler
 {
 public:
+    struct DelayedBinding {
+        QString exchangeName;
+        QString routingKey;
+        bool noWait;
+        QAmqpTable arguments;
+    };
+
     enum MethodId {
         METHOD_ID_ENUM(miDeclare, 10),
         METHOD_ID_ENUM(miBind, 20),
@@ -21,6 +28,9 @@ public:
 
     QAmqpQueuePrivate(QAmqpQueue *q);
     ~QAmqpQueuePrivate();
+
+    static bool isAcceptableBodySize(qlonglong declaredBodySize);
+    static bool isAcceptableBodyChunk(qlonglong remainingSize, qlonglong chunkSize);
 
     virtual void resetInternalState();
 
@@ -46,7 +56,7 @@ public:
     int options;
     bool delayedDeclare;
     bool declared;
-    QQueue<QPair<QString, QString> > delayedBindings;
+    QQueue<DelayedBinding> delayedBindings;
 
     QString consumerTag;
     bool recievingMessage;

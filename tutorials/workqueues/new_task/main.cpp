@@ -16,6 +16,8 @@ public Q_SLOTS:
     void start() {
         connect(&m_client, SIGNAL(connected()), this, SLOT(clientConnected()));
         connect(&m_client, SIGNAL(disconnected()), qApp, SLOT(quit()));
+        m_client.setUsername("guest");
+        m_client.setPassword("guest");
         m_client.connectToHost();
     }
 

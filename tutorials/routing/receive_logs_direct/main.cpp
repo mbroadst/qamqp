@@ -16,6 +16,8 @@ public Q_SLOTS:
     void start(const QStringList &severities) {
         m_severities = severities;
         connect(&m_client, SIGNAL(connected()), this, SLOT(clientConnected()));
+        m_client.setUsername("guest");
+        m_client.setPassword("guest");
         m_client.connectToHost();
     }
 

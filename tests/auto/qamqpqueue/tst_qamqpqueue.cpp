@@ -45,6 +45,7 @@ private Q_SLOTS:
     void invalidQos();
     void qos();
     void invalidRoutingKey();
+    void unicodeRoutingKeyAndHeader();
     void tableFieldDataTypes();
     void messageProperties();
     void emptyMessage();
@@ -58,6 +59,8 @@ private:
 void tst_QAMQPQueue::init()
 {
     client.reset(new QAmqpClient);
+    client->setUsername("guest");
+    client->setPassword("guest");
     client->connectToHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
 }
@@ -173,6 +176,8 @@ void tst_QAMQPQueue::exclusiveAccess()
     QVERIFY(queue->options() & QAmqpQueue::Exclusive);
 
     QAmqpClient secondClient;
+    secondClient.setUsername("guest");
+    secondClient.setPassword("guest");
     secondClient.connectToHost();
     QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
     QAmqpQueue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
@@ -196,6 +201,8 @@ void tst_QAMQPQueue::exclusiveRemoval()
     // create a new client and try to access the queue that should
     // no longer exist
     QAmqpClient secondClient;
+    secondClient.setUsername("guest");
+    secondClient.setPassword("guest");
     secondClient.connectToHost();
     QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
     QAmqpQueue *passiveQueue = secondClient.createQueue("test-exclusive-queue");
@@ -248,6 +255,8 @@ void tst_QAMQPQueue::removeIfEmpty()
     // create a second client and try to delete the queue
     {
         QAmqpClient secondClient;
+        secondClient.setUsername("guest");
+        secondClient.setPassword("guest");
         secondClient.connectToHost();
         QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
         QAmqpQueue *testDeleteQueue = secondClient.createQueue("test-remove-if-empty");
@@ -321,6 +330,8 @@ void tst_QAMQPQueue::purge()
     // create second client to listen to messages and attempt purge
     {
         QAmqpClient secondClient;
+        secondClient.setUsername("guest");
+        secondClient.setPassword("guest");
         secondClient.connectToHost();
         QVERIFY(waitForSignal(&secondClient, SIGNAL(connected())));
         QAmqpQueue *testPurgeQueue = secondClient.createQueue("test-purge");
@@ -540,6 +551,29 @@ void tst_QAMQPQueue::invalidRoutingKey()
     queue->declare();
     QVERIFY(waitForSignal(client.data(), SIGNAL(error(QAMQP::Error))));
     QCOMPARE(client->error(), QAMQP::FrameError);
+}
+
+void tst_QAMQPQueue::unicodeRoutingKeyAndHeader()
+{
+    const QString queueName = "test-unicode-routing-key";
+    const QString routingKey = QString::fromUtf8("routing-\xE2\x98\x83");
+    const QString headerValue = QString::fromUtf8("header-\xE2\x98\x83");
+
+    QAmqpQueue *queue = client->createQueue(queueName);
+    declareQueueAndVerifyConsuming(queue);
+    queue->bind("amq.topic", routingKey);
+    QVERIFY(waitForSignal(queue, SIGNAL(bound())));
+
+    QAmqpTable headers;
+    headers.insert("unicode", headerValue);
+    QAmqpExchange *exchange = client->createExchange("amq.topic");
+    exchange->publish("unicode message", routingKey, "text/plain", headers);
+
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    QAmqpMessage message = queue->dequeue();
+    QCOMPARE(message.routingKey(), routingKey);
+    QCOMPARE(message.header("unicode").toString(), headerValue);
+    QCOMPARE(message.payload(), QByteArray("unicode message"));
 }
 
 void tst_QAMQPQueue::tableFieldDataTypes()

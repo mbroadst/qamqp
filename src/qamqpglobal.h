@@ -26,11 +26,12 @@
 #define AMQP_SSL_PORT           5671
 #define AMQP_HOST               "localhost"
 #define AMQP_VHOST              "/"
-#define AMQP_LOGIN              "guest"
-#define AMQP_PSWD               "guest"
 
 #define AMQP_FRAME_MAX 131072
 #define AMQP_FRAME_MIN_SIZE 4096
+// upper bound for a reassembled message body; the declared size arrives from the
+// broker and must be bounded before body frames are accumulated
+#define AMQP_MESSAGE_MAX (128 * 1024 * 1024)
 
 #define AMQP_BASIC_CONTENT_TYPE_FLAG (1 << 15)
 #define AMQP_BASIC_CONTENT_ENCODING_FLAG (1 << 14)
@@ -119,6 +120,36 @@ enum Error
     NotImplementedError = 540,
     InternalError = 541
 };
+
+// maps a wire-supplied reply code to a known Error value, avoiding a static_cast
+// of an unvalidated network int into the enum; unrecognized codes map to InternalError
+inline Error errorFromCode(int code)
+{
+    switch (code) {
+    case NoError:
+    case ContentTooLargeError:
+    case NoRouteError:
+    case NoConsumersError:
+    case ConnectionForcedError:
+    case InvalidPathError:
+    case AccessRefusedError:
+    case NotFoundError:
+    case ResourceLockedError:
+    case PreconditionFailedError:
+    case FrameError:
+    case SyntaxError:
+    case CommandInvalidError:
+    case ChannelError:
+    case UnexpectedFrameError:
+    case ResourceError:
+    case NotAllowedError:
+    case NotImplementedError:
+    case InternalError:
+        return static_cast<Error>(code);
+    default:
+        return InternalError;
+    }
+}
 
 struct Decimal
 {

@@ -58,6 +58,7 @@ public:
     void setVirtualHost(const QString &virtualHost);
 
     QString username() const;
+    // no default credential is set; must be called explicitly before connecting (or use setAuth())
     void setUsername(const QString &username);
 
     QString password() const;
@@ -120,6 +121,7 @@ Q_SIGNALS:
     void sslErrors(const QList<QSslError> &errors);
     
 public Q_SLOTS:
+    // ignores only the supplied certificate errors; use with care
     void ignoreSslErrors(const QList<QSslError> &errors);
 
 protected:

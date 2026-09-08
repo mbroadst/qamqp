@@ -44,6 +44,16 @@ void QAmqpQueuePrivate::resetInternalState()
     consumeRequested = false;
 }
 
+bool QAmqpQueuePrivate::isAcceptableBodySize(qlonglong declaredBodySize)
+{
+    return declaredBodySize >= 0 && declaredBodySize <= AMQP_MESSAGE_MAX;
+}
+
+bool QAmqpQueuePrivate::isAcceptableBodyChunk(qlonglong remainingSize, qlonglong chunkSize)
+{
+    return chunkSize >= 0 && chunkSize <= remainingSize;
+}
+
 bool QAmqpQueuePrivate::_q_method(const QAmqpMethodFrame &frame)
 {
     Q_Q(QAmqpQueue);
@@ -109,6 +119,13 @@ void QAmqpQueuePrivate::_q_content(const QAmqpContentFrame &frame)
         return;
     }
 
+    if (!isAcceptableBodySize(frame.bodySize())) {
+        qAmqpDebug() << Q_FUNC_INFO << "rejecting message, declared body size out of range:"
+                     << frame.bodySize();
+        currentMessage = QAmqpMessage();
+        return;
+    }
+
     currentMessage.d->leftSize = frame.bodySize();
     QAmqpMessage::PropertyHash::ConstIterator it;
     QAmqpMessage::PropertyHash::ConstIterator itEnd = frame.properties_.constEnd();
@@ -135,6 +152,12 @@ void QAmqpQueuePrivate::_q_body(const QAmqpContentBodyFrame &frame)
 
     if (!currentMessage.isValid()) {
         qAmqpDebug() << "received content-body without delivered message";
+        return;
+    }
+
+    if (!isAcceptableBodyChunk(currentMessage.d->leftSize, frame.body().size())) {
+        qAmqpDebug() << Q_FUNC_INFO << "discarding message, body frame overruns declared size";
+        currentMessage = QAmqpMessage();
         return;
     }
 
@@ -224,6 +247,7 @@ void QAmqpQueuePrivate::getOk(const QAmqpMethodFrame &frame)
     message.d->redelivered = QAmqpFrame::readAmqpField(in, QAmqpMetaType::Boolean).toBool();
     message.d->exchangeName = QAmqpFrame::readAmqpField(in, QAmqpMetaType::ShortString).toString();
     message.d->routingKey = QAmqpFrame::readAmqpField(in, QAmqpMetaType::ShortString).toString();
+    messageCount = QAmqpFrame::readAmqpField(in, QAmqpMetaType::LongUint).toInt();
     currentMessage = message;
 }
 
@@ -325,9 +349,8 @@ void QAmqpQueue::channelOpened()
         d->declare();
 
     if (!d->delayedBindings.isEmpty()) {
-        typedef QPair<QString, QString> BindingPair;
-        foreach(BindingPair binding, d->delayedBindings)
-            bind(binding.first, binding.second);
+        foreach (QAmqpQueuePrivate::DelayedBinding binding, d->delayedBindings)
+            bind(binding.exchangeName, binding.routingKey, binding.noWait, binding.arguments);
         d->delayedBindings.clear();
     }
 }
@@ -417,41 +440,58 @@ void QAmqpQueue::purge()
 
 void QAmqpQueue::bind(QAmqpExchange *exchange, const QString &key)
 {
+    bind(exchange, key, false, QAmqpTable());
+}
+
+void QAmqpQueue::bind(QAmqpExchange *exchange, const QString &key, bool noWait,
+                      const QAmqpTable &arguments)
+{
     if (!exchange) {
         qAmqpDebug() << Q_FUNC_INFO << "invalid exchange provided";
         return;
     }
 
-    bind(exchange->name(), key);
+    bind(exchange->name(), key, noWait, arguments);
 }
 
 void QAmqpQueue::bind(const QString &exchangeName, const QString &key)
 {
+    bind(exchangeName, key, false, QAmqpTable());
+}
+
+void QAmqpQueue::bind(const QString &exchangeName, const QString &key, bool noWait,
+                      const QAmqpTable &arguments)
+{
     Q_D(QAmqpQueue);
     if (!d->opened) {
-        d->delayedBindings.append(QPair<QString,QString>(exchangeName, key));
+        QAmqpQueuePrivate::DelayedBinding binding;
+        binding.exchangeName = exchangeName;
+        binding.routingKey = key;
+        binding.noWait = noWait;
+        binding.arguments = arguments;
+        d->delayedBindings.append(binding);
         return;
     }
 
     QAmqpMethodFrame frame(QAmqpFrame::Queue, QAmqpQueuePrivate::miBind);
     frame.setChannel(d->channelNumber);
 
-    QByteArray arguments;
-    QDataStream out(&arguments, QIODevice::WriteOnly);
+    QByteArray frameArguments;
+    QDataStream out(&frameArguments, QIODevice::WriteOnly);
 
     out << qint16(0);   //  reserved 1
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, d->name);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, exchangeName);
     QAmqpFrame::writeAmqpField(out, QAmqpMetaType::ShortString, key);
 
-    out << qint8(0);    //  no-wait
-    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, QAmqpTable());
+    out << qint8(noWait ? 1 : 0);
+    QAmqpFrame::writeAmqpField(out, QAmqpMetaType::Hash, arguments);
 
     qAmqpDebug("<- queue#bind( queue=%s, exchange=%s, routing-key=%s, no-wait=%d )",
                qPrintable(d->name), qPrintable(exchangeName), qPrintable(key),
-               0);
+               noWait);
 
-    frame.setArguments(arguments);
+    frame.setArguments(frameArguments);
     d->sendFrame(frame);
 }
 

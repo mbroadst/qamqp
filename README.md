@@ -27,6 +27,30 @@ A good starting point is:
 * Start the "receive" sample and see in your browser the "hello" queue appear
 * publish a message there
 
+Usage notes
+------------
+
+#### credentials
+There is no default `guest`/`guest` credential. Call `setUsername()` and
+`setPassword()` (or supply a `QAmqpAuthenticator` via `setAuth()`) before
+connecting, or pass them in the connection URI.
+
+#### thread affinity
+A `QAmqpClient`, and every channel, exchange and queue it creates, must be used
+from the thread that owns the client's event loop. Most of the API is invoked
+directly rather than through queued signal/slot connections, so calling it from
+another thread is not safe. Use one `QAmqpClient` per thread rather than sharing
+a single client.
+
+#### message buffering
+`QAmqpQueue` derives from `QQueue<QAmqpMessage>` and buffers delivered messages in
+memory. That buffer is unbounded, so a consumer that does not drain it can grow
+without limit while a producer is fast. Set a prefetch window with
+`QAmqpChannel::qos()` and `dequeue()` messages promptly.
+
+Individual message bodies are bounded: a declared body larger than
+`AMQP_MESSAGE_MAX` (128 MiB) is rejected instead of being accumulated.
+
 AMQP Support
 ------------
 

@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QIODevice>
+#include <QThreadStorage>
 
 #include "qamqpframe_p.h"
 #include "qamqptable.h"
@@ -75,6 +76,45 @@ qint8 valueTypeToOctet(QAmqpMetaType::ValueType type)
     }
 
     return 'V';
+}
+
+namespace {
+const int MAX_FIELD_CONTAINER_DEPTH = 32;
+QThreadStorage<int *> fieldContainerDepth;
+
+class FieldContainerDepthGuard
+{
+public:
+    FieldContainerDepthGuard(QDataStream &stream)
+        : depth(fieldContainerDepth.localData()), valid(false)
+    {
+        if (!depth) {
+            depth = new int(0);
+            fieldContainerDepth.setLocalData(depth);
+        }
+
+        if (*depth >= MAX_FIELD_CONTAINER_DEPTH) {
+            qAmqpDebug() << Q_FUNC_INFO << "field container nesting too deep";
+            stream.setStatus(QDataStream::ReadCorruptData);
+            return;
+        }
+
+        ++*depth;
+        valid = true;
+    }
+
+    ~FieldContainerDepthGuard()
+    {
+        if (valid)
+            --*depth;
+    }
+
+    bool isValid() const { return valid; }
+
+private:
+    int *depth;
+    bool valid;
+};
 }
 
 void QAmqpTable::writeFieldValue(QDataStream &stream, const QVariant &value)
@@ -238,6 +278,10 @@ void QAmqpTable::writeFieldValue(QDataStream &stream, QAmqpMetaType::ValueType t
 
 QVariant QAmqpTable::readFieldValue(QDataStream &stream, QAmqpMetaType::ValueType type)
 {
+    FieldContainerDepthGuard depthGuard(stream);
+    if (!depthGuard.isValid())
+        return QVariant();
+
     switch (type) {
     case QAmqpMetaType::Boolean:
     case QAmqpMetaType::ShortShortUint:
@@ -304,6 +348,8 @@ QVariant QAmqpTable::readFieldValue(QDataStream &stream, QAmqpMetaType::ValueTyp
         QByteArray data;
         quint32 size = 0;
         stream >> size;
+        if (!QAmqpFrame::validateFieldSize(stream, size))
+            return QVariant();
         data.resize(size);
         stream.readRawData(data.data(), data.size());
 
@@ -313,6 +359,10 @@ QVariant QAmqpTable::readFieldValue(QDataStream &stream, QAmqpMetaType::ValueTyp
         while (!arrayStream.atEnd()) {
             arrayStream >> type;
             result.append(readFieldValue(arrayStream, valueTypeForOctet(type)));
+            if (arrayStream.status() != QDataStream::Ok) {
+                stream.setStatus(arrayStream.status());
+                return QVariant();
+            }
         }
 
         return result;
@@ -322,6 +372,8 @@ QVariant QAmqpTable::readFieldValue(QDataStream &stream, QAmqpMetaType::ValueTyp
         QByteArray bytes;
         quint32 length = 0;
         stream >> length;
+        if (!QAmqpFrame::validateFieldSize(stream, length))
+            return QVariant();
         bytes.resize(length);
         stream.readRawData(bytes.data(), bytes.size());
         return bytes;
@@ -357,14 +409,28 @@ QDataStream &operator<<(QDataStream &stream, const QAmqpTable &table)
 
 QDataStream &operator>>(QDataStream &stream, QAmqpTable &table)
 {
+    FieldContainerDepthGuard depthGuard(stream);
+    if (!depthGuard.isValid())
+        return stream;
+
     QByteArray data;
-    stream >> data;
+    quint32 size = 0;
+    stream >> size;
+    if (!QAmqpFrame::validateFieldSize(stream, size))
+        return stream;
+    data.resize(size);
+    stream.readRawData(data.data(), data.size());
+
     QDataStream tableStream(&data, QIODevice::ReadOnly);
     while (!tableStream.atEnd()) {
         qint8 octet = 0;
         QString field = QAmqpFrame::readAmqpField(tableStream, QAmqpMetaType::ShortString).toString();
         tableStream >> octet;
         table[field] = QAmqpTable::readFieldValue(tableStream, valueTypeForOctet(octet));
+        if (tableStream.status() != QDataStream::Ok) {
+            stream.setStatus(tableStream.status());
+            return stream;
+        }
     }
 
     return stream;

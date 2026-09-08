@@ -20,6 +20,8 @@ Server::~Server()
 
 void Server::listen()
 {
+    m_client->setUsername("guest");
+    m_client->setPassword("guest");
     m_client->connectToHost();
 }
 

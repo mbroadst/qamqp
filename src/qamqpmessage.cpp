@@ -116,9 +116,11 @@ QHash<QString, QVariant> QAmqpMessage::headers() const
 uint qHash(const QAmqpMessage &message, uint seed)
 {
     Q_UNUSED(seed);
-    return qHash(message.deliveryTag()) ^
-           qHash(message.isRedelivered()) ^
-           qHash(message.exchangeName()) ^
-           qHash(message.routingKey()) ^
-           qHash(message.payload());
+    // qHash() returns size_t on some Qt versions; narrow explicitly since this
+    // function's signature (uint) is part of the public API
+    return uint(qHash(message.deliveryTag()) ^
+                qHash(message.isRedelivered()) ^
+                qHash(message.exchangeName()) ^
+                qHash(message.routingKey()) ^
+                qHash(message.payload()));
 }
