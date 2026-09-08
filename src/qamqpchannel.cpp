@@ -6,11 +6,11 @@
 #include "qamqpclient.h"
 #include "qamqpclient_p.h"
 
-quint16 QAmqpChannelPrivate::nextChannelNumber = 0;
 QAmqpChannelPrivate::QAmqpChannelPrivate(QAmqpChannel *q)
     : channelNumber(0),
       opened(false),
       needOpen(true),
+    flowActive(true),
       prefetchSize(0),
       requestedPrefetchSize(0),
       prefetchCount(0),
@@ -31,9 +31,10 @@ QAmqpChannelPrivate::~QAmqpChannelPrivate()
 void QAmqpChannelPrivate::init(int channel, QAmqpClient *c)
 {
     client = c;
-    needOpen = (channel <= nextChannelNumber && channel != -1) ? false : true;
-    channelNumber = channel == -1 ? ++nextChannelNumber : channel;
-    nextChannelNumber = qMax(channelNumber, nextChannelNumber);
+    QAmqpClientPrivate *clientPriv = client->d_func();
+    const quint16 previousChannelNumber = clientPriv->nextChannelNumber;
+    channelNumber = clientPriv->allocateChannelNumber(channel);
+    needOpen = channelNumber && (channel == -1 || channel > previousChannelNumber);
 }
 
 bool QAmqpChannelPrivate::_q_method(const QAmqpMethodFrame &frame)
@@ -129,18 +130,41 @@ void QAmqpChannelPrivate::flow(bool active)
     sendFrame(frame);
 }
 
-// NOTE: not implemented until I can figure out a good way to force the server
-//       to pause the channel in a test. It seems like RabbitMQ just doesn't
-//       care about flow control, preferring rather to use basic.qos
 void QAmqpChannelPrivate::flow(const QAmqpMethodFrame &frame)
 {
-    Q_UNUSED(frame);
+    Q_Q(QAmqpChannel);
     qAmqpDebug("-> channel#flow( channel=%d, name=%s )", channelNumber, qPrintable(name));
+
+    QByteArray data = frame.arguments();
+    QDataStream stream(&data, QIODevice::ReadOnly);
+    QVariant activeValue = QAmqpFrame::readAmqpField(stream, QAmqpMetaType::Boolean);
+    if (stream.status() != QDataStream::Ok)
+        return;
+
+    const bool active = activeValue.toBool();
+    if (flowActive != active) {
+        flowActive = active;
+        Q_EMIT q->flowActiveChanged(active);
+    }
+
+    if (active)
+        Q_EMIT q->resumed();
+    else
+        Q_EMIT q->paused();
+
+    sendFrame(flowOkFrame(channelNumber, active));
 }
 
-void QAmqpChannelPrivate::flowOk()
+QAmqpMethodFrame QAmqpChannelPrivate::flowOkFrame(quint16 channelNumber, bool active)
 {
-    qAmqpDebug("<- channel#flowOk( channel=%d, name=%s )", channelNumber, qPrintable(name));
+    QByteArray arguments;
+    QDataStream stream(&arguments, QIODevice::WriteOnly);
+    QAmqpFrame::writeAmqpField(stream, QAmqpMetaType::ShortShortUint, active ? 1 : 0);
+
+    QAmqpMethodFrame frame(QAmqpFrame::Channel, miFlowOk);
+    frame.setChannel(channelNumber);
+    frame.setArguments(arguments);
+    return frame;
 }
 
 void QAmqpChannelPrivate::flowOk(const QAmqpMethodFrame &frame)
@@ -195,7 +219,7 @@ void QAmqpChannelPrivate::close(const QAmqpMethodFrame &frame)
     stream >> classId;
     stream >> methodId;
 
-    QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
+    QAMQP::Error checkError = QAMQP::errorFromCode(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
@@ -239,7 +263,7 @@ void QAmqpChannelPrivate::openOk(const QAmqpMethodFrame &)
 
 void QAmqpChannelPrivate::_q_disconnected()
 {
-    nextChannelNumber = 0;
+    // Existing channels retain their numbers across reconnects.
     opened = false;
 }
 
@@ -292,6 +316,12 @@ int QAmqpChannel::channelNumber() const
 {
     Q_D(const QAmqpChannel);
     return d->channelNumber;
+}
+
+bool QAmqpChannel::isFlowActive() const
+{
+    Q_D(const QAmqpChannel);
+    return d->flowActive;
 }
 
 void QAmqpChannel::setName(const QString &name)

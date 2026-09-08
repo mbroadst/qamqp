@@ -26,6 +26,8 @@ bool FibonacciRpcClient::connectToServer()
 {
     QEventLoop loop;
     connect(this, SIGNAL(connected()), &loop, SLOT(quit()));
+    m_client->setUsername("guest");
+    m_client->setPassword("guest");
     m_client->connectToHost();
     loop.exec();
 

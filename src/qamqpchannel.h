@@ -28,12 +28,14 @@ class QAMQP_EXPORT QAmqpChannel : public QObject
     Q_OBJECT
     Q_PROPERTY(int number READ channelNumber CONSTANT)
     Q_PROPERTY(bool open READ isOpen CONSTANT)
+    Q_PROPERTY(bool flowActive READ isFlowActive NOTIFY flowActiveChanged)
     Q_PROPERTY(QString name READ name WRITE setName)
 public:
     virtual ~QAmqpChannel();
 
     int channelNumber() const;
     bool isOpen() const;
+    bool isFlowActive() const;
 
     QString name() const;
     void setName(const QString &name);
@@ -59,6 +61,7 @@ Q_SIGNALS:
     void closed();
     void resumed();
     void paused();
+    void flowActiveChanged(bool active);
     void error(QAMQP::Error error);
     void qosDefined();
 

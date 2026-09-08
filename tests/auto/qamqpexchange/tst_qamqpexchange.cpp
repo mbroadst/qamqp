@@ -1,6 +1,5 @@
 #include <QtTest/QtTest>
 
-#include "signalspy.h"
 #include "qamqptestcase.h"
 
 #include "qamqpclient.h"
@@ -28,6 +27,7 @@ private Q_SLOTS:
     void passiveDeclareNotFound();
     void cleanupOnDeletion();
     void testQueuedPublish();
+    void publishBeforeChannelOpened();
 
 private:
     QScopedPointer<QAmqpClient> client;
@@ -37,6 +37,8 @@ private:
 void tst_QAMQPExchange::init()
 {
     client.reset(new QAmqpClient);
+    client->setUsername("guest");
+    client->setPassword("guest");
     client->connectToHost();
     QVERIFY(waitForSignal(client.data(), SIGNAL(connected())));
 }
@@ -240,6 +242,25 @@ void tst_QAMQPExchange::testQueuedPublish()
     }
 
     QVERIFY(defaultExchange->waitForConfirms());
+}
+
+void tst_QAMQPExchange::publishBeforeChannelOpened()
+{
+    const QString queueName = "test-publish-before-channel-open";
+    QAmqpQueue *queue = client->createQueue(queueName);
+    QVERIFY(waitForSignal(queue, SIGNAL(opened())));
+
+    queue->declare();
+    QVERIFY(waitForSignal(queue, SIGNAL(declared())));
+    QVERIFY(queue->consume(QAmqpQueue::coNoAck));
+    QVERIFY(waitForSignal(queue, SIGNAL(consuming(QString))));
+
+    QAmqpExchange *defaultExchange = client->createExchange();
+    defaultExchange->publish("queued message", queueName);
+
+    QVERIFY(waitForSignal(queue, SIGNAL(messageReceived())));
+    QCOMPARE(queue->dequeue().payload(), QByteArray("queued message"));
+    QVERIFY(client->isConnected());
 }
 
 QTEST_MAIN(tst_QAMQPExchange)

@@ -11,6 +11,13 @@ class QAmqpQueuePrivate: public QAmqpChannelPrivate,
                          public QAmqpContentBodyFrameHandler
 {
 public:
+    struct DelayedBinding {
+        QString exchangeName;
+        QString routingKey;
+        bool noWait;
+        QAmqpTable arguments;
+    };
+
     enum MethodId {
         METHOD_ID_ENUM(miDeclare, 10),
         METHOD_ID_ENUM(miBind, 20),
@@ -46,7 +53,7 @@ public:
     int options;
     bool delayedDeclare;
     bool declared;
-    QQueue<QPair<QString, QString> > delayedBindings;
+    QQueue<DelayedBinding> delayedBindings;
 
     QString consumerTag;
     bool recievingMessage;

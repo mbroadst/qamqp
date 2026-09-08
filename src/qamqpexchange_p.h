@@ -1,6 +1,8 @@
 #ifndef QAMQPEXCHANGE_P_H
 #define QAMQPEXCHANGE_P_H
 
+#include <QQueue>
+
 #include "qamqptable.h"
 #include "qamqpexchange.h"
 #include "qamqpchannel_p.h"
@@ -8,6 +10,15 @@
 class QAmqpExchangePrivate: public QAmqpChannelPrivate
 {
 public:
+    struct PendingPublish {
+        QByteArray message;
+        QString routingKey;
+        QString mimeType;
+        QAmqpTable headers;
+        QAmqpMessage::PropertyHash properties;
+        int publishOptions;
+    };
+
     enum MethodId {
         METHOD_ID_ENUM(miDeclare, 10),
         METHOD_ID_ENUM(miDelete, 20)
@@ -23,6 +34,7 @@ public:
     virtual void resetInternalState();
 
     void declare();
+    void sendPublish(const PendingPublish &publish);
 
     // method handler related
     virtual void _q_disconnected();
@@ -38,6 +50,8 @@ public:
     bool declared;
     qlonglong nextDeliveryTag;
     QVector<qlonglong> unconfirmedDeliveryTags;
+    QQueue<PendingPublish> pendingPublishes;
+    qint64 pendingPublishBytes;
 
     Q_DECLARE_PUBLIC(QAmqpExchange)
 };
