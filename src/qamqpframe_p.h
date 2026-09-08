@@ -10,7 +10,11 @@
 #include "qamqpmessage.h"
 
 class QAmqpFramePrivate;
-class QAmqpFrame
+class QAmqpFrame;
+QAMQP_EXPORT QDataStream &operator<<(QDataStream &, const QAmqpFrame &frame);
+QAMQP_EXPORT QDataStream &operator>>(QDataStream &, QAmqpFrame &frame);
+
+class QAMQP_EXPORT QAmqpFrame
 {
 public:
     static const qint64 HEADER_SIZE = 7;
@@ -51,6 +55,10 @@ public:
     static QVariant readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type);
     static void writeAmqpField(QDataStream &s, QAmqpMetaType::ValueType type, const QVariant &value);
 
+    // rejects wire-supplied lengths that are negative, exceed the sane frame cap, or
+    // exceed what is actually left to read, before any resize()/allocation is attempted
+    static bool validateFieldSize(QDataStream &s, qint64 size);
+
 protected:
     explicit QAmqpFrame(FrameType type);
     virtual void writePayload(QDataStream &stream) const = 0;
@@ -65,12 +73,9 @@ private:
     static QReadWriteLock lock_;
     static int writeTimeout_;
 
-    friend QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame);
-    friend QDataStream &operator>>(QDataStream &stream, QAmqpFrame &frame);
+    friend QAMQP_EXPORT QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame);
+    friend QAMQP_EXPORT QDataStream &operator>>(QDataStream &stream, QAmqpFrame &frame);
 };
-
-QDataStream &operator<<(QDataStream &, const QAmqpFrame &frame);
-QDataStream &operator>>(QDataStream &, QAmqpFrame &frame);
 
 class QAMQP_EXPORT QAmqpMethodFrame : public QAmqpFrame
 {

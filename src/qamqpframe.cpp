@@ -75,11 +75,8 @@ QDataStream &operator<<(QDataStream &stream, const QAmqpFrame &frame)
     // write end
     stream << qint8(QAmqpFrame::FRAME_END);
     
-    int writeTimeout = QAmqpFrame::writeTimeout();
-    if(writeTimeout >= -1)
-    {
-        stream.device()->waitForBytesWritten(writeTimeout);
-    }
+    // rely on Qt's async write buffering (QIODevice::bytesWritten()) instead of
+    // blocking the event loop here; writeTimeout is kept only for API compatibility
 
     return stream;
 }
@@ -139,7 +136,17 @@ void QAmqpMethodFrame::readPayload(QDataStream &stream)
     stream >> methodClass_;
     stream >> id_;
 
-    arguments_.resize(size_ - (sizeof(id_) + sizeof(methodClass_)));
+    const qint32 headerSize = qint32(sizeof(id_) + sizeof(methodClass_));
+    if (size_ < headerSize) {
+        // declared frame size smaller than the mandatory methodClass_/id_ fields:
+        // size_ - headerSize would underflow and resize() with a huge/negative value
+        qAmqpDebug() << Q_FUNC_INFO << "method frame size too small:" << size_;
+        stream.setStatus(QDataStream::ReadCorruptData);
+        arguments_.clear();
+        return;
+    }
+
+    arguments_.resize(size_ - headerSize);
     stream.readRawData(arguments_.data(), arguments_.size());
 }
 
@@ -151,6 +158,24 @@ void QAmqpMethodFrame::writePayload(QDataStream &stream) const
 }
 
 //////////////////////////////////////////////////////////////////////////
+
+bool QAmqpFrame::validateFieldSize(QDataStream &s, qint64 size)
+{
+    if (size < 0 || size > AMQP_FRAME_MAX) {
+        qAmqpDebug() << Q_FUNC_INFO << "field size out of range:" << size;
+        s.setStatus(QDataStream::ReadCorruptData);
+        return false;
+    }
+
+    QIODevice *device = s.device();
+    if (device && size > device->bytesAvailable()) {
+        qAmqpDebug() << Q_FUNC_INFO << "field size exceeds available data:" << size;
+        s.setStatus(QDataStream::ReadCorruptData);
+        return false;
+    }
+
+    return true;
+}
 
 QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type)
 {
@@ -187,13 +212,15 @@ QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type
     }
     case QAmqpMetaType::ShortString:
     {
-        qint8 size = 0;
+        quint8 size = 0;
         QByteArray buffer;
 
         s >> size;
+        if (!validateFieldSize(s, size))
+            return QVariant();
         buffer.resize(size);
         s.readRawData(buffer.data(), buffer.size());
-        return QString::fromLatin1(buffer.data(), size);
+        return QString::fromUtf8(buffer.data(), buffer.size());
     }
     case QAmqpMetaType::LongString:
     {
@@ -201,6 +228,8 @@ QVariant QAmqpFrame::readAmqpField(QDataStream &s, QAmqpMetaType::ValueType type
         QByteArray buffer;
 
         s >> size;
+        if (!validateFieldSize(s, size))
+            return QVariant();
         buffer.resize(size);
         s.readRawData(buffer.data(), buffer.size());
         return QString::fromUtf8(buffer.data(), buffer.size());
@@ -250,20 +279,21 @@ void QAmqpFrame::writeAmqpField(QDataStream &s, QAmqpMetaType::ValueType type, c
         break;
     case QAmqpMetaType::ShortString:
     {
-        QString str = value.toString();
-        if (str.length() >= 256) {
-            qAmqpDebug() << Q_FUNC_INFO << "invalid shortstr length: " << str.length();
+        QByteArray bytes = value.toString().toUtf8();
+        if (bytes.length() > 255) {
+            qAmqpDebug() << Q_FUNC_INFO << "shortstr exceeds 255 bytes, truncating: " << bytes.length();
+            bytes.truncate(255);
         }
 
-        s << quint8(str.length());
-        s.writeRawData(str.toUtf8().data(), str.length());
+        s << quint8(bytes.length());
+        s.writeRawData(bytes.constData(), bytes.length());
     }
         break;
     case QAmqpMetaType::LongString:
     {
-        QString str = value.toString();
-        s << quint32(str.length());
-        s.writeRawData(str.toLatin1().data(), str.length());
+        QByteArray bytes = value.toString().toUtf8();
+        s << quint32(bytes.length());
+        s.writeRawData(bytes.constData(), bytes.length());
     }
         break;
     case QAmqpMetaType::Timestamp:

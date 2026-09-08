@@ -3,6 +3,7 @@
 #include <QStringList>
 #include <QSslSocket>
 #include <QtEndian>
+#include <limits.h>
 
 #include "qamqpglobal.h"
 #include "qamqpexchange.h"
@@ -27,6 +28,7 @@ QAmqpClientPrivate::QAmqpClientPrivate(QAmqpClient *q)
       closed(false),
       connected(false),
       channelMax(0),
+      nextChannelNumber(0),
       heartbeatDelay(0),
       frameMax(AMQP_FRAME_MAX),
       error(QAMQP::NoError),
@@ -49,8 +51,10 @@ void QAmqpClientPrivate::init()
     reconnectTimer->setSingleShot(true);
     QObject::connect(reconnectTimer, SIGNAL(timeout()), q, SLOT(_q_connect()));
 
+    // no default credentials: callers must explicitly configure a username/password
+    // (or a custom QAmqpAuthenticator) before connecting
     authenticator = QSharedPointer<QAmqpAuthenticator>(
-        new QAmqpPlainAuthenticator(QString::fromLatin1(AMQP_LOGIN), QString::fromLatin1(AMQP_PSWD)));
+        new QAmqpPlainAuthenticator(QString(), QString()));
 }
 
 void QAmqpClientPrivate::initSocket()
@@ -120,14 +124,45 @@ void QAmqpClientPrivate::setPassword(const QString &password)
     }
 }
 
-void QAmqpClientPrivate::parseConnectionString(const QString &uri)
+quint16 QAmqpClientPrivate::allocateChannelNumber(int requestedChannelNumber)
+{
+    if (requestedChannelNumber < -1 || requestedChannelNumber > USHRT_MAX)
+        return 0;
+
+    quint16 channelNumber = 0;
+    if (requestedChannelNumber == -1) {
+        if (nextChannelNumber == USHRT_MAX)
+            return 0;
+        channelNumber = nextChannelNumber + 1;
+    } else {
+        channelNumber = quint16(requestedChannelNumber);
+    }
+
+    if (channelMax && channelNumber > channelMax)
+        return 0;
+
+    nextChannelNumber = qMax(channelNumber, nextChannelNumber);
+    return channelNumber;
+}
+
+quint16 QAmqpClientPrivate::negotiateChannelMax(quint16 clientChannelMax, quint16 serverChannelMax)
+{
+    if (!clientChannelMax)
+        return serverChannelMax;
+    if (!serverChannelMax)
+        return clientChannelMax;
+    return qMin(clientChannelMax, serverChannelMax);
+}
+
+bool QAmqpClientPrivate::parseConnectionString(const QString &uri)
 {
     QUrl connectionString = QUrl::fromUserInput(uri);
 
-    if (connectionString.scheme() != AMQP_SCHEME &&
-        connectionString.scheme() != AMQP_SSL_SCHEME) {
-        qAmqpDebug() << Q_FUNC_INFO << "invalid scheme: " << connectionString.scheme();
-        return;
+    if (!connectionString.isValid() ||
+        (connectionString.scheme() != AMQP_SCHEME &&
+         connectionString.scheme() != AMQP_SSL_SCHEME) ||
+        connectionString.host().isEmpty()) {
+        return false;
     }
 
     useSsl = (connectionString.scheme() == AMQP_SSL_SCHEME);
@@ -140,6 +175,7 @@ void QAmqpClientPrivate::parseConnectionString(const QString &uri)
     virtualHost = vhost;
     setPassword(connectionString.password());
     setUsername(connectionString.userName());
+    return true;
 }
 
 void QAmqpClientPrivate::_q_connect()
@@ -151,6 +187,14 @@ void QAmqpClientPrivate::_q_connect()
         _q_disconnect();
         // We need to explicitly close connection here because either way it will not be closed until we receive closeOk
         closeConnection();
+    }
+
+    if (const QAmqpPlainAuthenticator *a = dynamic_cast<const QAmqpPlainAuthenticator*>(authenticator.data())) {
+        if (a->login().isEmpty()) {
+            qAmqpDebug() << Q_FUNC_INFO
+                         << "connecting with no username/password configured; call setUsername()/setPassword() "
+                            "(or setAuth()) explicitly - there is no default guest/guest credential anymore";
+        }
     }
 
     qAmqpDebug() << "connecting to host: " << host << ", port: " << port;
@@ -250,6 +294,13 @@ void QAmqpClientPrivate::_q_readyRead()
         unsigned char headerData[QAmqpFrame::HEADER_SIZE];
         socket->peek((char*)headerData, QAmqpFrame::HEADER_SIZE);
         const quint32 payloadSize = qFromBigEndian<quint32>(headerData + 3);
+
+        // reject an oversized frame before waiting on/buffering any of its payload
+        if (Q_UNLIKELY(payloadSize > quint32(frameMax))) {
+            close(QAMQP::FrameError, "frame size too large");
+            return;
+        }
+
         const qint64 readSize = QAmqpFrame::HEADER_SIZE + payloadSize + QAmqpFrame::FRAME_END_SIZE;
 
         if (socket->bytesAvailable() < readSize)
@@ -440,7 +491,7 @@ void QAmqpClientPrivate::tune(const QAmqpMethodFrame &frame)
     QByteArray data = frame.arguments();
     QDataStream stream(&data, QIODevice::ReadOnly);
 
-    qint16 channel_max = 0,
+    quint16 channel_max = 0,
            heartbeat_delay = 0;
     qint32 frame_max = 0;
 
@@ -450,7 +501,7 @@ void QAmqpClientPrivate::tune(const QAmqpMethodFrame &frame)
 
     if (!frameMax)
         frameMax = frame_max;
-    channelMax = !channelMax ? channel_max : qMax(channel_max, channelMax);
+    channelMax = negotiateChannelMax(channelMax, channel_max);
     heartbeatDelay = !heartbeatDelay ? heartbeat_delay: heartbeatDelay;
 
     qAmqpDebug("-> connection#tune( channel_max=%d, frame_max=%d, heartbeat=%d )",
@@ -498,7 +549,7 @@ void QAmqpClientPrivate::close(const QAmqpMethodFrame &frame)
     qAmqpDebug("-> connection#close( reply-code=%d, reply-text=%s, class-id=%d, method-id:%d )",
                code, qPrintable(text), classId, methodId);
 
-    QAMQP::Error checkError = static_cast<QAMQP::Error>(code);
+    QAMQP::Error checkError = QAMQP::errorFromCode(code);
     if (checkError != QAMQP::NoError) {
         error = checkError;
         errorString = qPrintable(text);
@@ -725,6 +776,10 @@ QAmqpExchange *QAmqpClient::createExchange(const QString &name, int channelNumbe
     }
 
     exchange = new QAmqpExchange(channelNumber, this);
+    if (!exchange->channelNumber()) {
+        delete exchange;
+        return 0;
+    }
     d->methodHandlersByChannel[exchange->channelNumber()].append(exchange->d_func());
     connect(this, SIGNAL(connected()), exchange, SLOT(_q_open()));
     connect(this, SIGNAL(disconnected()), exchange, SLOT(_q_disconnected()));
@@ -752,6 +807,10 @@ QAmqpQueue *QAmqpClient::createQueue(const QString &name, int channelNumber)
     }
 
     queue = new QAmqpQueue(channelNumber, this);
+    if (!queue->channelNumber()) {
+        delete queue;
+        return 0;
+    }
     d->methodHandlersByChannel[queue->channelNumber()].append(queue->d_func());
     d->contentHandlerByChannel[queue->channelNumber()].append(queue->d_func());
     d->bodyHandlersByChannel[queue->channelNumber()].append(queue->d_func());
@@ -803,7 +862,7 @@ void QAmqpClient::setAutoReconnect(bool value, int timeout)
 qint16 QAmqpClient::channelMax() const
 {
     Q_D(const QAmqpClient);
-    return d->channelMax;
+    return qint16(d->channelMax);
 }
 
 void QAmqpClient::setChannelMax(qint16 channelMax)
@@ -814,7 +873,7 @@ void QAmqpClient::setChannelMax(qint16 channelMax)
         return;
     }
 
-    d->channelMax = channelMax;
+    d->channelMax = qMax(channelMax, qint16(0));
 }
 
 qint32 QAmqpClient::frameMax() const
@@ -921,6 +980,15 @@ QString QAmqpClient::gitVersion()
 void QAmqpClient::ignoreSslErrors(const QList<QSslError> &errors)
 {
     Q_D(QAmqpClient);
+
+    if (errors.isEmpty()) {
+        qAmqpDebug() << Q_FUNC_INFO << "clearing ignored SSL errors";
+    } else {
+        foreach (const QSslError &sslError, errors) {
+            qAmqpDebug() << Q_FUNC_INFO << "ignoring SSL error:" << sslError.errorString();
+        }
+    }
+
     d->socket->ignoreSslErrors(errors);
 }
 
@@ -932,7 +1000,12 @@ void QAmqpClient::connectToHost(const QString &uri)
         return;
     }
 
-    d->parseConnectionString(uri);
+    if (!d->parseConnectionString(uri)) {
+        d->error = QAMQP::SyntaxError;
+        d->errorString = QLatin1String("Invalid AMQP URI: expected amqp:// or amqps:// with a host");
+        Q_EMIT error(d->error);
+        return;
+    }
     d->_q_connect();
 }
 
